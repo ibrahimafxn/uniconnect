@@ -1,0 +1,48 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+import { Group } from '../academic/group.schema';
+import { AcademicYear } from '../academic/academic-year.schema';
+
+export enum StudentStatus {
+  Active = 'active',
+  Suspended = 'suspended',
+  Graduated = 'graduated',
+}
+
+@Schema({ timestamps: true })
+export class StudentProfile extends Document {
+  @Prop({ required: true, trim: true })
+  firstName!: string;
+
+  @Prop({ required: true, trim: true })
+  lastName!: string;
+
+  @Prop({ required: true, trim: true })
+  studentNumber!: string; // matricule
+
+  @Prop({
+    required: true,
+    enum: StudentStatus,
+    default: StudentStatus.Active,
+  })
+  status!: StudentStatus;
+
+  @Prop({ trim: true })
+  email?: string;
+
+  @Prop({ trim: true })
+  phone?: string;
+
+  @Prop({ trim: true })
+  address?: string;
+
+  @Prop({ required: true, type: Types.ObjectId, ref: Group.name })
+  groupId!: Types.ObjectId;
+
+  @Prop({ required: true, type: Types.ObjectId, ref: AcademicYear.name })
+  academicYearId!: Types.ObjectId;
+}
+
+export const StudentProfileSchema = SchemaFactory.createForClass(StudentProfile);
+StudentProfileSchema.index({ studentNumber: 1 }, { unique: true });
+StudentProfileSchema.index({ lastName: 1, firstName: 1 });

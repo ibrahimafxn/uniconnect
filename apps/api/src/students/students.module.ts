@@ -1,0 +1,21 @@
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { StudentProfile, StudentProfileSchema } from './student-profile.schema';
+import { Enrollment, EnrollmentSchema } from './enrollment.schema';
+import { StudentDocument, StudentDocumentSchema } from './student-document.schema';
+import { StudentsService } from './students.service';
+import { StudentsController } from './students.controller';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: StudentProfile.name, schema: StudentProfileSchema },
+      { name: Enrollment.name, schema: EnrollmentSchema },
+      { name: StudentDocument.name, schema: StudentDocumentSchema },
+    ]),
+  ],
+  providers: [StudentsService],
+  controllers: [StudentsController],
+  exports: [MongooseModule],
+})
+export class StudentsModule {}
