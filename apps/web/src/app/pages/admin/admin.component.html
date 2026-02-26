@@ -1,0 +1,257 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Administration</h1>
+      <p class="subtitle">Structure academique + etudiants (MVP)</p>
+    </div>
+    <button class="ghost" (click)="refresh()">Rafraichir</button>
+  </div>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Annee academique</h2>
+      <form [formGroup]="yearForm" (ngSubmit)="createYear()">
+        <input formControlName="name" placeholder="2025-2026" />
+        <div class="row">
+          <input type="date" formControlName="startDate" />
+          <input type="date" formControlName="endDate" />
+        </div>
+        <label class="checkbox">
+          <input type="checkbox" formControlName="isActive" /> Active
+        </label>
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let y of (years$ | async)?.items">
+          {{ y.name }} ({{ y.startDate | date }} - {{ y.endDate | date }})
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Filieres</h2>
+      <form [formGroup]="programForm" (ngSubmit)="createProgram()">
+        <input formControlName="name" placeholder="Informatique" />
+        <input formControlName="code" placeholder="INFO" />
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let p of (programs$ | async)?.items">
+          {{ p.name }} <span class="muted">{{ p.code }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Niveaux</h2>
+      <form [formGroup]="levelForm" (ngSubmit)="createLevel()">
+        <input formControlName="name" placeholder="L1" />
+        <select formControlName="programId">
+          <option value="">Choisir filiere</option>
+          <option *ngFor="let p of (programs$ | async)?.items" [value]="p._id">
+            {{ p.name }}
+          </option>
+        </select>
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let l of (levels$ | async)?.items">
+          {{ l.name }} — {{ l.programId }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Groupes</h2>
+      <form [formGroup]="groupForm" (ngSubmit)="createGroup()">
+        <input formControlName="name" placeholder="G1" />
+        <select formControlName="levelId">
+          <option value="">Choisir niveau</option>
+          <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">
+            {{ l.name }}
+          </option>
+        </select>
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let g of (groups$ | async)?.items">
+          {{ g.name }} — {{ g.levelId }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="card full">
+      <h2>Etudiants</h2>
+      <div class="row">
+        <input
+          [(ngModel)]="studentQuery"
+          placeholder="Rechercher (nom, prenom, matricule)"
+          name="studentQuery"
+        />
+        <button type="button" class="ghost" (click)="searchStudents()">Rechercher</button>
+      </div>
+      <div class="row">
+        <span class="muted">
+          Page {{ studentPage }} —
+          {{ studentTotal }} etudiants
+        </span>
+        <button type="button" class="ghost" (click)="changeStudentPage(-1)">Precedent</button>
+        <button type="button" class="ghost" (click)="changeStudentPage(1)">Suivant</button>
+      </div>
+      <form [formGroup]="studentForm" (ngSubmit)="createStudent()">
+        <input formControlName="firstName" placeholder="Prenom" />
+        <input formControlName="lastName" placeholder="Nom" />
+        <input formControlName="studentNumber" placeholder="Matricule" />
+        <select formControlName="status">
+          <option value="active">Actif</option>
+          <option value="suspended">Suspendu</option>
+          <option value="graduated">Diplome</option>
+        </select>
+        <input formControlName="email" placeholder="Email" />
+        <input formControlName="phone" placeholder="Telephone" />
+        <input formControlName="address" placeholder="Adresse" />
+        <select formControlName="groupId">
+          <option value="">Choisir groupe</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
+            {{ g.name }}
+          </option>
+        </select>
+        <select formControlName="academicYearId">
+          <option value="">Choisir annee</option>
+          <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">
+            {{ y.name }}
+          </option>
+        </select>
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let s of (students$ | async)?.items">
+          {{ s.lastName }} {{ s.firstName }} — {{ s.studentNumber }}
+          <span class="muted">({{ s.status || 'active' }})</span>
+          <select
+            [value]="s.status || 'active'"
+            (change)="updateStudentStatus(s._id, $any($event.target).value)"
+          >
+            <option value="active">Actif</option>
+            <option value="suspended">Suspendu</option>
+            <option value="graduated">Diplome</option>
+          </select>
+          <button type="button" class="ghost" (click)="selectStudentForEdit(s)">
+            Editer
+          </button>
+          <button type="button" class="ghost" (click)="deleteStudent(s._id)">
+            Supprimer
+          </button>
+        </li>
+      </ul>
+
+      <div class="card" *ngIf="editingStudentId">
+        <h3>Modifier etudiant</h3>
+        <form [formGroup]="editStudentForm" (ngSubmit)="saveStudentEdit()">
+          <input formControlName="firstName" placeholder="Prenom" />
+          <input formControlName="lastName" placeholder="Nom" />
+          <select formControlName="status">
+            <option value="active">Actif</option>
+            <option value="suspended">Suspendu</option>
+            <option value="graduated">Diplome</option>
+          </select>
+          <input formControlName="email" placeholder="Email" />
+          <input formControlName="phone" placeholder="Telephone" />
+          <input formControlName="address" placeholder="Adresse" />
+          <select formControlName="groupId">
+            <option value="">Choisir groupe</option>
+            <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
+              {{ g.name }}
+            </option>
+          </select>
+          <select formControlName="academicYearId">
+            <option value="">Choisir annee</option>
+            <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">
+              {{ y.name }}
+            </option>
+          </select>
+          <div class="row">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="ghost" (click)="cancelEditStudent()">Annuler</button>
+          </div>
+        </form>
+        <p class="muted">Le matricule n'est pas modifiable.</p>
+      </div>
+    </div>
+
+    <div class="card full">
+      <h2>Pieces jointes</h2>
+      <form [formGroup]="documentForm" (ngSubmit)="uploadDocument()">
+        <select formControlName="studentId" (change)="loadDocuments()">
+          <option value="">Choisir etudiant</option>
+          <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
+            {{ s.lastName }} {{ s.firstName }}
+          </option>
+        </select>
+        <input formControlName="label" placeholder="Libelle (optionnel)" />
+        <input type="file" (change)="onDocumentFileChange($event)" accept=".pdf,.png,.jpg,.jpeg" />
+        <button type="submit">Uploader</button>
+      </form>
+      <ul>
+        <li *ngFor="let d of (documents$ | async)?.items">
+          <a [href]="documentDownloadUrl(d._id)" target="_blank" rel="noopener">
+            {{ d.originalName }}
+          </a>
+          <span class="muted" *ngIf="d.label">— {{ d.label }}</span>
+          <button type="button" class="ghost" (click)="deleteDocument(d._id)">
+            Supprimer
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Plans de paiement</h2>
+      <form [formGroup]="planForm" (ngSubmit)="createPlan()">
+        <select formControlName="studentId">
+          <option value="">Choisir etudiant</option>
+          <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
+            {{ s.lastName }} {{ s.firstName }}
+          </option>
+        </select>
+        <input formControlName="label" placeholder="Mensuel 2025-2026" />
+        <input type="number" formControlName="totalAmount" placeholder="Montant total" />
+        <input formControlName="currency" placeholder="XOF" />
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let p of (plans$ | async)">
+          {{ p.label }} — {{ p.totalAmount }} {{ p.currency }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Paiements</h2>
+      <form [formGroup]="paymentForm" (ngSubmit)="createPayment()">
+        <select formControlName="studentId">
+          <option value="">Choisir etudiant</option>
+          <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
+            {{ s.lastName }} {{ s.firstName }}
+          </option>
+        </select>
+        <select formControlName="planId">
+          <option value="">Plan (optionnel)</option>
+          <option *ngFor="let p of (plans$ | async)" [value]="p._id">
+            {{ p.label }}
+          </option>
+        </select>
+        <input type="number" formControlName="amount" placeholder="Montant" />
+        <input formControlName="currency" placeholder="XOF" />
+        <input type="date" formControlName="paidAt" />
+        <input formControlName="reference" placeholder="Reference" />
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let p of (payments$ | async)">
+          {{ p.amount }} {{ p.currency }} — {{ p.paidAt | date }}
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>

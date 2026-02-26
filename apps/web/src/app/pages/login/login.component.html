@@ -1,0 +1,24 @@
+<div class="page">
+  <div class="card">
+    <h1>Connexion ENT</h1>
+    <p class="subtitle">Acces admin — MVP</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        Email
+        <input type="email" formControlName="email" placeholder="admin@uniconnect.local" />
+      </label>
+
+      <label>
+        Mot de passe
+        <input type="password" formControlName="password" placeholder="••••••••" />
+      </label>
+
+      <button type="submit" [disabled]="loading || form.invalid">
+        {{ loading ? 'Connexion...' : 'Se connecter' }}
+      </button>
+
+      <p class="error" *ngIf="error">{{ error }}</p>
+    </form>
+  </div>
+</div>
