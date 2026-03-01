@@ -122,10 +122,13 @@ describe('AdminComponent', () => {
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
+    const year = new Date().getFullYear();
     comp.studentForm.setValue({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: 'S1',
+      studentNumber: `ML103DJ${year}`,
+      gender: 'male',
+      birthDate: '2004-03-15',
       status: 'active',
       email: 'john@school.tld',
       phone: '+221700000000',
@@ -250,6 +253,8 @@ describe('AdminComponent', () => {
       firstName: '',
       lastName: '',
       studentNumber: '',
+      gender: 'female',
+      birthDate: '',
       status: 'active',
       email: '',
       phone: '',

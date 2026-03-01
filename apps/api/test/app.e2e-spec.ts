@@ -145,7 +145,8 @@ describe('AppController (e2e)', () => {
   });
 
   it('creates and reads a student', async () => {
-    const studentNumber = `S-${Date.now()}`;
+    const year = new Date().getFullYear();
+    const studentNumber = `ML103DJ${year}`;
     const student = await request(app.getHttpServer())
       .post(`${baseUrl}/students`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -153,6 +154,8 @@ describe('AppController (e2e)', () => {
         firstName: 'John',
         lastName: 'Doe',
         studentNumber,
+        gender: 'male',
+        birthDate: '2004-03-15',
         email: 'john.doe@uniconnect.local',
         phone: '+221700000000',
         address: 'Dakar',

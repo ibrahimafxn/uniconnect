@@ -2,14 +2,14 @@
   <div class="header">
     <div>
       <h1>Administration</h1>
-      <p class="subtitle">Structure academique + etudiants (MVP)</p>
+      <p class="subtitle">Structure académique + étudiants (MVP)</p>
     </div>
-    <button class="ghost" (click)="refresh()">Rafraichir</button>
+    <button class="ghost" (click)="refresh()">Rafraîchir</button>
   </div>
 
   <section class="grid">
     <div class="card">
-      <h2>Annee academique</h2>
+      <h2>Année académique</h2>
       <form [formGroup]="yearForm" (ngSubmit)="createYear()">
         <input formControlName="name" placeholder="2025-2026" />
         <div class="row">
@@ -29,7 +29,7 @@
     </div>
 
     <div class="card">
-      <h2>Filieres</h2>
+      <h2>Filières</h2>
       <form [formGroup]="programForm" (ngSubmit)="createProgram()">
         <input formControlName="name" placeholder="Informatique" />
         <input formControlName="code" placeholder="INFO" />
@@ -47,7 +47,7 @@
       <form [formGroup]="levelForm" (ngSubmit)="createLevel()">
         <input formControlName="name" placeholder="L1" />
         <select formControlName="programId">
-          <option value="">Choisir filiere</option>
+          <option value="">Choisir filière</option>
           <option *ngFor="let p of (programs$ | async)?.items" [value]="p._id">
             {{ p.name }}
           </option>
@@ -81,11 +81,11 @@
     </div>
 
     <div class="card full">
-      <h2>Etudiants</h2>
+      <h2>Étudiants</h2>
       <div class="row">
         <input
           [(ngModel)]="studentQuery"
-          placeholder="Rechercher (nom, prenom, matricule)"
+          placeholder="Rechercher (nom, prénom, matricule)"
           name="studentQuery"
         />
         <button type="button" class="ghost" (click)="searchStudents()">Rechercher</button>
@@ -93,22 +93,27 @@
       <div class="row">
         <span class="muted">
           Page {{ studentPage }} —
-          {{ studentTotal }} etudiants
+          {{ studentTotal }} étudiants
         </span>
-        <button type="button" class="ghost" (click)="changeStudentPage(-1)">Precedent</button>
+        <button type="button" class="ghost" (click)="changeStudentPage(-1)">Précédent</button>
         <button type="button" class="ghost" (click)="changeStudentPage(1)">Suivant</button>
       </div>
       <form [formGroup]="studentForm" (ngSubmit)="createStudent()">
-        <input formControlName="firstName" placeholder="Prenom" />
+        <input formControlName="firstName" placeholder="Prénom" />
         <input formControlName="lastName" placeholder="Nom" />
-        <input formControlName="studentNumber" placeholder="Matricule" />
+        <input formControlName="studentNumber" placeholder="Matricule (ex: ML103DJ2026 ou ML103DJ20261)" />
+        <select formControlName="gender">
+          <option value="female">Femme (0)</option>
+          <option value="male">Homme (1)</option>
+        </select>
+        <input type="date" formControlName="birthDate" />
         <select formControlName="status">
           <option value="active">Actif</option>
           <option value="suspended">Suspendu</option>
-          <option value="graduated">Diplome</option>
+          <option value="graduated">Diplômé</option>
         </select>
         <input formControlName="email" placeholder="Email" />
-        <input formControlName="phone" placeholder="Telephone" />
+        <input formControlName="phone" placeholder="Téléphone" />
         <input formControlName="address" placeholder="Adresse" />
         <select formControlName="groupId">
           <option value="">Choisir groupe</option>
@@ -117,7 +122,7 @@
           </option>
         </select>
         <select formControlName="academicYearId">
-          <option value="">Choisir annee</option>
+          <option value="">Choisir année</option>
           <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">
             {{ y.name }}
           </option>
@@ -134,10 +139,10 @@
           >
             <option value="active">Actif</option>
             <option value="suspended">Suspendu</option>
-            <option value="graduated">Diplome</option>
+            <option value="graduated">Diplômé</option>
           </select>
           <button type="button" class="ghost" (click)="selectStudentForEdit(s)">
-            Editer
+            Éditer
           </button>
           <button type="button" class="ghost" (click)="deleteStudent(s._id)">
             Supprimer
@@ -146,17 +151,22 @@
       </ul>
 
       <div class="card" *ngIf="editingStudentId">
-        <h3>Modifier etudiant</h3>
+        <h3>Modifier étudiant</h3>
         <form [formGroup]="editStudentForm" (ngSubmit)="saveStudentEdit()">
-          <input formControlName="firstName" placeholder="Prenom" />
+          <input formControlName="firstName" placeholder="Prénom" />
           <input formControlName="lastName" placeholder="Nom" />
+          <select formControlName="gender">
+            <option value="female">Femme (0)</option>
+            <option value="male">Homme (1)</option>
+          </select>
+          <input type="date" formControlName="birthDate" />
           <select formControlName="status">
             <option value="active">Actif</option>
             <option value="suspended">Suspendu</option>
-            <option value="graduated">Diplome</option>
+            <option value="graduated">Diplômé</option>
           </select>
           <input formControlName="email" placeholder="Email" />
-          <input formControlName="phone" placeholder="Telephone" />
+          <input formControlName="phone" placeholder="Téléphone" />
           <input formControlName="address" placeholder="Adresse" />
           <select formControlName="groupId">
             <option value="">Choisir groupe</option>
@@ -165,7 +175,7 @@
             </option>
           </select>
           <select formControlName="academicYearId">
-            <option value="">Choisir annee</option>
+            <option value="">Choisir année</option>
             <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">
               {{ y.name }}
             </option>
@@ -180,15 +190,15 @@
     </div>
 
     <div class="card full">
-      <h2>Pieces jointes</h2>
+      <h2>Pièces jointes</h2>
       <form [formGroup]="documentForm" (ngSubmit)="uploadDocument()">
         <select formControlName="studentId" (change)="loadDocuments()">
-          <option value="">Choisir etudiant</option>
+          <option value="">Choisir étudiant</option>
           <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
             {{ s.lastName }} {{ s.firstName }}
           </option>
         </select>
-        <input formControlName="label" placeholder="Libelle (optionnel)" />
+        <input formControlName="label" placeholder="Libellé (optionnel)" />
         <input type="file" (change)="onDocumentFileChange($event)" accept=".pdf,.png,.jpg,.jpeg" />
         <button type="submit">Uploader</button>
       </form>
@@ -209,7 +219,7 @@
       <h2>Plans de paiement</h2>
       <form [formGroup]="planForm" (ngSubmit)="createPlan()">
         <select formControlName="studentId">
-          <option value="">Choisir etudiant</option>
+          <option value="">Choisir étudiant</option>
           <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
             {{ s.lastName }} {{ s.firstName }}
           </option>
@@ -219,12 +229,12 @@
         <input formControlName="currency" placeholder="XOF" />
         <div formArrayName="installments" class="installments">
           <div *ngFor="let inst of installments.controls; let i = index" [formGroupName]="i">
-            <input type="number" formControlName="amount" placeholder="Montant echeance" />
+            <input type="number" formControlName="amount" placeholder="Montant échéance" />
             <input type="date" formControlName="dueDate" />
-            <input formControlName="label" placeholder="Libelle (optionnel)" />
+            <input formControlName="label" placeholder="Libellé (optionnel)" />
             <button type="button" (click)="removeInstallment(i)">Retirer</button>
           </div>
-          <button type="button" (click)="addInstallment()">Ajouter une echeance</button>
+          <button type="button" (click)="addInstallment()">Ajouter une échéance</button>
         </div>
         <button type="submit">Ajouter</button>
       </form>
@@ -232,14 +242,14 @@
         <li *ngFor="let p of (plans$ | async)">
           {{ p.label }} — {{ p.totalAmount }} {{ p.currency }}
           <span *ngIf="(p.installments?.length ?? 0) > 0">
-            ({{ p.installments?.length ?? 0 }} echeances)
+            ({{ p.installments?.length ?? 0 }} échéances)
           </span>
         </li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>Impayes</h2>
+      <h2>Impayés</h2>
       <ul>
         <li *ngFor="let u of (unpaid$ | async)">
           {{ u.studentName }} ({{ u.studentNumber }}) —
@@ -252,7 +262,7 @@
       <h2>Paiements</h2>
       <form [formGroup]="paymentForm" (ngSubmit)="createPayment()">
         <select formControlName="studentId">
-          <option value="">Choisir etudiant</option>
+          <option value="">Choisir étudiant</option>
           <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">
             {{ s.lastName }} {{ s.firstName }}
           </option>
@@ -266,13 +276,13 @@
         <input type="number" formControlName="amount" placeholder="Montant" />
         <input formControlName="currency" placeholder="XOF" />
         <input type="date" formControlName="paidAt" />
-        <input formControlName="reference" placeholder="Reference" />
+        <input formControlName="reference" placeholder="Référence" />
         <button type="submit">Ajouter</button>
       </form>
       <ul>
         <li *ngFor="let p of (payments$ | async)">
           {{ p.amount }} {{ p.currency }} — {{ p.paidAt | date }}
-          <a [href]="paymentReceiptUrl(p._id)" target="_blank" rel="noopener">Recu</a>
+          <a [href]="paymentReceiptUrl(p._id)" target="_blank" rel="noopener">Reçu</a>
         </li>
       </ul>
     </div>

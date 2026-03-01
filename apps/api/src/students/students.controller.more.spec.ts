@@ -8,10 +8,13 @@ describe('StudentsController extra', () => {
     } as unknown as StudentsService;
 
     const controller = new StudentsController(service);
+    const year = new Date().getFullYear();
     await controller.createStudent({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: 'S1',
+      studentNumber: `ML103DJ${year}`,
+      gender: 'male' as any,
+      birthDate: '2004-03-15',
       groupId: '507f1f77bcf86cd799439011',
       academicYearId: '507f1f77bcf86cd799439012',
     });

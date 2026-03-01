@@ -9,6 +9,8 @@ export type Student = {
   firstName: string;
   lastName: string;
   studentNumber: string;
+  gender: 'female' | 'male';
+  birthDate: string;
   status?: 'active' | 'suspended' | 'graduated';
   groupId: string;
   academicYearId: string;
