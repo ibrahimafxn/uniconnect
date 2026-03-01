@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePaymentDto {
   @IsMongoId()
@@ -14,7 +15,12 @@ export class CreatePaymentDto {
   @IsMongoId()
   planId?: string;
 
+  @IsOptional()
+  @IsMongoId()
+  installmentId?: string;
+
   @IsNumber()
+  @Type(() => Number)
   amount!: number;
 
   @IsString()

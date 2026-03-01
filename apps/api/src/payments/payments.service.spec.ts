@@ -6,6 +6,12 @@ const makeQuery = (result: any) => ({
   }),
 });
 
+const makeLeanQuery = (result: any) => ({
+  lean: () => ({
+    exec: jest.fn().mockResolvedValue(result),
+  }),
+});
+
 describe('PaymentsService', () => {
   it('listPlans returns items', async () => {
     const planModel = {
@@ -13,8 +19,15 @@ describe('PaymentsService', () => {
       create: jest.fn(),
     } as any;
     const paymentModel = { find: jest.fn(), create: jest.fn() } as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
 
-    const service = new PaymentsService(planModel, paymentModel);
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
     const res = await service.listPlans();
     expect(planModel.find).toHaveBeenCalled();
     expect(res).toEqual([{ label: 'Mensuel' }]);
@@ -23,8 +36,15 @@ describe('PaymentsService', () => {
   it('createPlan calls model.create', async () => {
     const planModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const paymentModel = { find: jest.fn(), create: jest.fn() } as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
 
-    const service = new PaymentsService(planModel, paymentModel);
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
     await service.createPlan({
       studentId: 's1',
       label: 'Mensuel',
@@ -34,14 +54,54 @@ describe('PaymentsService', () => {
     expect(planModel.create).toHaveBeenCalled();
   });
 
+  it('createPlan maps installments', async () => {
+    const planModel = { create: jest.fn().mockResolvedValue({}) } as any;
+    const paymentModel = { find: jest.fn(), create: jest.fn() } as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    await service.createPlan({
+      studentId: 's1',
+      label: 'Mensuel',
+      totalAmount: 1000,
+      currency: 'XOF',
+      installments: [{ amount: 500, dueDate: '2026-05-01', label: 'E1' }],
+    });
+
+    expect(planModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        installments: [
+          expect.objectContaining({
+            amount: 500,
+            label: 'E1',
+            dueDate: expect.any(Date),
+          }),
+        ],
+      }),
+    );
+  });
+
   it('listPayments returns items', async () => {
     const planModel = { find: jest.fn(), create: jest.fn() } as any;
     const paymentModel = {
       find: jest.fn().mockReturnValue(makeQuery([{ amount: 1000 }])),
       create: jest.fn(),
     } as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
 
-    const service = new PaymentsService(planModel, paymentModel);
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
     const res = await service.listPayments();
     expect(paymentModel.find).toHaveBeenCalled();
     expect(res).toEqual([{ amount: 1000 }]);
@@ -50,8 +110,19 @@ describe('PaymentsService', () => {
   it('createPayment calls model.create', async () => {
     const planModel = { find: jest.fn(), create: jest.fn() } as any;
     const paymentModel = { create: jest.fn().mockResolvedValue({}) } as any;
+    const studentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ id: 's1', email: undefined }),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
 
-    const service = new PaymentsService(planModel, paymentModel);
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
     await service.createPayment({
       studentId: 's1',
       planId: 'p1',
@@ -61,5 +132,265 @@ describe('PaymentsService', () => {
       reference: 'PAY-1',
     });
     expect(paymentModel.create).toHaveBeenCalled();
+  });
+
+  it('listUnpaid returns balances for due installments', async () => {
+    const planModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          {
+            _id: 'p1',
+            studentId: 's1',
+            label: 'Plan A',
+            totalAmount: 1000,
+            currency: 'XOF',
+            installments: [
+              { amount: 200, dueDate: new Date('2026-02-01') },
+              { amount: 300, dueDate: new Date('2026-02-15') },
+              { amount: 500, dueDate: new Date('2026-04-01') },
+            ],
+          },
+        ]),
+      ),
+    } as any;
+    const paymentModel = {
+      aggregate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 300 }]),
+      }),
+    } as any;
+    const studentModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          { _id: 's1', firstName: 'Awa', lastName: 'Traore', studentNumber: 'S001' },
+        ]),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.listUnpaid(new Date('2026-03-01'));
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({
+      planId: 'p1',
+      studentId: 's1',
+      dueAmount: 500,
+      totalPaid: 300,
+      balanceDue: 200,
+      currency: 'XOF',
+    });
+  });
+
+  it('listUnpaid returns empty when no plans', async () => {
+    const planModel = {
+      find: jest.fn().mockReturnValue(makeLeanQuery([])),
+    } as any;
+    const paymentModel = { aggregate: jest.fn() } as any;
+    const studentModel = { find: jest.fn() } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.listUnpaid(new Date('2026-03-01'));
+    expect(res).toEqual([]);
+  });
+
+  it('listUnpaid uses totalAmount when no installments', async () => {
+    const planModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          {
+            _id: 'p1',
+            studentId: 's1',
+            label: 'Plan B',
+            totalAmount: 1000,
+            currency: 'XOF',
+            installments: [],
+          },
+        ]),
+      ),
+    } as any;
+    const paymentModel = {
+      aggregate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 200 }]),
+      }),
+    } as any;
+    const studentModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          { _id: 's1', firstName: 'Moussa', lastName: 'Diop', studentNumber: 'S002' },
+        ]),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.listUnpaid(new Date('2026-03-01'));
+    expect(res[0].dueAmount).toBe(1000);
+    expect(res[0].balanceDue).toBe(800);
+  });
+
+  it('listUnpaid filters fully paid plans', async () => {
+    const planModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          {
+            _id: 'p1',
+            studentId: 's1',
+            label: 'Plan C',
+            totalAmount: 1000,
+            currency: 'XOF',
+            installments: [],
+          },
+        ]),
+      ),
+    } as any;
+    const paymentModel = {
+      aggregate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 1000 }]),
+      }),
+    } as any;
+    const studentModel = {
+      find: jest.fn().mockReturnValue(makeLeanQuery([])),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.listUnpaid(new Date('2026-03-01'));
+    expect(res).toEqual([]);
+  });
+
+  it('buildReceipt returns payment, student, and plan', async () => {
+    const planModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ _id: 'p1', label: 'Plan A', totalAmount: 1000, currency: 'XOF' }),
+      ),
+    } as any;
+    const paymentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({
+          _id: 'pay1',
+          studentId: 's1',
+          planId: 'p1',
+          amount: 500,
+          currency: 'XOF',
+          paidAt: new Date(),
+        }),
+      ),
+    } as any;
+    const studentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ _id: 's1', firstName: 'Awa', lastName: 'Traore' }),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.buildReceipt('pay1');
+    expect(res.payment._id).toBe('pay1');
+    expect(res.student?._id).toBe('s1');
+    expect(res.plan?._id).toBe('p1');
+  });
+
+  it('buildReceipt returns null plan when planId missing', async () => {
+    const planModel = { findById: jest.fn() } as any;
+    const paymentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({
+          _id: 'pay1',
+          studentId: 's1',
+          amount: 500,
+          currency: 'XOF',
+          paidAt: new Date(),
+        }),
+      ),
+    } as any;
+    const studentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ _id: 's1', firstName: 'Awa', lastName: 'Traore' }),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.buildReceipt('pay1');
+    expect(res.plan).toBeNull();
+  });
+
+  it('buildReceipt throws when payment not found', async () => {
+    const planModel = { findById: jest.fn() } as any;
+    const paymentModel = {
+      findById: jest.fn().mockReturnValue(makeLeanQuery(null)),
+    } as any;
+    const studentModel = { findById: jest.fn() } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+
+    await expect(service.buildReceipt('missing')).rejects.toThrow(
+      'Payment not found',
+    );
+  });
+
+  it('createPayment triggers email when student has email', async () => {
+    const planModel = { find: jest.fn(), create: jest.fn() } as any;
+    const paymentModel = {
+      create: jest.fn().mockResolvedValue({ id: 'pay1' }),
+    } as any;
+    const studentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ id: 's1', email: 'student@school.tld' }),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn().mockResolvedValue(true) } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    await service.createPayment({
+      studentId: 's1',
+      amount: 1000,
+      currency: 'XOF',
+      paidAt: new Date(),
+    });
+
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(emailService.sendMail).toHaveBeenCalled();
   });
 });

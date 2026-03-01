@@ -217,11 +217,31 @@
         <input formControlName="label" placeholder="Mensuel 2025-2026" />
         <input type="number" formControlName="totalAmount" placeholder="Montant total" />
         <input formControlName="currency" placeholder="XOF" />
+        <div formArrayName="installments" class="installments">
+          <div *ngFor="let inst of installments.controls; let i = index" [formGroupName]="i">
+            <input type="number" formControlName="amount" placeholder="Montant echeance" />
+            <input type="date" formControlName="dueDate" />
+            <input formControlName="label" placeholder="Libelle (optionnel)" />
+            <button type="button" (click)="removeInstallment(i)">Retirer</button>
+          </div>
+          <button type="button" (click)="addInstallment()">Ajouter une echeance</button>
+        </div>
         <button type="submit">Ajouter</button>
       </form>
       <ul>
         <li *ngFor="let p of (plans$ | async)">
           {{ p.label }} — {{ p.totalAmount }} {{ p.currency }}
+          <span *ngIf="p.installments?.length">({{ p.installments.length }} echeances)</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Impayes</h2>
+      <ul>
+        <li *ngFor="let u of (unpaid$ | async)">
+          {{ u.studentName }} ({{ u.studentNumber }}) —
+          {{ u.balanceDue }} {{ u.currency }} / du {{ u.dueAmount }} {{ u.currency }}
         </li>
       </ul>
     </div>
@@ -250,6 +270,7 @@
       <ul>
         <li *ngFor="let p of (payments$ | async)">
           {{ p.amount }} {{ p.currency }} — {{ p.paidAt | date }}
+          <a [href]="paymentReceiptUrl(p._id)" target="_blank" rel="noopener">Recu</a>
         </li>
       </ul>
     </div>

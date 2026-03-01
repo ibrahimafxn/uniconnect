@@ -40,6 +40,14 @@ Source: `CHANGELOG.md`
 - `apps/api/.env.test` used for MongoDB connection.
   Evidence: `apps/api/test/setup-e2e.ts`, `apps/api/.env.test`
 
+### API unit tests
+- Command: `npm run -w apps/api test -- --runInBand`
+- Result: PASS (coverage thresholds met)
+
+### Web unit tests
+- Command: `npm run -w apps/web test -- --watch=false`
+- Result: PASS
+
 ## Sprint 3 — Paiements MVP (Planifie)
 
 Window: 2026-04-29 → 2026-05-10 (tests/docs to 2026-05-12)
@@ -53,3 +61,8 @@ Planned scope:
 - Tests + doc paiements.
 
 Source: `extras/roadmap_gantt.md`, `extras/sprint_3_trello.csv`
+
+### Avancement (2026-03-01)
+- API: echeances (installments), impayes, recus PDF, notifications email.
+- UI: saisie echeances, liste impayes, lien recu PDF.
+- Docs: README + env SMTP.

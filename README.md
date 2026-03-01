@@ -69,6 +69,26 @@ Pieces jointes:
 - Types autorises: PDF, PNG, JPEG
 - Taille max: 10 MB
 
+## Sprint 3 (Paiements MVP)
+
+Fonctionnel:
+- Plans de paiement avec echeances (optionnelles).
+- Enregistrement des reglements.
+- Tableau des impayes (montant du/verse).
+- Recus PDF simples.
+- Notifications email basiques (confirmation paiement).
+
+API:
+- `GET /api/payments/plans`
+- `POST /api/payments/plans`
+- `GET /api/payments`
+- `POST /api/payments`
+- `GET /api/payments/unpaid`
+- `GET /api/payments/:id/receipt`
+
+Email (optionnel):
+- Configurer `SMTP_*` dans `apps/api/.env`.
+
 ## Couverture (fin de sprint)
 
 ```bash

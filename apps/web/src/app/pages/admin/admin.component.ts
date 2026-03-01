@@ -1,6 +1,12 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {FormBuilder, ReactiveFormsModule, Validators, FormsModule} from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  FormsModule,
+} from '@angular/forms';
 import {Observable, of, tap} from 'rxjs';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
@@ -32,6 +38,7 @@ export class AdminComponent {
   students$ = this.loadStudents();
   plans$ = this.payments.listPlans();
   payments$ = this.payments.listPayments();
+  unpaid$ = this.payments.listUnpaid();
   documents$: Observable<Paginated<StudentDocument>> = of({
     items: [],
     total: 0,
@@ -96,6 +103,7 @@ export class AdminComponent {
     label: ['', Validators.required],
     totalAmount: [0, Validators.required],
     currency: ['XOF', Validators.required],
+    installments: this.fb.array([]),
   });
 
   paymentForm = this.fb.group({
@@ -121,6 +129,7 @@ export class AdminComponent {
     this.students$ = this.loadStudents();
     this.plans$ = this.payments.listPlans();
     this.payments$ = this.payments.listPayments();
+    this.unpaid$ = this.payments.listUnpaid();
   }
 
   createYear() {
@@ -222,6 +231,7 @@ export class AdminComponent {
     if (this.planForm.invalid) return;
     this.payments.createPlan(this.planForm.value as any).subscribe(() => {
       this.planForm.reset({ currency: 'XOF', totalAmount: 0 });
+      this.installments.clear();
       this.refresh();
     });
   }
@@ -232,6 +242,28 @@ export class AdminComponent {
       this.paymentForm.reset({ currency: 'XOF', amount: 0 });
       this.refresh();
     });
+  }
+
+  get installments() {
+    return this.planForm.get('installments') as FormArray;
+  }
+
+  addInstallment() {
+    this.installments.push(
+      this.fb.group({
+        amount: [0, Validators.required],
+        dueDate: ['', Validators.required],
+        label: [''],
+      }),
+    );
+  }
+
+  removeInstallment(index: number) {
+    this.installments.removeAt(index);
+  }
+
+  paymentReceiptUrl(paymentId: string) {
+    return this.payments.receiptUrl(paymentId);
   }
 
   onDocumentFileChange(event: Event) {

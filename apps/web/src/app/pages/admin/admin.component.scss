@@ -37,6 +37,18 @@ form {
   margin-bottom: 12px;
 }
 
+.installments {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+}
+
+.installments button {
+  background: #1e293b;
+}
+
 .row {
   display: grid;
   gap: 8px;

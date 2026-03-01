@@ -11,6 +11,9 @@ export class Payment extends Document {
   @Prop({ required: false, type: Types.ObjectId, ref: PaymentPlan.name })
   planId?: Types.ObjectId;
 
+  @Prop({ required: false, type: Types.ObjectId })
+  installmentId?: Types.ObjectId;
+
   @Prop({ required: true })
   amount!: number;
 
@@ -26,3 +29,4 @@ export class Payment extends Document {
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);
 PaymentSchema.index({ studentId: 1, paidAt: -1 });
+PaymentSchema.index({ planId: 1, paidAt: -1 });
