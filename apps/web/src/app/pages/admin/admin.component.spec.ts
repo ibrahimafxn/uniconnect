@@ -22,6 +22,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -65,6 +67,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -101,6 +105,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -147,6 +153,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -183,6 +191,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -219,6 +229,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -265,6 +277,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -285,6 +299,7 @@ describe('AdminComponent', () => {
       label: 'Mensuel',
       totalAmount: 100000,
       currency: 'XOF',
+      installments: [],
     });
     comp.createPlan();
     expect(payments.createPlan).toHaveBeenCalled();
@@ -306,6 +321,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
@@ -359,6 +376,8 @@ describe('AdminComponent', () => {
     const payments = {
       listPlans: () => of([]),
       listPayments: () => of([]),
+      listUnpaid: () => of([]),
+      receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
     };
