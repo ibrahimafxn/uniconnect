@@ -1,0 +1,61 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Planning</h1>
+      <p class="subtitle">Création des séances et gestion des salles.</p>
+    </div>
+    <button class="ghost" (click)="refresh()">Rafraîchir</button>
+  </div>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Salles</h2>
+      <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
+        <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
+        <input type="number" formControlName="capacity" placeholder="Capacité" />
+        <input formControlName="location" placeholder="Localisation (optionnel)" />
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul>
+        <li *ngFor="let r of (rooms$ | async)">
+          {{ r.name }} — {{ r.capacity }}
+          <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+          <button type="button" class="ghost" (click)="deleteRoom(r._id)">Supprimer</button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card full">
+      <h2>Séances</h2>
+      <form [formGroup]="sessionForm" (ngSubmit)="createSession()">
+        <input type="date" formControlName="date" />
+        <div class="row">
+          <input type="time" formControlName="startTime" />
+          <input type="time" formControlName="endTime" />
+        </div>
+        <select formControlName="groupId">
+          <option value="">Choisir groupe</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
+            {{ g.name }}
+          </option>
+        </select>
+        <input formControlName="teacherId" placeholder="ID enseignant" />
+        <select formControlName="roomId">
+          <option value="">Choisir salle</option>
+          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
+            {{ r.name }}
+          </option>
+        </select>
+        <input formControlName="label" placeholder="Libellé (optionnel)" />
+        <button type="submit">Créer</button>
+      </form>
+      <ul>
+        <li *ngFor="let s of (sessions$ | async)">
+          {{ s.date | date }} — {{ s.startTime }}-{{ s.endTime }}
+          <span class="muted">({{ s.label || 'Séance' }})</span>
+          <button type="button" class="ghost" (click)="deleteSession(s._id)">Supprimer</button>
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>
