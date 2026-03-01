@@ -66,3 +66,16 @@ Source: `extras/roadmap_gantt.md`, `extras/sprint_3_trello.csv`
 - API: echeances (installments), impayes, recus PDF, notifications email.
 - UI: saisie echeances, liste impayes, lien recu PDF.
 - Docs: README + env SMTP.
+
+## Sprint 4 — Planning MVP (Planifie)
+
+Window: 2026-05-13 → 2026-05-25 (tests/docs to 2026-05-26)
+
+Planned scope:
+- Gestion des salles (CRUD + capacite).
+- Creation EDT basique (seances).
+- Consultation EDT par profil.
+- Detection conflits simple.
+- Tests + doc planning.
+
+Source: `extras/roadmap_gantt.md`, `extras/sprint_4_trello.csv`
