@@ -39,3 +39,17 @@ Source: `CHANGELOG.md`
 - Result: PASS (7 tests)
 - `apps/api/.env.test` used for MongoDB connection.
   Evidence: `apps/api/test/setup-e2e.ts`, `apps/api/.env.test`
+
+## Sprint 3 — Paiements MVP (Planifie)
+
+Window: 2026-04-29 → 2026-05-10 (tests/docs to 2026-05-12)
+
+Planned scope:
+- Modele paiements + echeances.
+- Enregistrement reglements.
+- Tableau impayes.
+- Recus PDF simples.
+- Notifications email basiques.
+- Tests + doc paiements.
+
+Source: `extras/roadmap_gantt.md`, `extras/sprint_3_trello.csv`
