@@ -14,6 +14,8 @@ describe('AppController (e2e)', () => {
   let programId = '';
   let levelId = '';
   let groupId = '';
+  let teacherId = '';
+  let roomId = '';
   let studentId = '';
   let planId = '';
 
@@ -142,6 +144,62 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(Array.isArray(programs.body.items)).toBe(true);
+  });
+
+  it('creates a teacher user', async () => {
+    const email = `teacher.${Date.now()}@uniconnect.local`;
+    const teacher = await request(app.getHttpServer())
+      .post(`${baseUrl}/users`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        email,
+        password: 'Teacher1234!',
+        role: Role.Teacher,
+      })
+      .expect(201);
+
+    teacherId = teacher.body.id;
+    expect(teacherId).toBeTruthy();
+  });
+
+  it('creates room and session', async () => {
+    const room = await request(app.getHttpServer())
+      .post(`${baseUrl}/planning/rooms`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        name: `Salle-${Date.now()}`,
+        capacity: 30,
+      })
+      .expect(201);
+
+    roomId = room.body._id;
+    expect(roomId).toBeTruthy();
+
+    const session = await request(app.getHttpServer())
+      .post(`${baseUrl}/planning/sessions`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        date: '2026-05-20',
+        startTime: '09:00',
+        endTime: '10:00',
+        groupId,
+        teacherId,
+        roomId,
+        label: 'Math',
+      })
+      .expect(201);
+
+    expect(session.body._id).toBeTruthy();
+  });
+
+  it('lists planning sessions', async () => {
+    const list = await request(app.getHttpServer())
+      .get(`${baseUrl}/planning/sessions`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(Array.isArray(list.body)).toBe(true);
+    expect(list.body.length).toBeGreaterThan(0);
   });
 
   it('creates and reads a student', async () => {
