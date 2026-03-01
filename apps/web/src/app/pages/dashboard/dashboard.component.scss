@@ -40,4 +40,35 @@
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  display: grid;
+  gap: 8px;
+}
+
+.card h3 {
+  margin: 0;
+}
+
+.card p {
+  margin: 0;
+  color: #64748b;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.action[disabled] {
+  background: #cbd5e1;
+  color: #475569;
+  cursor: not-allowed;
 }
