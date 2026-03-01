@@ -231,7 +231,9 @@
       <ul>
         <li *ngFor="let p of (plans$ | async)">
           {{ p.label }} — {{ p.totalAmount }} {{ p.currency }}
-          <span *ngIf="p.installments?.length">({{ p.installments.length }} echeances)</span>
+          <span *ngIf="(p.installments?.length ?? 0) > 0">
+            ({{ p.installments?.length ?? 0 }} echeances)
+          </span>
         </li>
       </ul>
     </div>
