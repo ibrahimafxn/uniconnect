@@ -214,7 +214,10 @@ export class PlanningService {
     if (excludeId) {
       conflictQuery._id = { $ne: new Types.ObjectId(excludeId) };
     }
-    const conflict = await this.sessionModel.findOne(conflictQuery).lean().exec();
+    const conflict = await this.sessionModel
+      .findOne(conflictQuery)
+      .lean()
+      .exec();
     if (!conflict) return;
 
     const reasons: string[] = [];
@@ -222,7 +225,13 @@ export class PlanningService {
     if (String(conflict.teacherId) === params.teacherId) reasons.push('enseignant');
     if (String(conflict.groupId) === params.groupId) reasons.push('groupe');
     const reasonText = reasons.length > 0 ? reasons.join(', ') : 'conflit';
-    throw new BadRequestException(`Conflit de planning: ${reasonText}.`);
+    const timeRange =
+      conflict.startTime && conflict.endTime
+        ? `${conflict.startTime}-${conflict.endTime}`
+        : '';
+    throw new BadRequestException(
+      `Conflit de planning (${reasonText}) ${timeRange}`.trim(),
+    );
   }
 
   private async ensureTeacherExists(teacherId: string) {

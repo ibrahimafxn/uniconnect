@@ -20,13 +20,53 @@
         <li *ngFor="let r of (rooms$ | async)">
           {{ r.name }} — {{ r.capacity }}
           <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+          <button type="button" class="ghost" (click)="selectRoomForEdit(r)">Éditer</button>
           <button type="button" class="ghost" (click)="deleteRoom(r._id)">Supprimer</button>
         </li>
       </ul>
+
+      <div class="edit-card" *ngIf="editingRoomId">
+        <h3>Modifier salle</h3>
+        <form [formGroup]="editRoomForm" (ngSubmit)="saveRoomEdit()">
+          <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
+          <input type="number" formControlName="capacity" placeholder="Capacité" />
+          <input formControlName="location" placeholder="Localisation (optionnel)" />
+          <div class="row">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="ghost" (click)="cancelEditRoom()">Annuler</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="card full">
       <h2>Séances</h2>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter">
+        <input type="date" formControlName="dateFrom" />
+        <input type="date" formControlName="dateTo" />
+        <select formControlName="groupId">
+          <option value="">Tous les groupes</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
+            {{ g.name }}
+          </option>
+        </select>
+        <select formControlName="teacherId">
+          <option value="">Tous les enseignants</option>
+          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
+            {{ t.email }} ({{ t.role }})
+          </option>
+        </select>
+        <select formControlName="roomId">
+          <option value="">Toutes les salles</option>
+          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
+            {{ r.name }}
+          </option>
+        </select>
+        <div class="row">
+          <button type="submit">Filtrer</button>
+          <button type="button" class="ghost" (click)="resetFilters()">Réinitialiser</button>
+        </div>
+      </form>
       <form [formGroup]="sessionForm" (ngSubmit)="createSession()">
         <input type="date" formControlName="date" />
         <div class="row">

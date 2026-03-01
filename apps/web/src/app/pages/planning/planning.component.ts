@@ -22,10 +22,17 @@ export class PlanningComponent {
   sessions$ = this.planning.listSessions();
   groups$ = this.academic.listGroups();
   teachers$ = this.users.listTeachers();
+  editingRoomId: string | null = null;
 
   roomForm = this.fb.group({
     name: ['', Validators.required],
-    capacity: [30, Validators.required],
+    capacity: [30, [Validators.required, Validators.min(1)]],
+    location: [''],
+  });
+
+  editRoomForm = this.fb.group({
+    name: ['', Validators.required],
+    capacity: [30, [Validators.required, Validators.min(1)]],
     location: [''],
   });
 
@@ -37,6 +44,14 @@ export class PlanningComponent {
     teacherId: ['', Validators.required],
     roomId: ['', Validators.required],
     label: [''],
+  });
+
+  filterForm = this.fb.group({
+    dateFrom: [''],
+    dateTo: [''],
+    groupId: [''],
+    teacherId: [''],
+    roomId: [''],
   });
 
   refresh() {
@@ -54,6 +69,30 @@ export class PlanningComponent {
     });
   }
 
+  selectRoomForEdit(room: any) {
+    this.editingRoomId = room._id;
+    this.editRoomForm.setValue({
+      name: room.name ?? '',
+      capacity: room.capacity ?? 30,
+      location: room.location ?? '',
+    });
+  }
+
+  cancelEditRoom() {
+    this.editingRoomId = null;
+    this.editRoomForm.reset({ capacity: 30 });
+  }
+
+  saveRoomEdit() {
+    if (!this.editingRoomId || this.editRoomForm.invalid) return;
+    this.planning
+      .updateRoom(this.editingRoomId, this.editRoomForm.value as any)
+      .subscribe(() => {
+        this.cancelEditRoom();
+        this.refresh();
+      });
+  }
+
   createSession() {
     if (this.sessionForm.invalid) return;
     this.planning.createSession(this.sessionForm.value as any).subscribe(() => {
@@ -68,5 +107,15 @@ export class PlanningComponent {
 
   deleteSession(id: string) {
     this.planning.deleteSession(id).subscribe(() => this.refresh());
+  }
+
+  applyFilters() {
+    const params = this.filterForm.value as any;
+    this.sessions$ = this.planning.listSessions(params);
+  }
+
+  resetFilters() {
+    this.filterForm.reset();
+    this.sessions$ = this.planning.listSessions();
   }
 }
