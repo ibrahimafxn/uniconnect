@@ -1,0 +1,68 @@
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PlanningApi } from '../../core/api/planning.api';
+import { AcademicApi } from '../../core/api/academic.api';
+
+@Component({
+  selector: 'app-planning',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './planning.component.html',
+  styleUrls: ['./planning.component.scss'],
+})
+export class PlanningComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly planning = inject(PlanningApi);
+  private readonly academic = inject(AcademicApi);
+
+  rooms$ = this.planning.listRooms();
+  sessions$ = this.planning.listSessions();
+  groups$ = this.academic.listGroups();
+
+  roomForm = this.fb.group({
+    name: ['', Validators.required],
+    capacity: [30, Validators.required],
+    location: [''],
+  });
+
+  sessionForm = this.fb.group({
+    date: ['', Validators.required],
+    startTime: ['', Validators.required],
+    endTime: ['', Validators.required],
+    groupId: ['', Validators.required],
+    teacherId: ['', Validators.required],
+    roomId: ['', Validators.required],
+    label: [''],
+  });
+
+  refresh() {
+    this.rooms$ = this.planning.listRooms();
+    this.sessions$ = this.planning.listSessions();
+    this.groups$ = this.academic.listGroups();
+  }
+
+  createRoom() {
+    if (this.roomForm.invalid) return;
+    this.planning.createRoom(this.roomForm.value as any).subscribe(() => {
+      this.roomForm.reset({ capacity: 30 });
+      this.refresh();
+    });
+  }
+
+  createSession() {
+    if (this.sessionForm.invalid) return;
+    this.planning.createSession(this.sessionForm.value as any).subscribe(() => {
+      this.sessionForm.reset();
+      this.refresh();
+    });
+  }
+
+  deleteRoom(id: string) {
+    this.planning.deleteRoom(id).subscribe(() => this.refresh());
+  }
+
+  deleteSession(id: string) {
+    this.planning.deleteSession(id).subscribe(() => this.refresh());
+  }
+}

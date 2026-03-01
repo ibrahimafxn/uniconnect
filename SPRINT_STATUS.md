@@ -79,3 +79,7 @@ Planned scope:
 - Tests + doc planning.
 
 Source: `extras/roadmap_gantt.md`, `extras/sprint_4_trello.csv`
+
+### Avancement (2026-03-01)
+- API: salles CRUD, seances EDT, conflits simples (salle/enseignant/groupe), consultation par profil.
+- UI: page Planning (salles + seances).

@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AcademicModule } from './academic/academic.module';
 import { StudentsModule } from './students/students.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PlanningModule } from './planning/planning.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PaymentsModule } from './payments/payments.module';
     AcademicModule,
     StudentsModule,
     PaymentsModule,
+    PlanningModule,
   ],
   controllers: [AppController],
   providers: [],
