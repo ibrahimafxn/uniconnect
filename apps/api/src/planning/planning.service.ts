@@ -5,6 +5,7 @@ import { Room } from './room.schema';
 import { Session } from './session.schema';
 import { StudentProfile } from '../students/student-profile.schema';
 import { Role } from '../common/roles.enum';
+import { User } from '../users/user.schema';
 
 type SessionUser = {
   userId: string;
@@ -21,6 +22,8 @@ export class PlanningService {
     private readonly sessionModel: Model<Session>,
     @InjectModel(StudentProfile.name)
     private readonly studentModel: Model<StudentProfile>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<User>,
   ) {}
 
   listRooms() {
@@ -87,6 +90,7 @@ export class PlanningService {
     roomId: string;
     label?: string;
   }) {
+    await this.ensureTeacherExists(data.teacherId);
     const { startMinutes, endMinutes } = this.computeMinutes(
       data.startTime,
       data.endTime,
@@ -113,6 +117,8 @@ export class PlanningService {
     if (!current) {
       throw new BadRequestException('Séance introuvable.');
     }
+    const teacherId = String(data.teacherId ?? current.teacherId);
+    await this.ensureTeacherExists(teacherId);
     const date = data.date ? this.normalizeDate(data.date) : current.date;
     const startTime = data.startTime ?? current.startTime;
     const endTime = data.endTime ?? current.endTime;
@@ -121,7 +127,6 @@ export class PlanningService {
       endTime,
     );
     const groupId = (data.groupId ?? current.groupId) as any;
-    const teacherId = (data.teacherId ?? current.teacherId) as any;
     const roomId = (data.roomId ?? current.roomId) as any;
 
     await this.ensureNoConflict(
@@ -218,5 +223,15 @@ export class PlanningService {
     if (String(conflict.groupId) === params.groupId) reasons.push('groupe');
     const reasonText = reasons.length > 0 ? reasons.join(', ') : 'conflit';
     throw new BadRequestException(`Conflit de planning: ${reasonText}.`);
+  }
+
+  private async ensureTeacherExists(teacherId: string) {
+    const user = await this.userModel.findById(teacherId).lean().exec();
+    if (!user) {
+      throw new BadRequestException('Enseignant introuvable.');
+    }
+    if (![Role.Teacher, Role.External].includes(user.role as Role)) {
+      throw new BadRequestException('Utilisateur non enseignant.');
+    }
   }
 }

@@ -39,7 +39,12 @@
             {{ g.name }}
           </option>
         </select>
-        <input formControlName="teacherId" placeholder="ID enseignant" />
+        <select formControlName="teacherId">
+          <option value="">Choisir enseignant</option>
+          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
+            {{ t.email }} ({{ t.role }})
+          </option>
+        </select>
         <select formControlName="roomId">
           <option value="">Choisir salle</option>
           <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
