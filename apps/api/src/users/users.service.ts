@@ -22,6 +22,13 @@ export class UsersService {
     return this.userModel.find().sort({ createdAt: -1 }).exec();
   }
 
+  findTeachers() {
+    return this.userModel
+      .find({ role: { $in: [Role.Teacher, Role.External] } })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
   create(email: string, passwordHash: string, role: Role) {
     return this.userModel.create({ email, passwordHash, role });
   }

@@ -10,7 +10,13 @@ describe('PlanningService', () => {
     const roomModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const sessionModel = {} as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {} as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     await service.createRoom({ name: 'A1', capacity: 30 });
     expect(roomModel.create).toHaveBeenCalled();
   });
@@ -21,7 +27,13 @@ describe('PlanningService', () => {
     } as any;
     const sessionModel = {} as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {} as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     const res = await service.listRooms();
     expect(res).toHaveLength(1);
   });
@@ -33,7 +45,17 @@ describe('PlanningService', () => {
       create: jest.fn(),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     await expect(
       service.createSession({
         date: '2026-05-20',
@@ -62,7 +84,17 @@ describe('PlanningService', () => {
       create: jest.fn(),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     await expect(
       service.createSession({
         date: '2026-05-20',
@@ -84,7 +116,17 @@ describe('PlanningService', () => {
       create: jest.fn().mockResolvedValue({ id: 's1' }),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     const res = await service.createSession({
       date: '2026-05-20',
       startTime: '09:00',
@@ -110,7 +152,13 @@ describe('PlanningService', () => {
           }) as any,
       }),
     } as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {} as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     await service.listSessions({
       user: { userId: 'u1', email: 's@u.c', role: 'student' as any },
     });
@@ -123,7 +171,13 @@ describe('PlanningService', () => {
       find: jest.fn().mockReturnValue(makeQuery([])),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {} as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
     await service.listSessions({
       user: { userId: 't1', email: 't@u.c', role: 'teacher' as any },
     });
@@ -136,7 +190,8 @@ describe('PlanningService', () => {
       find: jest.fn().mockReturnValue(makeQuery([])),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {} as any;
+    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
     await service.listSessions({
       user: { userId: 'a1', email: 'a@u.c', role: 'admin' as any },
       groupId: 'g1',
@@ -182,7 +237,12 @@ describe('PlanningService', () => {
       }),
     } as any;
     const studentModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel);
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
     await expect(
       service.updateSession('s1', {
         startTime: '09:30',

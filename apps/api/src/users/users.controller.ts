@@ -25,6 +25,18 @@ export class UsersController {
     }));
   }
 
+  @Get('teachers')
+  async listTeachers() {
+    const users = await this.usersService.findTeachers();
+    return users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
+  }
+
   @Get(':id')
   async get(@Param('id') id: string) {
     const u = await this.usersService.findById(id);

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PlanningApi } from '../../core/api/planning.api';
 import { AcademicApi } from '../../core/api/academic.api';
+import { UsersApi } from '../../core/api/users.api';
 
 @Component({
   selector: 'app-planning',
@@ -15,10 +16,12 @@ export class PlanningComponent {
   private readonly fb = inject(FormBuilder);
   private readonly planning = inject(PlanningApi);
   private readonly academic = inject(AcademicApi);
+  private readonly users = inject(UsersApi);
 
   rooms$ = this.planning.listRooms();
   sessions$ = this.planning.listSessions();
   groups$ = this.academic.listGroups();
+  teachers$ = this.users.listTeachers();
 
   roomForm = this.fb.group({
     name: ['', Validators.required],
@@ -40,6 +43,7 @@ export class PlanningComponent {
     this.rooms$ = this.planning.listRooms();
     this.sessions$ = this.planning.listSessions();
     this.groups$ = this.academic.listGroups();
+    this.teachers$ = this.users.listTeachers();
   }
 
   createRoom() {
