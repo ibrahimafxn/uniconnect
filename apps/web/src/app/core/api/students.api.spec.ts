@@ -32,10 +32,13 @@ describe('StudentsApi', () => {
   });
 
   it('createStudent posts payload', () => {
+    const year = new Date().getFullYear();
     api.createStudent({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: 'S1',
+      studentNumber: `ML103DJ${year}`,
+      gender: 'male',
+      birthDate: '2004-03-15',
       status: 'active',
       groupId: 'g1',
       academicYearId: 'y1',

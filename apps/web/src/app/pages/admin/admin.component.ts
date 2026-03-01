@@ -73,7 +73,15 @@ export class AdminComponent {
   studentForm = this.fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
-    studentNumber: ['', Validators.required],
+    studentNumber: [
+      '',
+      [
+        Validators.required,
+        Validators.pattern(/^(ML)[01](0[1-9]|1[0-2])[A-Z]{2}\d{4}$/i),
+      ],
+    ],
+    gender: ['female', Validators.required],
+    birthDate: ['', Validators.required],
     status: ['active', Validators.required],
     email: [''],
     phone: [''],
@@ -85,6 +93,8 @@ export class AdminComponent {
   editStudentForm = this.fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
+    gender: ['female', Validators.required],
+    birthDate: ['', Validators.required],
     status: ['active', Validators.required],
     email: [''],
     phone: [''],
@@ -167,7 +177,7 @@ export class AdminComponent {
   createStudent() {
     if (this.studentForm.invalid) return;
     this.students.createStudent(this.studentForm.value as any).subscribe(() => {
-      this.studentForm.reset({ status: 'active' });
+      this.studentForm.reset({ status: 'active', gender: 'female' });
       this.refresh();
     });
   }
@@ -194,6 +204,8 @@ export class AdminComponent {
     this.editStudentForm.setValue({
       firstName: student.firstName ?? '',
       lastName: student.lastName ?? '',
+      gender: student.gender ?? 'female',
+      birthDate: this.formatDateForInput(student.birthDate),
       status: student.status ?? 'active',
       email: student.email ?? '',
       phone: student.phone ?? '',
@@ -205,7 +217,7 @@ export class AdminComponent {
 
   cancelEditStudent() {
     this.editingStudentId = null;
-    this.editStudentForm.reset({ status: 'active' });
+    this.editStudentForm.reset({ status: 'active', gender: 'female' });
   }
 
   saveStudentEdit() {
@@ -304,5 +316,12 @@ export class AdminComponent {
     this.students.deleteStudentDocument(docId).subscribe(() => {
       this.loadDocuments();
     });
+  }
+
+  private formatDateForInput(value: string | Date | undefined) {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
   }
 }

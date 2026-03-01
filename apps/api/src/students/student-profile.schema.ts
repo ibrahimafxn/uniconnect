@@ -9,6 +9,11 @@ export enum StudentStatus {
   Graduated = 'graduated',
 }
 
+export enum StudentGender {
+  Female = 'female',
+  Male = 'male',
+}
+
 @Schema({ timestamps: true })
 export class StudentProfile extends Document {
   @Prop({ required: true, trim: true })
@@ -19,6 +24,12 @@ export class StudentProfile extends Document {
 
   @Prop({ required: true, trim: true })
   studentNumber!: string; // matricule
+
+  @Prop({ required: true, enum: StudentGender })
+  gender!: StudentGender;
+
+  @Prop({ required: true })
+  birthDate!: Date;
 
   @Prop({
     required: true,

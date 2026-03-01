@@ -1,5 +1,13 @@
-import { IsEnum, IsMongoId, IsOptional, IsString } from 'class-validator';
-import { StudentStatus } from '../student-profile.schema';
+import {
+  IsDateString,
+  IsEnum,
+  IsMongoId,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
+import { StudentGender, StudentStatus } from '../student-profile.schema';
+import { STUDENT_NUMBER_REGEX } from '../student-number';
 
 export class CreateStudentProfileDto {
   @IsString()
@@ -9,7 +17,17 @@ export class CreateStudentProfileDto {
   lastName!: string;
 
   @IsString()
+  @Matches(STUDENT_NUMBER_REGEX, {
+    message:
+      'Matricule invalide. Format attendu: ML{0|1}{MM}{Initiales}{YYYY}[N].',
+  })
   studentNumber!: string;
+
+  @IsEnum(StudentGender)
+  gender!: StudentGender;
+
+  @IsDateString()
+  birthDate!: string;
 
   @IsOptional()
   @IsEnum(StudentStatus)
