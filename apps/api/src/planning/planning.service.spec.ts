@@ -68,13 +68,17 @@ describe('PlanningService', () => {
     ).rejects.toThrow();
   });
 
-  it('createSession throws on conflict', async () => {
+  it('createSession throws on conflict with details', async () => {
     const roomModel = {} as any;
     const sessionModel = {
       findOne: jest.fn().mockReturnValue({
         lean: () =>
           ({
             exec: jest.fn().mockResolvedValue({
+              _id: 's1',
+              date: '2026-05-20',
+              startTime: '09:00',
+              endTime: '10:00',
               roomId: '507f1f77bcf86cd799439013',
               teacherId: '507f1f77bcf86cd799439012',
               groupId: '507f1f77bcf86cd799439011',
@@ -104,7 +108,7 @@ describe('PlanningService', () => {
         teacherId: '507f1f77bcf86cd799439012',
         roomId: '507f1f77bcf86cd799439013',
       }),
-    ).rejects.toThrow('Conflit');
+    ).rejects.toThrow('Conflit de planning');
   });
 
   it('createSession succeeds when no conflict', async () => {

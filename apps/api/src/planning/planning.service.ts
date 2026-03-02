@@ -229,8 +229,21 @@ export class PlanningService {
       conflict.startTime && conflict.endTime
         ? `${conflict.startTime}-${conflict.endTime}`
         : '';
+    const dateText = conflict.date
+      ? new Date(conflict.date).toISOString().slice(0, 10)
+      : '';
+    const conflictId = conflict._id ? String(conflict._id) : '';
+    const detail = [
+      reasonText ? `Ressource: ${reasonText}` : '',
+      dateText ? `Date: ${dateText}` : '',
+      timeRange ? `Heure: ${timeRange}` : '',
+      conflictId ? `Séance: ${conflictId}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
     throw new BadRequestException(
-      `Conflit de planning (${reasonText}) ${timeRange}`.trim(),
+      detail ? `Conflit de planning. ${detail}` : 'Conflit de planning.',
     );
   }
 
