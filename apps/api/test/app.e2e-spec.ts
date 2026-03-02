@@ -88,11 +88,12 @@ describe('AppController (e2e)', () => {
   });
 
   it('creates academic structure', async () => {
+    const suffix = Date.now();
     const year = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/years`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
-        name: '2025-2026',
+        name: `2025-2026-${suffix}`,
         startDate: '2025-09-01',
         endDate: '2026-07-15',
         isActive: true,
@@ -105,7 +106,7 @@ describe('AppController (e2e)', () => {
     const program = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/programs`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ name: 'Informatique', code: 'INFO' })
+      .send({ name: `Informatique-${suffix}`, code: `INFO-${suffix}` })
       .expect(201);
 
     programId = program.body._id;
@@ -114,7 +115,7 @@ describe('AppController (e2e)', () => {
     const level = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/levels`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ name: 'L1', programId })
+      .send({ name: `L1-${suffix}`, programId })
       .expect(201);
 
     levelId = level.body._id;
@@ -123,7 +124,7 @@ describe('AppController (e2e)', () => {
     const group = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/groups`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ name: 'G1', levelId })
+      .send({ name: `G1-${suffix}`, levelId })
       .expect(201);
 
     groupId = group.body._id;
@@ -204,7 +205,7 @@ describe('AppController (e2e)', () => {
 
   it('creates and reads a student', async () => {
     const year = new Date().getFullYear();
-    const studentNumber = `ML103DJ${year}`;
+    const studentNumber = `ML103DJ${year}${Date.now().toString().slice(-4)}`;
     const student = await request(app.getHttpServer())
       .post(`${baseUrl}/students`)
       .set('Authorization', `Bearer ${accessToken}`)
