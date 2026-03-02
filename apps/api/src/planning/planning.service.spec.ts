@@ -6,6 +6,9 @@ const makeQuery = (result: any) => ({
 });
 
 describe('PlanningService', () => {
+  const oid1 = '507f1f77bcf86cd799439011';
+  const oid2 = '507f1f77bcf86cd799439012';
+  const oid3 = '507f1f77bcf86cd799439013';
   it('createRoom calls model.create', async () => {
     const roomModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const sessionModel = {} as any;
@@ -38,6 +41,67 @@ describe('PlanningService', () => {
     expect(res).toHaveLength(1);
   });
 
+  it('updateRoom and deleteRoom call model', async () => {
+    const roomModel = {
+      findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn() }),
+      findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
+    } as any;
+    const service = new PlanningService(roomModel, {} as any, {} as any, {} as any);
+    await service.updateRoom(oid1, { name: 'B1' });
+    await service.deleteRoom(oid1);
+    expect(roomModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      oid1,
+      { name: 'B1' },
+      { new: true },
+    );
+    expect(roomModel.findByIdAndDelete).toHaveBeenCalledWith(oid1);
+  });
+
+  it('createSession rejects invalid time format', async () => {
+    const sessionModel = {
+      findOne: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn() }) }),
+      create: jest.fn(),
+    } as any;
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, userModel);
+    await expect(
+      service.createSession({
+        date: '2026-05-20',
+        startTime: 'xx',
+        endTime: '10:00',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
+      }),
+    ).rejects.toThrow('Horaire invalide');
+  });
+
+  it('createSession rejects invalid date', async () => {
+    const sessionModel = {
+      findOne: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn() }) }),
+      create: jest.fn(),
+    } as any;
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, userModel);
+    await expect(
+      service.createSession({
+        date: 'invalid-date',
+        startTime: '09:00',
+        endTime: '10:00',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
+      }),
+    ).rejects.toThrow('Date invalide');
+  });
   it('createSession rejects invalid time range', async () => {
     const roomModel = {} as any;
     const sessionModel = {
@@ -61,9 +125,9 @@ describe('PlanningService', () => {
         date: '2026-05-20',
         startTime: '10:00',
         endTime: '09:00',
-        groupId: '507f1f77bcf86cd799439011',
-        teacherId: '507f1f77bcf86cd799439012',
-        roomId: '507f1f77bcf86cd799439013',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
       }),
     ).rejects.toThrow();
   });
@@ -75,13 +139,13 @@ describe('PlanningService', () => {
         lean: () =>
           ({
             exec: jest.fn().mockResolvedValue({
-              _id: 's1',
+              _id: oid1,
               date: '2026-05-20',
               startTime: '09:00',
               endTime: '10:00',
-              roomId: '507f1f77bcf86cd799439013',
-              teacherId: '507f1f77bcf86cd799439012',
-              groupId: '507f1f77bcf86cd799439011',
+              roomId: oid3,
+              teacherId: oid2,
+              groupId: oid1,
             }),
           }) as any,
       }),
@@ -104,9 +168,9 @@ describe('PlanningService', () => {
         date: '2026-05-20',
         startTime: '09:00',
         endTime: '10:00',
-        groupId: '507f1f77bcf86cd799439011',
-        teacherId: '507f1f77bcf86cd799439012',
-        roomId: '507f1f77bcf86cd799439013',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
       }),
     ).rejects.toThrow('Conflit de planning');
   });
@@ -135,12 +199,76 @@ describe('PlanningService', () => {
       date: '2026-05-20',
       startTime: '09:00',
       endTime: '10:00',
-      groupId: '507f1f77bcf86cd799439011',
-      teacherId: '507f1f77bcf86cd799439012',
-      roomId: '507f1f77bcf86cd799439013',
+      groupId: oid1,
+      teacherId: oid2,
+      roomId: oid3,
       label: 'Math',
     });
     expect(res).toEqual({ id: 's1' });
+  });
+
+  it('createSession rejects unknown teacher', async () => {
+    const roomModel = {} as any;
+    const sessionModel = {
+      findOne: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+      create: jest.fn(),
+    } as any;
+    const studentModel = {} as any;
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+    } as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
+    await expect(
+      service.createSession({
+        date: '2026-05-20',
+        startTime: '09:00',
+        endTime: '10:00',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
+      }),
+    ).rejects.toThrow('Enseignant introuvable');
+  });
+
+  it('createSession rejects non-teacher user', async () => {
+    const roomModel = {} as any;
+    const sessionModel = {
+      findOne: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+      create: jest.fn(),
+    } as any;
+    const studentModel = {} as any;
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'student' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(
+      roomModel,
+      sessionModel,
+      studentModel,
+      userModel,
+    );
+    await expect(
+      service.createSession({
+        date: '2026-05-20',
+        startTime: '09:00',
+        endTime: '10:00',
+        groupId: oid1,
+        teacherId: oid2,
+        roomId: oid3,
+      }),
+    ).rejects.toThrow('Utilisateur non enseignant');
   });
 
   it('listSessions filters by role student', async () => {
@@ -152,7 +280,7 @@ describe('PlanningService', () => {
       findOne: jest.fn().mockReturnValue({
         lean: () =>
           ({
-            exec: jest.fn().mockResolvedValue({ groupId: 'g1' }),
+            exec: jest.fn().mockResolvedValue({ groupId: oid1 }),
           }) as any,
       }),
     } as any;
@@ -166,7 +294,24 @@ describe('PlanningService', () => {
     await service.listSessions({
       user: { userId: 'u1', email: 's@u.c', role: 'student' as any },
     });
-    expect(sessionModel.find).toHaveBeenCalledWith({ groupId: 'g1' });
+    expect(sessionModel.find).toHaveBeenCalledWith({ groupId: oid1 });
+  });
+
+  it('listSessions returns empty when student has no group', async () => {
+    const sessionModel = {
+      find: jest.fn().mockReturnValue(makeQuery([])),
+    } as any;
+    const studentModel = {
+      findOne: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+    } as any;
+    const service = new PlanningService({} as any, sessionModel, studentModel, {} as any);
+    const res = await service.listSessions({
+      user: { userId: 'u1', email: 's@u.c', role: 'student' as any },
+    });
+    expect(res).toEqual([]);
+    expect(sessionModel.find).not.toHaveBeenCalled();
   });
 
   it('listSessions filters by role teacher', async () => {
@@ -183,9 +328,9 @@ describe('PlanningService', () => {
       userModel,
     );
     await service.listSessions({
-      user: { userId: 't1', email: 't@u.c', role: 'teacher' as any },
+      user: { userId: oid2, email: 't@u.c', role: 'teacher' as any },
     });
-    expect(sessionModel.find).toHaveBeenCalledWith({ teacherId: 't1' });
+    expect(sessionModel.find).toHaveBeenCalledWith({ teacherId: oid2 });
   });
 
   it('listSessions allows admin filters', async () => {
@@ -198,18 +343,53 @@ describe('PlanningService', () => {
     const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
     await service.listSessions({
       user: { userId: 'a1', email: 'a@u.c', role: 'admin' as any },
-      groupId: 'g1',
-      teacherId: 't1',
-      roomId: 'r1',
+      groupId: oid1,
+      teacherId: oid2,
+      roomId: oid3,
       dateFrom: '2026-05-01',
       dateTo: '2026-05-31',
     });
     expect(sessionModel.find).toHaveBeenCalledWith({
       date: { $gte: new Date('2026-05-01'), $lte: new Date('2026-05-31') },
-      groupId: 'g1',
-      teacherId: 't1',
-      roomId: 'r1',
+      groupId: oid1,
+      teacherId: oid2,
+      roomId: oid3,
     });
+  });
+
+  it('updateSession updates when no conflict', async () => {
+    const roomModel = {} as any;
+    const sessionModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () =>
+          ({
+            exec: jest.fn().mockResolvedValue({
+              _id: oid1,
+              date: new Date('2026-05-20'),
+              startTime: '09:00',
+              endTime: '10:00',
+              groupId: oid1,
+              teacherId: oid2,
+              roomId: oid3,
+            }),
+          }) as any,
+      }),
+      findOne: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+      findByIdAndUpdate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ id: oid1 }),
+      }),
+    } as any;
+    const userModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
+      }),
+    } as any;
+    const service = new PlanningService(roomModel, sessionModel, {} as any, userModel);
+    const res = await service.updateSession(oid1, { label: 'Math' } as any);
+    expect(res).toEqual({ id: oid1 });
+    expect(sessionModel.findByIdAndUpdate).toHaveBeenCalled();
   });
 
   it('updateSession validates conflicts', async () => {
@@ -223,9 +403,9 @@ describe('PlanningService', () => {
               date: new Date('2026-05-20'),
               startTime: '09:00',
               endTime: '10:00',
-              groupId: 'g1',
-              teacherId: 't1',
-              roomId: 'r1',
+              groupId: oid1,
+              teacherId: oid2,
+              roomId: oid3,
             }),
           }) as any,
       }),
@@ -233,9 +413,9 @@ describe('PlanningService', () => {
         lean: () =>
           ({
             exec: jest.fn().mockResolvedValue({
-              roomId: 'r1',
-              teacherId: 't1',
-              groupId: 'g1',
+              roomId: oid3,
+              teacherId: oid2,
+              groupId: oid1,
             }),
           }) as any,
       }),
@@ -248,10 +428,31 @@ describe('PlanningService', () => {
     } as any;
     const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
     await expect(
-      service.updateSession('s1', {
+      service.updateSession(oid1, {
         startTime: '09:30',
         endTime: '10:30',
       } as any),
     ).rejects.toThrow('Conflit');
+  });
+
+  it('updateSession rejects missing session', async () => {
+    const sessionModel = {
+      findById: jest.fn().mockReturnValue({
+        lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+      }),
+    } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any);
+    await expect(service.updateSession(oid1, {} as any)).rejects.toThrow(
+      'Séance introuvable',
+    );
+  });
+
+  it('deleteSession calls model', async () => {
+    const sessionModel = {
+      findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
+    } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any);
+    await service.deleteSession(oid1);
+    expect(sessionModel.findByIdAndDelete).toHaveBeenCalledWith(oid1);
   });
 });

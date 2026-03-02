@@ -134,6 +134,56 @@ describe('PaymentsService', () => {
     expect(paymentModel.create).toHaveBeenCalled();
   });
 
+  it('updatePlan and deletePlan call model', async () => {
+    const planModel = {
+      findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn() }),
+      findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
+    } as any;
+    const paymentModel = {} as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    await service.updatePlan('p1', { label: 'Mensuel' });
+    await service.deletePlan('p1');
+    expect(planModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      'p1',
+      { label: 'Mensuel' },
+      { new: true },
+    );
+    expect(planModel.findByIdAndDelete).toHaveBeenCalledWith('p1');
+  });
+
+  it('updatePayment and deletePayment call model', async () => {
+    const planModel = {} as any;
+    const paymentModel = {
+      findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn() }),
+      findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
+    } as any;
+    const studentModel = {} as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    await service.updatePayment('pay1', { amount: 500 } as any);
+    await service.deletePayment('pay1');
+    expect(paymentModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      'pay1',
+      { amount: 500 },
+      { new: true },
+    );
+    expect(paymentModel.findByIdAndDelete).toHaveBeenCalledWith('pay1');
+  });
+
   it('listUnpaid returns balances for due installments', async () => {
     const planModel = {
       find: jest.fn().mockReturnValue(
@@ -241,6 +291,56 @@ describe('PaymentsService', () => {
     const res = await service.listUnpaid(new Date('2026-03-01'));
     expect(res[0].dueAmount).toBe(1000);
     expect(res[0].balanceDue).toBe(800);
+  });
+
+  it('listUnpaid sorts by balanceDue', async () => {
+    const planModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          {
+            _id: 'p1',
+            studentId: 's1',
+            totalAmount: 1000,
+            currency: 'XOF',
+            installments: [],
+          },
+          {
+            _id: 'p2',
+            studentId: 's2',
+            totalAmount: 1500,
+            currency: 'XOF',
+            installments: [],
+          },
+        ]),
+      ),
+    } as any;
+    const paymentModel = {
+      aggregate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([
+          { _id: 'p1', totalPaid: 400 },
+          { _id: 'p2', totalPaid: 200 },
+        ]),
+      }),
+    } as any;
+    const studentModel = {
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          { _id: 's1', firstName: 'Awa', lastName: 'Traore', studentNumber: 'S001' },
+          { _id: 's2', firstName: 'Moussa', lastName: 'Diop', studentNumber: 'S002' },
+        ]),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    const res = await service.listUnpaid(new Date('2026-03-01'));
+    expect(res[0].planId).toBe('p2');
+    expect(res[1].planId).toBe('p1');
   });
 
   it('listUnpaid filters fully paid plans', async () => {
@@ -376,6 +476,35 @@ describe('PaymentsService', () => {
       ),
     } as any;
     const emailService = { sendMail: jest.fn().mockResolvedValue(true) } as any;
+
+    const service = new PaymentsService(
+      planModel,
+      paymentModel,
+      studentModel,
+      emailService,
+    );
+    await service.createPayment({
+      studentId: 's1',
+      amount: 1000,
+      currency: 'XOF',
+      paidAt: new Date(),
+    });
+
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(emailService.sendMail).toHaveBeenCalled();
+  });
+
+  it('createPayment ignores email errors', async () => {
+    const planModel = { find: jest.fn(), create: jest.fn() } as any;
+    const paymentModel = {
+      create: jest.fn().mockResolvedValue({ id: 'pay1' }),
+    } as any;
+    const studentModel = {
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({ id: 's1', email: 'student@school.tld' }),
+      ),
+    } as any;
+    const emailService = { sendMail: jest.fn().mockRejectedValue(new Error('fail')) } as any;
 
     const service = new PaymentsService(
       planModel,
