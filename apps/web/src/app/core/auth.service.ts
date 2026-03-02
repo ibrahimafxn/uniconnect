@@ -44,6 +44,31 @@ export class AuthService {
     return !!this.getAccessToken();
   }
 
+  getUserRole(): string | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const payload = this.decodeToken(token);
+    return payload?.role ?? null;
+  }
+
+  getUserEmail(): string | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const payload = this.decodeToken(token);
+    return payload?.email ?? null;
+  }
+
+  private decodeToken(token: string): any | null {
+    try {
+      const [, payload] = token.split('.');
+      if (!payload) return null;
+      const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
+  }
+
   private setTokens(tokens: AuthTokens) {
     localStorage.setItem('accessToken', tokens.accessToken);
     localStorage.setItem('refreshToken', tokens.refreshToken);
