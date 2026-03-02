@@ -39,6 +39,19 @@ describe('UsersService', () => {
     expect(model.find).toHaveBeenCalled();
   });
 
+  it('findTeachers calls model.find with teacher roles', async () => {
+    const model = {
+      find: jest.fn().mockReturnValue({
+        sort: () => ({ exec: jest.fn().mockResolvedValue([]) }),
+      }),
+    } as any;
+    const service = new UsersService(model);
+    await service.findTeachers();
+    expect(model.find).toHaveBeenCalledWith({
+      role: { $in: [Role.Teacher, Role.External] },
+    });
+  });
+
   it('findById calls model.findById', async () => {
     const model = {
       findById: jest
