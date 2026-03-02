@@ -14,6 +14,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -26,6 +36,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -59,6 +73,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -71,6 +95,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -97,6 +125,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -109,6 +147,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -148,6 +190,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -160,6 +212,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -186,6 +242,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -198,6 +264,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -224,6 +294,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -236,6 +316,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -274,6 +358,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -286,6 +380,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -318,6 +416,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
@@ -330,6 +438,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -363,6 +475,16 @@ describe('AdminComponent', () => {
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
+      createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
+      updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
+      deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
+      updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
+      deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
+      updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
+      deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
     const students = {
       listStudents: jasmine
@@ -376,6 +498,7 @@ describe('AdminComponent', () => {
         .and.returnValue(of({ items: [], total: 0, page: 1, limit: 20, skip: 0 })),
       uploadStudentDocument: jasmine.createSpy('uploadStudentDocument').and.returnValue(of({})),
       deleteStudentDocument: jasmine.createSpy('deleteStudentDocument').and.returnValue(of({})),
+      updateStudentDocument: jasmine.createSpy('updateStudentDocument').and.returnValue(of({})),
       downloadStudentDocument: jasmine.createSpy('downloadStudentDocument').and.returnValue(''),
     };
     const payments = {
@@ -385,6 +508,10 @@ describe('AdminComponent', () => {
       receiptUrl: () => "",
       createPlan: jasmine.createSpy('createPlan').and.returnValue(of({})),
       createPayment: jasmine.createSpy('createPayment').and.returnValue(of({})),
+      updatePlan: jasmine.createSpy('updatePlan').and.returnValue(of({})),
+      deletePlan: jasmine.createSpy('deletePlan').and.returnValue(of({})),
+      updatePayment: jasmine.createSpy('updatePayment').and.returnValue(of({})),
+      deletePayment: jasmine.createSpy('deletePayment').and.returnValue(of({})),
     };
 
     TestBed.configureTestingModule({

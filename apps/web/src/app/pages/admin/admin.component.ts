@@ -47,6 +47,7 @@ export class AdminComponent {
     skip: 0,
   });
   documentFile: File | null = null;
+  editingDocumentId: string | null = null;
 
   yearForm = this.fb.group({
     name: ['', Validators.required],
@@ -54,21 +55,25 @@ export class AdminComponent {
     endDate: ['', Validators.required],
     isActive: [false],
   });
+  editingYearId: string | null = null;
 
   programForm = this.fb.group({
     name: ['', Validators.required],
     code: [''],
   });
+  editingProgramId: string | null = null;
 
   levelForm = this.fb.group({
     name: ['', Validators.required],
     programId: ['', Validators.required],
   });
+  editingLevelId: string | null = null;
 
   groupForm = this.fb.group({
     name: ['', Validators.required],
     levelId: ['', Validators.required],
   });
+  editingGroupId: string | null = null;
 
   studentForm = this.fb.group({
     firstName: ['', Validators.required],
@@ -108,6 +113,10 @@ export class AdminComponent {
     label: [''],
   });
 
+  editDocumentForm = this.fb.group({
+    label: [''],
+  });
+
   planForm = this.fb.group({
     studentId: ['', Validators.required],
     label: ['', Validators.required],
@@ -115,6 +124,7 @@ export class AdminComponent {
     currency: ['XOF', Validators.required],
     installments: this.fb.array([]),
   });
+  editingPlanId: string | null = null;
 
   paymentForm = this.fb.group({
     studentId: ['', Validators.required],
@@ -124,6 +134,7 @@ export class AdminComponent {
     paidAt: ['', Validators.required],
     reference: [''],
   });
+  editingPaymentId: string | null = null;
 
   private loadStudents() {
     return this.students
@@ -144,34 +155,138 @@ export class AdminComponent {
 
   createYear() {
     if (this.yearForm.invalid) return;
+    if (this.editingYearId) {
+      this.academic.updateYear(this.editingYearId, this.yearForm.value as any).subscribe(() => {
+        this.cancelEditYear();
+        this.refresh();
+      });
+      return;
+    }
     this.academic.createYear(this.yearForm.value as any).subscribe(() => {
       this.yearForm.reset({ isActive: false });
       this.refresh();
     });
   }
 
+  selectYearForEdit(year: any) {
+    this.editingYearId = year._id;
+    this.yearForm.setValue({
+      name: year.name ?? '',
+      startDate: this.formatDateForInput(year.startDate),
+      endDate: this.formatDateForInput(year.endDate),
+      isActive: !!year.isActive,
+    });
+  }
+
+  cancelEditYear() {
+    this.editingYearId = null;
+    this.yearForm.reset({ isActive: false });
+  }
+
+  deleteYear(id: string) {
+    this.academic.deleteYear(id).subscribe(() => this.refresh());
+  }
+
   createProgram() {
     if (this.programForm.invalid) return;
+    if (this.editingProgramId) {
+      this.academic
+        .updateProgram(this.editingProgramId, this.programForm.value as any)
+        .subscribe(() => {
+          this.cancelEditProgram();
+          this.refresh();
+        });
+      return;
+    }
     this.academic.createProgram(this.programForm.value as any).subscribe(() => {
       this.programForm.reset();
       this.refresh();
     });
   }
 
+  selectProgramForEdit(program: any) {
+    this.editingProgramId = program._id;
+    this.programForm.setValue({
+      name: program.name ?? '',
+      code: program.code ?? '',
+    });
+  }
+
+  cancelEditProgram() {
+    this.editingProgramId = null;
+    this.programForm.reset();
+  }
+
+  deleteProgram(id: string) {
+    this.academic.deleteProgram(id).subscribe(() => this.refresh());
+  }
+
   createLevel() {
     if (this.levelForm.invalid) return;
+    if (this.editingLevelId) {
+      this.academic
+        .updateLevel(this.editingLevelId, this.levelForm.value as any)
+        .subscribe(() => {
+          this.cancelEditLevel();
+          this.refresh();
+        });
+      return;
+    }
     this.academic.createLevel(this.levelForm.value as any).subscribe(() => {
       this.levelForm.reset();
       this.refresh();
     });
   }
 
+  selectLevelForEdit(level: any) {
+    this.editingLevelId = level._id;
+    this.levelForm.setValue({
+      name: level.name ?? '',
+      programId: level.programId ?? '',
+    });
+  }
+
+  cancelEditLevel() {
+    this.editingLevelId = null;
+    this.levelForm.reset();
+  }
+
+  deleteLevel(id: string) {
+    this.academic.deleteLevel(id).subscribe(() => this.refresh());
+  }
+
   createGroup() {
     if (this.groupForm.invalid) return;
+    if (this.editingGroupId) {
+      this.academic
+        .updateGroup(this.editingGroupId, this.groupForm.value as any)
+        .subscribe(() => {
+          this.cancelEditGroup();
+          this.refresh();
+        });
+      return;
+    }
     this.academic.createGroup(this.groupForm.value as any).subscribe(() => {
       this.groupForm.reset();
       this.refresh();
     });
+  }
+
+  selectGroupForEdit(group: any) {
+    this.editingGroupId = group._id;
+    this.groupForm.setValue({
+      name: group.name ?? '',
+      levelId: group.levelId ?? '',
+    });
+  }
+
+  cancelEditGroup() {
+    this.editingGroupId = null;
+    this.groupForm.reset();
+  }
+
+  deleteGroup(id: string) {
+    this.academic.deleteGroup(id).subscribe(() => this.refresh());
   }
 
   createStudent() {
@@ -241,6 +356,15 @@ export class AdminComponent {
 
   createPlan() {
     if (this.planForm.invalid) return;
+    if (this.editingPlanId) {
+      this.payments
+        .updatePlan(this.editingPlanId, this.planForm.value as any)
+        .subscribe(() => {
+          this.cancelEditPlan();
+          this.refresh();
+        });
+      return;
+    }
     this.payments.createPlan(this.planForm.value as any).subscribe(() => {
       this.planForm.reset({ currency: 'XOF', totalAmount: 0 });
       this.installments.clear();
@@ -248,12 +372,73 @@ export class AdminComponent {
     });
   }
 
+  selectPlanForEdit(plan: any) {
+    this.editingPlanId = plan._id;
+    this.planForm.setValue({
+      studentId: plan.studentId ?? '',
+      label: plan.label ?? '',
+      totalAmount: plan.totalAmount ?? 0,
+      currency: plan.currency ?? 'XOF',
+      installments: [],
+    } as any);
+    this.installments.clear();
+    (plan.installments ?? []).forEach((inst: any) => {
+      this.installments.push(
+        this.fb.group({
+          amount: [inst.amount ?? 0, Validators.required],
+          dueDate: [this.formatDateForInput(inst.dueDate), Validators.required],
+          label: [inst.label ?? ''],
+        }),
+      );
+    });
+  }
+
+  cancelEditPlan() {
+    this.editingPlanId = null;
+    this.planForm.reset({ currency: 'XOF', totalAmount: 0 });
+    this.installments.clear();
+  }
+
+  deletePlan(id: string) {
+    this.payments.deletePlan(id).subscribe(() => this.refresh());
+  }
+
   createPayment() {
     if (this.paymentForm.invalid) return;
+    if (this.editingPaymentId) {
+      this.payments
+        .updatePayment(this.editingPaymentId, this.paymentForm.value as any)
+        .subscribe(() => {
+          this.cancelEditPayment();
+          this.refresh();
+        });
+      return;
+    }
     this.payments.createPayment(this.paymentForm.value as any).subscribe(() => {
       this.paymentForm.reset({ currency: 'XOF', amount: 0 });
       this.refresh();
     });
+  }
+
+  selectPaymentForEdit(payment: any) {
+    this.editingPaymentId = payment._id;
+    this.paymentForm.setValue({
+      studentId: payment.studentId ?? '',
+      planId: payment.planId ?? '',
+      amount: payment.amount ?? 0,
+      currency: payment.currency ?? 'XOF',
+      paidAt: this.formatDateForInput(payment.paidAt),
+      reference: payment.reference ?? '',
+    });
+  }
+
+  cancelEditPayment() {
+    this.editingPaymentId = null;
+    this.paymentForm.reset({ currency: 'XOF', amount: 0 });
+  }
+
+  deletePayment(id: string) {
+    this.payments.deletePayment(id).subscribe(() => this.refresh());
   }
 
   get installments() {
@@ -316,6 +501,26 @@ export class AdminComponent {
     this.students.deleteStudentDocument(docId).subscribe(() => {
       this.loadDocuments();
     });
+  }
+
+  selectDocumentForEdit(doc: StudentDocument) {
+    this.editingDocumentId = doc._id;
+    this.editDocumentForm.setValue({ label: doc.label ?? '' });
+  }
+
+  cancelEditDocument() {
+    this.editingDocumentId = null;
+    this.editDocumentForm.reset({ label: '' });
+  }
+
+  saveDocumentEdit() {
+    if (!this.editingDocumentId) return;
+    this.students
+      .updateStudentDocument(this.editingDocumentId, this.editDocumentForm.value as any)
+      .subscribe(() => {
+        this.cancelEditDocument();
+        this.loadDocuments();
+      });
   }
 
   private formatDateForInput(value: string | Date | undefined) {

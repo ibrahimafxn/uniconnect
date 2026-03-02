@@ -55,6 +55,14 @@ export class PaymentsApi {
     return this.http.post<PaymentPlan>(`${this.baseUrl}/plans`, payload);
   }
 
+  updatePlan(id: string, payload: Partial<Omit<PaymentPlan, '_id'>>) {
+    return this.http.patch<PaymentPlan>(`${this.baseUrl}/plans/${id}`, payload);
+  }
+
+  deletePlan(id: string) {
+    return this.http.delete<PaymentPlan>(`${this.baseUrl}/plans/${id}`);
+  }
+
   listUnpaid(asOf?: string): Observable<UnpaidItem[]> {
     const params = asOf ? `?asOf=${encodeURIComponent(asOf)}` : '';
     return this.http.get<UnpaidItem[]>(`${this.baseUrl}/unpaid${params}`);
@@ -66,6 +74,14 @@ export class PaymentsApi {
 
   createPayment(payload: Omit<Payment, '_id'>) {
     return this.http.post<Payment>(`${this.baseUrl}`, payload);
+  }
+
+  updatePayment(id: string, payload: Partial<Omit<Payment, '_id'>>) {
+    return this.http.patch<Payment>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  deletePayment(id: string) {
+    return this.http.delete<Payment>(`${this.baseUrl}/${id}`);
   }
 
   receiptUrl(paymentId: string) {

@@ -197,6 +197,10 @@ export class StudentsService {
     return this.documentModel.findByIdAndDelete(id).exec();
   }
 
+  updateDocument(id: string, data: Partial<StudentDocument>) {
+    return this.documentModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
+
   private ensureStudentNumberMatches(params: {
     studentNumber: string;
     firstName: string;

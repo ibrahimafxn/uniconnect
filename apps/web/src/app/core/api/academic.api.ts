@@ -31,6 +31,14 @@ export class AcademicApi {
     return this.http.post<AcademicYear>(`${this.baseUrl}/years`, payload);
   }
 
+  updateYear(id: string, payload: Partial<Omit<AcademicYear, '_id'>>) {
+    return this.http.patch<AcademicYear>(`${this.baseUrl}/years/${id}`, payload);
+  }
+
+  deleteYear(id: string) {
+    return this.http.delete<AcademicYear>(`${this.baseUrl}/years/${id}`);
+  }
+
   listPrograms(page = 1, limit = 50) {
     const params = new HttpParams().set('page', page).set('limit', limit);
     return this.http.get<Paginated<Program>>(`${this.baseUrl}/programs`, { params });
@@ -38,6 +46,14 @@ export class AcademicApi {
 
   createProgram(payload: Omit<Program, '_id'>) {
     return this.http.post<Program>(`${this.baseUrl}/programs`, payload);
+  }
+
+  updateProgram(id: string, payload: Partial<Omit<Program, '_id'>>) {
+    return this.http.patch<Program>(`${this.baseUrl}/programs/${id}`, payload);
+  }
+
+  deleteProgram(id: string) {
+    return this.http.delete<Program>(`${this.baseUrl}/programs/${id}`);
   }
 
   listLevels(page = 1, limit = 50) {
@@ -49,6 +65,14 @@ export class AcademicApi {
     return this.http.post<Level>(`${this.baseUrl}/levels`, payload);
   }
 
+  updateLevel(id: string, payload: Partial<Omit<Level, '_id'>>) {
+    return this.http.patch<Level>(`${this.baseUrl}/levels/${id}`, payload);
+  }
+
+  deleteLevel(id: string) {
+    return this.http.delete<Level>(`${this.baseUrl}/levels/${id}`);
+  }
+
   listGroups(page = 1, limit = 50) {
     const params = new HttpParams().set('page', page).set('limit', limit);
     return this.http.get<Paginated<Group>>(`${this.baseUrl}/groups`, { params });
@@ -56,5 +80,13 @@ export class AcademicApi {
 
   createGroup(payload: Omit<Group, '_id'>) {
     return this.http.post<Group>(`${this.baseUrl}/groups`, payload);
+  }
+
+  updateGroup(id: string, payload: Partial<Omit<Group, '_id'>>) {
+    return this.http.patch<Group>(`${this.baseUrl}/groups/${id}`, payload);
+  }
+
+  deleteGroup(id: string) {
+    return this.http.delete<Group>(`${this.baseUrl}/groups/${id}`);
   }
 }

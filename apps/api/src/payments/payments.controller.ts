@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Res,
@@ -17,6 +19,8 @@ import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
 import { CreatePaymentPlanDto } from './dto/create-payment-plan.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { UpdatePaymentPlanDto } from './dto/update-payment-plan.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,6 +36,25 @@ export class PaymentsController {
   @Post('plans')
   createPlan(@Body() dto: CreatePaymentPlanDto) {
     return this.paymentsService.createPlan(dto);
+  }
+
+  @Patch('plans/:id')
+  updatePlan(@Param('id') id: string, @Body() dto: UpdatePaymentPlanDto) {
+    const installments = dto.installments
+      ? dto.installments.map((inst) => ({
+          ...inst,
+          dueDate: inst.dueDate ? new Date(inst.dueDate) : undefined,
+        }))
+      : undefined;
+    return this.paymentsService.updatePlan(id, {
+      ...dto,
+      installments,
+    } as any);
+  }
+
+  @Delete('plans/:id')
+  deletePlan(@Param('id') id: string) {
+    return this.paymentsService.deletePlan(id);
   }
 
   @Get()
@@ -93,5 +116,19 @@ export class PaymentsController {
       ...dto,
       paidAt: new Date(dto.paidAt),
     });
+  }
+
+  @Patch(':id')
+  updatePayment(@Param('id') id: string, @Body() dto: UpdatePaymentDto) {
+    const payload = {
+      ...dto,
+      paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
+    };
+    return this.paymentsService.updatePayment(id, payload as any);
+  }
+
+  @Delete(':id')
+  deletePayment(@Param('id') id: string) {
+    return this.paymentsService.deletePayment(id);
   }
 }

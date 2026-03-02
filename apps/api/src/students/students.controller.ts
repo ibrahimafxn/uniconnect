@@ -30,6 +30,7 @@ import { CreateStudentProfileDto } from './dto/create-student-profile.dto';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
+import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
 import { parsePagination } from '../common/pagination';
 import { toObjectId } from '../common/object-id';
 
@@ -209,5 +210,17 @@ export class StudentsController {
     await this.studentsService.deleteDocument(docId);
     unlink(doc.path, () => undefined);
     return { success: true };
+  }
+
+  @Patch('documents/:docId')
+  async updateDocument(
+    @Param('docId') docId: string,
+    @Body() dto: UpdateStudentDocumentDto,
+  ) {
+    const doc = await this.studentsService.getDocument(docId);
+    if (!doc) {
+      throw new HttpException('Document not found', HttpStatus.NOT_FOUND);
+    }
+    return this.studentsService.updateDocument(docId, dto);
   }
 }
