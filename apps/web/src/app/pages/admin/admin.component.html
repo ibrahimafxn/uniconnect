@@ -19,11 +19,23 @@
         <label class="checkbox">
           <input type="checkbox" formControlName="isActive" /> Active
         </label>
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingYearId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingYearId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditYear()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let y of (years$ | async)?.items">
           {{ y.name }} ({{ y.startDate | date }} - {{ y.endDate | date }})
+          <button type="button" class="ghost" (click)="selectYearForEdit(y)">Éditer</button>
+          <button type="button" class="ghost" (click)="deleteYear(y._id)">Supprimer</button>
         </li>
       </ul>
     </div>
@@ -33,11 +45,23 @@
       <form [formGroup]="programForm" (ngSubmit)="createProgram()">
         <input formControlName="name" placeholder="Informatique" />
         <input formControlName="code" placeholder="INFO" />
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingProgramId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingProgramId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditProgram()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let p of (programs$ | async)?.items">
           {{ p.name }} <span class="muted">{{ p.code }}</span>
+          <button type="button" class="ghost" (click)="selectProgramForEdit(p)">Éditer</button>
+          <button type="button" class="ghost" (click)="deleteProgram(p._id)">Supprimer</button>
         </li>
       </ul>
     </div>
@@ -52,11 +76,23 @@
             {{ p.name }}
           </option>
         </select>
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingLevelId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingLevelId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditLevel()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let l of (levels$ | async)?.items">
           {{ l.name }} — {{ l.programId }}
+          <button type="button" class="ghost" (click)="selectLevelForEdit(l)">Éditer</button>
+          <button type="button" class="ghost" (click)="deleteLevel(l._id)">Supprimer</button>
         </li>
       </ul>
     </div>
@@ -71,11 +107,23 @@
             {{ l.name }}
           </option>
         </select>
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingGroupId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingGroupId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditGroup()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let g of (groups$ | async)?.items">
           {{ g.name }} — {{ g.levelId }}
+          <button type="button" class="ghost" (click)="selectGroupForEdit(g)">Éditer</button>
+          <button type="button" class="ghost" (click)="deleteGroup(g._id)">Supprimer</button>
         </li>
       </ul>
     </div>
@@ -208,11 +256,25 @@
             {{ d.originalName }}
           </a>
           <span class="muted" *ngIf="d.label">— {{ d.label }}</span>
+          <button type="button" class="ghost" (click)="selectDocumentForEdit(d)">
+            Éditer
+          </button>
           <button type="button" class="ghost" (click)="deleteDocument(d._id)">
             Supprimer
           </button>
         </li>
       </ul>
+
+      <div class="card" *ngIf="editingDocumentId">
+        <h3>Modifier document</h3>
+        <form [formGroup]="editDocumentForm" (ngSubmit)="saveDocumentEdit()">
+          <input formControlName="label" placeholder="Libellé (optionnel)" />
+          <div class="row">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="ghost" (click)="cancelEditDocument()">Annuler</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="card">
@@ -236,7 +298,17 @@
           </div>
           <button type="button" (click)="addInstallment()">Ajouter une échéance</button>
         </div>
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingPlanId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingPlanId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditPlan()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let p of (plans$ | async)">
@@ -244,6 +316,8 @@
           <span *ngIf="(p.installments?.length ?? 0) > 0">
             ({{ p.installments?.length ?? 0 }} échéances)
           </span>
+          <button type="button" class="ghost" (click)="selectPlanForEdit(p)">Éditer</button>
+          <button type="button" class="ghost" (click)="deletePlan(p._id)">Supprimer</button>
         </li>
       </ul>
     </div>
@@ -277,12 +351,24 @@
         <input formControlName="currency" placeholder="XOF" />
         <input type="date" formControlName="paidAt" />
         <input formControlName="reference" placeholder="Référence" />
-        <button type="submit">Ajouter</button>
+        <div class="row">
+          <button type="submit">{{ editingPaymentId ? 'Enregistrer' : 'Ajouter' }}</button>
+          <button
+            *ngIf="editingPaymentId"
+            type="button"
+            class="ghost"
+            (click)="cancelEditPayment()"
+          >
+            Annuler
+          </button>
+        </div>
       </form>
       <ul>
         <li *ngFor="let p of (payments$ | async)">
           {{ p.amount }} {{ p.currency }} — {{ p.paidAt | date }}
           <a [href]="paymentReceiptUrl(p._id)" target="_blank" rel="noopener">Reçu</a>
+          <button type="button" class="ghost" (click)="selectPaymentForEdit(p)">Éditer</button>
+          <button type="button" class="ghost" (click)="deletePayment(p._id)">Supprimer</button>
         </li>
       </ul>
     </div>

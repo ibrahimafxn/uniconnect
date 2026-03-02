@@ -90,4 +90,8 @@ export class StudentsApi {
   deleteStudentDocument(docId: string) {
     return this.http.delete<{ success: boolean }>(`${this.baseUrl}/documents/${docId}`);
   }
+
+  updateStudentDocument(docId: string, payload: { label?: string }) {
+    return this.http.patch<StudentDocument>(`${this.baseUrl}/documents/${docId}`, payload);
+  }
 }

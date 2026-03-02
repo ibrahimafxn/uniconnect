@@ -65,6 +65,22 @@ export class PaymentsService {
     });
   }
 
+  updatePlan(id: string, data: Partial<PaymentPlan>) {
+    return this.planModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
+
+  deletePlan(id: string) {
+    return this.planModel.findByIdAndDelete(id).exec();
+  }
+
+  updatePayment(id: string, data: Partial<Payment>) {
+    return this.paymentModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
+
+  deletePayment(id: string) {
+    return this.paymentModel.findByIdAndDelete(id).exec();
+  }
+
   async listUnpaid(asOf: Date) {
     const plans = await this.planModel.find().lean().exec();
     if (plans.length === 0) return [];
