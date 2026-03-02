@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PlanningApi } from '../../core/api/planning.api';
 import { AcademicApi } from '../../core/api/academic.api';
 import { UsersApi } from '../../core/api/users.api';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-planning',
@@ -17,12 +18,14 @@ export class PlanningComponent {
   private readonly planning = inject(PlanningApi);
   private readonly academic = inject(AcademicApi);
   private readonly users = inject(UsersApi);
+  private readonly auth = inject(AuthService);
 
   rooms$ = this.planning.listRooms();
   sessions$ = this.planning.listSessions();
   groups$ = this.academic.listGroups();
   teachers$ = this.users.listTeachers();
   editingRoomId: string | null = null;
+  readonly isAdmin = ['admin', 'super_admin'].includes(this.auth.getUserRole() ?? '');
 
   roomForm = this.fb.group({
     name: ['', Validators.required],

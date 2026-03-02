@@ -8,7 +8,7 @@
   </div>
 
   <section class="grid">
-    <div class="card">
+    <div class="card" *ngIf="isAdmin; else roomsReadonly">
       <h2>Salles</h2>
       <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
         <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
@@ -38,6 +38,18 @@
         </form>
       </div>
     </div>
+    <ng-template #roomsReadonly>
+      <div class="card">
+        <h2>Salles</h2>
+        <p class="muted">Lecture seule.</p>
+        <ul>
+          <li *ngFor="let r of (rooms$ | async)">
+            {{ r.name }} — {{ r.capacity }}
+            <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+          </li>
+        </ul>
+      </div>
+    </ng-template>
 
     <div class="card full">
       <h2>Séances</h2>
@@ -67,7 +79,8 @@
           <button type="button" class="ghost" (click)="resetFilters()">Réinitialiser</button>
         </div>
       </form>
-      <form [formGroup]="sessionForm" (ngSubmit)="createSession()">
+      <p class="muted" *ngIf="!isAdmin">Lecture seule.</p>
+      <form *ngIf="isAdmin" [formGroup]="sessionForm" (ngSubmit)="createSession()">
         <input type="date" formControlName="date" />
         <div class="row">
           <input type="time" formControlName="startTime" />
@@ -98,7 +111,14 @@
         <li *ngFor="let s of (sessions$ | async)">
           {{ s.date | date }} — {{ s.startTime }}-{{ s.endTime }}
           <span class="muted">({{ s.label || 'Séance' }})</span>
-          <button type="button" class="ghost" (click)="deleteSession(s._id)">Supprimer</button>
+          <button
+            *ngIf="isAdmin"
+            type="button"
+            class="ghost"
+            (click)="deleteSession(s._id)"
+          >
+            Supprimer
+          </button>
         </li>
       </ul>
     </div>
