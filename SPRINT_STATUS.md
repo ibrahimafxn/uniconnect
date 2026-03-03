@@ -31,8 +31,8 @@ Source: `CHANGELOG.md`
 ### Coverage
 - Command: `npm run test:coverage`
 - Result: PASS
-- API coverage (statements): 98.62%
-- Web coverage (statements): 81.95%
+- API coverage (statements): 99.2%
+- Web coverage (statements): 82.93%
 
 ### API e2e
 - Command: `npm run -w apps/api test:e2e`
@@ -85,3 +85,24 @@ Source: `extras/roadmap_gantt.md`, `extras/sprint_4_trello.csv`
 - API: audit log sur actions sensibles + tags Swagger Planning.
 - UI: page Planning (salles + seances) avec refonte visuelle et actions clarifiees.
 - Docs: module Planning documente (`docs/planning.md`).
+
+## Sprint 5 — Messagerie MVP (Planifie)
+
+Window: 2026-05-27 → 2026-06-09 (tests/docs to 2026-06-09)
+
+Planned scope:
+- Conversations 1-1
+- Groupes de discussion
+- Pieces jointes simples
+- Notifications email
+- UI inbox + recherche simple
+
+### Avancement (2026-03-03)
+- API: conversations, messages, pieces jointes + audit log.
+- UI: page Messagerie (inbox + fil de discussion).
+- Docs: module Messagerie documente (`docs/messaging.md`).
+
+### Retrospective (2026-03-03)
+- Ce qui a bien fonctionne: livraison bout en bout (API + UI + docs + tests) avec couverture conforme.
+- Ce qui a ralenti: ajustements tests unitaires (IDs ObjectId, mocks).
+- Actions d'amelioration: ajouter notifications email + recherche avancée + pagination UI sur messages.
