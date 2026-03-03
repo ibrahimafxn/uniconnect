@@ -38,6 +38,20 @@ describe('AcademicApi', () => {
     req.flush({ _id: '1', name: 'Info', code: 'INFO' });
   });
 
+  it('updateProgram patches payload', () => {
+    api.updateProgram('p1', { name: 'Info2' }).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/programs/p1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ _id: 'p1' });
+  });
+
+  it('deleteProgram calls API', () => {
+    api.deleteProgram('p1').subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/programs/p1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ _id: 'p1' });
+  });
+
   it('listYears calls API', () => {
     api.listYears(1, 10).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/years?page=1&limit=10');
@@ -66,6 +80,20 @@ describe('AcademicApi', () => {
     req.flush({ _id: 'y1' });
   });
 
+  it('updateYear patches payload', () => {
+    api.updateYear('y1', { isActive: false }).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/years/y1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ _id: 'y1' });
+  });
+
+  it('deleteYear calls API', () => {
+    api.deleteYear('y1').subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/years/y1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ _id: 'y1' });
+  });
+
   it('listLevels calls API', () => {
     api.listLevels(1, 10).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/levels?page=1&limit=10');
@@ -87,6 +115,20 @@ describe('AcademicApi', () => {
     req.flush({ _id: 'l1' });
   });
 
+  it('updateLevel patches payload', () => {
+    api.updateLevel('l1', { name: 'L1A' }).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/levels/l1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ _id: 'l1' });
+  });
+
+  it('deleteLevel calls API', () => {
+    api.deleteLevel('l1').subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/levels/l1');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ _id: 'l1' });
+  });
+
   it('listGroups calls API', () => {
     api.listGroups(1, 10).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/groups?page=1&limit=10');
@@ -105,6 +147,20 @@ describe('AcademicApi', () => {
     api.createGroup({ name: 'G1', levelId: 'l1' }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/groups');
     expect(req.request.method).toBe('POST');
+    req.flush({ _id: 'g1' });
+  });
+
+  it('updateGroup patches payload', () => {
+    api.updateGroup('g1', { name: 'G1A' }).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/groups/g1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ _id: 'g1' });
+  });
+
+  it('deleteGroup calls API', () => {
+    api.deleteGroup('g1').subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/academic/groups/g1');
+    expect(req.request.method).toBe('DELETE');
     req.flush({ _id: 'g1' });
   });
 });

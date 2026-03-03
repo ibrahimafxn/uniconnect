@@ -26,14 +26,15 @@ Source: `CHANGELOG.md`
 - API e2e tests (minimal) pass with `.env.test`.
   Evidence: `npm run -w apps/api test:e2e` (2026-03-01)
 
-## Test Runs (2026-03-03)
+## Test Runs (2026-03-04)
 
 ### Coverage
 - Command: `npm run test:coverage`
 - Result: PASS
 - API coverage (statements): 99.34%
 - API coverage (branches): 85.15%
-- Web coverage (statements): 81.63%
+- Web coverage (statements): 91.67%
+- Web coverage (branches): 68.12%
 
 ### API e2e
 - Command: `npm run -w apps/api test:e2e`

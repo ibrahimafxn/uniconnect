@@ -72,6 +72,21 @@ describe('PlanningComponent', () => {
     expect(planning.createRoom).not.toHaveBeenCalled();
   });
 
+  it('createSession does nothing when invalid', () => {
+    const { comp, planning } = setup();
+    comp.sessionForm.setValue({
+      date: '',
+      startTime: '',
+      endTime: '',
+      groupId: '',
+      teacherId: '',
+      roomId: '',
+      label: '',
+    });
+    comp.createSession();
+    expect(planning.createSession).not.toHaveBeenCalled();
+  });
+
   it('createRoom posts and refreshes', () => {
     const { comp, planning } = setup();
     spyOn(comp, 'refresh');
@@ -97,6 +112,20 @@ describe('PlanningComponent', () => {
     expect(planning.updateRoom).toHaveBeenCalledWith('r1', { name: 'A2', capacity: 25, location: 'C' });
     expect(comp.editingRoomId).toBeNull();
     expect(comp.refresh).toHaveBeenCalled();
+  });
+
+  it('saveRoomEdit does nothing without editing id', () => {
+    const { comp, planning } = setup();
+    comp.editRoomForm.setValue({ name: 'A2', capacity: 25, location: 'C' });
+    comp.saveRoomEdit();
+    expect(planning.updateRoom).not.toHaveBeenCalled();
+  });
+
+  it('cancelEditRoom resets state', () => {
+    const { comp } = setup();
+    comp.selectRoomForEdit({ _id: 'r1', name: 'A1', capacity: 20, location: 'B' });
+    comp.cancelEditRoom();
+    expect(comp.editingRoomId).toBeNull();
   });
 
   it('createSession posts and refreshes', () => {
@@ -160,6 +189,37 @@ describe('PlanningComponent', () => {
     expect(comp.refresh).toHaveBeenCalled();
   });
 
+  it('saveSessionEdit does nothing without editing id', () => {
+    const { comp, planning } = setup();
+    comp.editSessionForm.setValue({
+      date: '2026-03-06',
+      startTime: '09:00',
+      endTime: '11:00',
+      groupId: 'g1',
+      teacherId: 't1',
+      roomId: 'r1',
+      label: 'Math 2',
+    });
+    comp.saveSessionEdit();
+    expect(planning.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('cancelEditSession resets state', () => {
+    const { comp } = setup();
+    comp.selectSessionForEdit({
+      _id: 's1',
+      date: '2026-03-05',
+      startTime: '08:00',
+      endTime: '10:00',
+      groupId: 'g1',
+      teacherId: 't1',
+      roomId: 'r1',
+      label: 'Math',
+    });
+    comp.cancelEditSession();
+    expect(comp.editingSessionId).toBeNull();
+  });
+
   it('applyFilters calls listSessions with params', () => {
     const { comp, planning } = setup();
     comp.filterForm.setValue({
@@ -197,6 +257,19 @@ describe('PlanningComponent', () => {
       roomId: null,
     });
     expect(planning.listSessions).toHaveBeenCalled();
+  });
+
+  it('roomName/groupName/teacherEmail fall back to id', () => {
+    const { comp } = setup();
+    expect(comp.roomName(null, 'r1')).toBe('r1');
+    expect(comp.groupName(null, 'g1')).toBe('g1');
+    expect(comp.teacherEmail(null, 't1')).toBe('t1');
+  });
+
+  it('formatDateForInput handles invalid dates', () => {
+    const { comp } = setup();
+    expect((comp as any).formatDateForInput('invalid')).toBe('');
+    expect((comp as any).formatDateForInput(undefined)).toBe('');
   });
 
   it('deleteRoom and deleteSession refresh', () => {

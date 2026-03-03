@@ -52,6 +52,13 @@ describe('PaymentsApi', () => {
     req.flush([]);
   });
 
+  it('listUnpaid without asOf', () => {
+    api.listUnpaid().subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/payments/unpaid');
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
   it('listPayments calls API', () => {
     api.listPayments().subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/payments');

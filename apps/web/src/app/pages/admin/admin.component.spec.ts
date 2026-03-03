@@ -308,6 +308,36 @@ describe('AdminComponent', () => {
     expect(comp.refresh).toHaveBeenCalled();
   });
 
+  it('updates program when editing', () => {
+    const { comp, academic } = setupAdmin();
+    spyOn(comp, 'refresh');
+    comp.selectProgramForEdit({ _id: 'p1', name: 'Info', code: 'INFO' });
+    comp.createProgram();
+    expect(academic.updateProgram).toHaveBeenCalledWith('p1', jasmine.any(Object));
+    expect(comp.editingProgramId).toBeNull();
+    expect(comp.refresh).toHaveBeenCalled();
+  });
+
+  it('updates level when editing', () => {
+    const { comp, academic } = setupAdmin();
+    spyOn(comp, 'refresh');
+    comp.selectLevelForEdit({ _id: 'l1', name: 'L1', programId: 'p1' });
+    comp.createLevel();
+    expect(academic.updateLevel).toHaveBeenCalledWith('l1', jasmine.any(Object));
+    expect(comp.editingLevelId).toBeNull();
+    expect(comp.refresh).toHaveBeenCalled();
+  });
+
+  it('updates group when editing', () => {
+    const { comp, academic } = setupAdmin();
+    spyOn(comp, 'refresh');
+    comp.selectGroupForEdit({ _id: 'g1', name: 'G1', levelId: 'l1' });
+    comp.createGroup();
+    expect(academic.updateGroup).toHaveBeenCalledWith('g1', jasmine.any(Object));
+    expect(comp.editingGroupId).toBeNull();
+    expect(comp.refresh).toHaveBeenCalled();
+  });
+
   it('selects and cancels program edit', () => {
     const { comp } = setupAdmin();
     comp.selectProgramForEdit({ _id: 'p1', name: 'Info', code: 'INFO' });
@@ -368,6 +398,15 @@ describe('AdminComponent', () => {
     expect(students.listStudents).toHaveBeenCalled();
   });
 
+  it('changeStudentPage ignores when beyond max', () => {
+    const { comp } = setupAdmin();
+    comp.studentPage = 3;
+    comp.studentTotal = 10;
+    comp.studentLimit = 50;
+    comp.changeStudentPage(1);
+    expect(comp.studentPage).toBe(3);
+  });
+
   it('plan installments and edit flow', () => {
     const { comp, payments } = setupAdmin();
     comp.addInstallment();
@@ -414,6 +453,50 @@ describe('AdminComponent', () => {
     expect(comp.paymentReceiptUrl('pay1')).toBe('http://localhost/receipt');
     expect(comp.cancelEditPayment).toHaveBeenCalled();
     expect(comp.refresh).toHaveBeenCalled();
+  });
+
+  it('does not create plan when form invalid', () => {
+    const { comp, payments } = setupAdmin();
+    comp.planForm.setValue({ studentId: '', label: '', totalAmount: 0, currency: 'XOF', installments: [] } as any);
+    comp.createPlan();
+    expect(payments.createPlan).not.toHaveBeenCalled();
+  });
+
+  it('does not create payment when form invalid', () => {
+    const { comp, payments } = setupAdmin();
+    comp.paymentForm.setValue({ studentId: '', planId: '', amount: 0, currency: 'XOF', paidAt: '', reference: '' } as any);
+    comp.createPayment();
+    expect(payments.createPayment).not.toHaveBeenCalled();
+  });
+
+  it('loadDocuments with no student resets list', (done) => {
+    const { comp } = setupAdmin();
+    comp.documentForm.setValue({ studentId: '', label: '' });
+    comp.loadDocuments();
+    comp.documents$.subscribe((data) => {
+      expect(data.items.length).toBe(0);
+      done();
+    });
+  });
+
+  it('uploadDocument does nothing without file', () => {
+    const { comp, students } = setupAdmin();
+    comp.documentForm.setValue({ studentId: 's1', label: 'Doc' });
+    comp.uploadDocument();
+    expect(students.uploadStudentDocument).not.toHaveBeenCalled();
+  });
+
+  it('cancelEditDocument resets state', () => {
+    const { comp } = setupAdmin();
+    comp.selectDocumentForEdit({ _id: 'd1', label: 'Old' } as any);
+    comp.cancelEditDocument();
+    expect(comp.editingDocumentId).toBeNull();
+  });
+
+  it('formatDateForInput handles invalid values', () => {
+    const { comp } = setupAdmin();
+    expect((comp as any).formatDateForInput('invalid')).toBe('');
+    expect((comp as any).formatDateForInput(undefined)).toBe('');
   });
 
   it('documents flow', () => {
