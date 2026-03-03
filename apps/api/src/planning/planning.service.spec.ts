@@ -9,18 +9,21 @@ describe('PlanningService', () => {
   const oid1 = '507f1f77bcf86cd799439011';
   const oid2 = '507f1f77bcf86cd799439012';
   const oid3 = '507f1f77bcf86cd799439013';
+  const actor = { userId: 'u1', role: 'admin' } as any;
   it('createRoom calls model.create', async () => {
     const roomModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const sessionModel = {} as any;
     const studentModel = {} as any;
     const userModel = {} as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
-    await service.createRoom({ name: 'A1', capacity: 30 });
+    await service.createRoom({ name: 'A1', capacity: 30 }, actor);
     expect(roomModel.create).toHaveBeenCalled();
   });
 
@@ -31,11 +34,13 @@ describe('PlanningService', () => {
     const sessionModel = {} as any;
     const studentModel = {} as any;
     const userModel = {} as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     const res = await service.listRooms();
     expect(res).toHaveLength(1);
@@ -46,9 +51,10 @@ describe('PlanningService', () => {
       findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn() }),
       findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
     } as any;
-    const service = new PlanningService(roomModel, {} as any, {} as any, {} as any);
-    await service.updateRoom(oid1, { name: 'B1' });
-    await service.deleteRoom(oid1);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService(roomModel, {} as any, {} as any, {} as any, auditLog);
+    await service.updateRoom(oid1, { name: 'B1' }, actor);
+    await service.deleteRoom(oid1, actor);
     expect(roomModel.findByIdAndUpdate).toHaveBeenCalledWith(
       oid1,
       { name: 'B1' },
@@ -67,7 +73,8 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
-    const service = new PlanningService({} as any, sessionModel, {} as any, userModel);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, userModel, auditLog);
     await expect(
       service.createSession({
         date: '2026-05-20',
@@ -76,7 +83,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow('Horaire invalide');
   });
 
@@ -90,7 +97,8 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
-    const service = new PlanningService({} as any, sessionModel, {} as any, userModel);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, userModel, auditLog);
     await expect(
       service.createSession({
         date: 'invalid-date',
@@ -99,7 +107,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow('Date invalide');
   });
   it('createSession rejects invalid time range', async () => {
@@ -114,11 +122,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await expect(
       service.createSession({
@@ -128,7 +138,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow();
   });
 
@@ -157,11 +167,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await expect(
       service.createSession({
@@ -171,7 +183,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow('Conflit de planning');
   });
 
@@ -189,11 +201,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     const res = await service.createSession({
       date: '2026-05-20',
@@ -203,7 +217,7 @@ describe('PlanningService', () => {
       teacherId: oid2,
       roomId: oid3,
       label: 'Math',
-    });
+    }, actor);
     expect(res).toEqual({ id: 's1' });
   });
 
@@ -221,11 +235,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
       }),
     } as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await expect(
       service.createSession({
@@ -235,7 +251,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow('Enseignant introuvable');
   });
 
@@ -253,11 +269,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'student' }) }),
       }),
     } as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await expect(
       service.createSession({
@@ -267,7 +285,7 @@ describe('PlanningService', () => {
         groupId: oid1,
         teacherId: oid2,
         roomId: oid3,
-      }),
+      }, actor),
     ).rejects.toThrow('Utilisateur non enseignant');
   });
 
@@ -285,11 +303,13 @@ describe('PlanningService', () => {
       }),
     } as any;
     const userModel = {} as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await service.listSessions({
       user: { userId: 'u1', email: 's@u.c', role: 'student' as any },
@@ -306,7 +326,8 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
       }),
     } as any;
-    const service = new PlanningService({} as any, sessionModel, studentModel, {} as any);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService({} as any, sessionModel, studentModel, {} as any, auditLog);
     const res = await service.listSessions({
       user: { userId: 'u1', email: 's@u.c', role: 'student' as any },
     });
@@ -321,11 +342,13 @@ describe('PlanningService', () => {
     } as any;
     const studentModel = {} as any;
     const userModel = {} as any;
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
     const service = new PlanningService(
       roomModel,
       sessionModel,
       studentModel,
       userModel,
+      auditLog,
     );
     await service.listSessions({
       user: { userId: oid2, email: 't@u.c', role: 'teacher' as any },
@@ -340,7 +363,8 @@ describe('PlanningService', () => {
     } as any;
     const studentModel = {} as any;
     const userModel = {} as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel, auditLog);
     await service.listSessions({
       user: { userId: 'a1', email: 'a@u.c', role: 'admin' as any },
       groupId: oid1,
@@ -386,8 +410,9 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
-    const service = new PlanningService(roomModel, sessionModel, {} as any, userModel);
-    const res = await service.updateSession(oid1, { label: 'Math' } as any);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService(roomModel, sessionModel, {} as any, userModel, auditLog);
+    const res = await service.updateSession(oid1, { label: 'Math' } as any, actor);
     expect(res).toEqual({ id: oid1 });
     expect(sessionModel.findByIdAndUpdate).toHaveBeenCalled();
   });
@@ -426,12 +451,13 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue({ role: 'teacher' }) }),
       }),
     } as any;
-    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService(roomModel, sessionModel, studentModel, userModel, auditLog);
     await expect(
       service.updateSession(oid1, {
         startTime: '09:30',
         endTime: '10:30',
-      } as any),
+      } as any, actor),
     ).rejects.toThrow('Conflit');
   });
 
@@ -441,8 +467,9 @@ describe('PlanningService', () => {
         lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
       }),
     } as any;
-    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any);
-    await expect(service.updateSession(oid1, {} as any)).rejects.toThrow(
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any, auditLog);
+    await expect(service.updateSession(oid1, {} as any, actor)).rejects.toThrow(
       'Séance introuvable',
     );
   });
@@ -451,8 +478,9 @@ describe('PlanningService', () => {
     const sessionModel = {
       findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn() }),
     } as any;
-    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any);
-    await service.deleteSession(oid1);
+    const auditLog = { log: jest.fn().mockResolvedValue({}) } as any;
+    const service = new PlanningService({} as any, sessionModel, {} as any, {} as any, auditLog);
+    await service.deleteSession(oid1, actor);
     expect(sessionModel.findByIdAndDelete).toHaveBeenCalledWith(oid1);
   });
 });
