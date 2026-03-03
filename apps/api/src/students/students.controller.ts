@@ -84,6 +84,7 @@ export class StudentsController {
       ...dto,
       groupId: toObjectId(dto.groupId),
       academicYearId: toObjectId(dto.academicYearId),
+      birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
     };
     return this.studentsService.updateStudent(id, payload);
   }
