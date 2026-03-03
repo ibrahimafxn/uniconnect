@@ -16,7 +16,7 @@
     <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
       {{ item.label }}
     </a>
-    <button class="nav-disabled" type="button" disabled title="Module en préparation">Notes</button>
+    <a routerLink="/notes" routerLinkActive="active" (click)="closeMenu()">Notes</a>
   </nav>
 
   <div class="actions">
@@ -27,7 +27,7 @@
         <span class="role">{{ userRole }}</span>
       </div>
     </div>
-    <a class="help" routerLink="/support" title="Ouvrir l'aide et support">
+    <a class="help" routerLink="/support" title="Ouvrir le module Aide & Support">
       Aide/Support
     </a>
     <button class="logout" type="button" (click)="logout()">Déconnexion</button>
@@ -39,7 +39,7 @@
     <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
       {{ item.label }}
     </a>
-    <button class="nav-disabled" type="button" disabled title="Module en préparation">Notes</button>
+    <a routerLink="/notes" routerLinkActive="active" (click)="closeMenu()">Notes</a>
   </nav>
   <div class="mobile-actions">
     <div class="user-chip">
@@ -49,7 +49,7 @@
         <span class="role">{{ userRole }}</span>
       </div>
     </div>
-    <a class="help" routerLink="/support" title="Ouvrir l'aide et support" (click)="closeMenu()">
+    <a class="help" routerLink="/support" title="Ouvrir le module Aide & Support" (click)="closeMenu()">
       Aide/Support
     </a>
     <button class="logout" type="button" (click)="logout()">Déconnexion</button>

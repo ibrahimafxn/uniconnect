@@ -41,4 +41,4 @@ Sprint 6 (Notes MVP)
 - API: module Notes (matieres, evaluations, notes) + calculs de moyennes + audit log.
 - UI: page Notes (matieres, evaluations, saisie notes, moyenne etudiant).
 - Docs: `docs/notes.md`.
-- Tests: `npm run test:coverage` OK (API 99.34% statements, 85.15% branches; Web 81.63% statements).
+- Tests: `npm run test:coverage` OK (API 99.34% statements, 85.15% branches; Web 91.67% statements, 68.12% branches).

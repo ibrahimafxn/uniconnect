@@ -65,6 +65,22 @@ describe('PlanningApi', () => {
     req.flush([]);
   });
 
+  it('listSessions with no params sends empty query', () => {
+    api.listSessions().subscribe();
+    const req = httpMock.expectOne((request) => request.url === 'http://localhost:3000/api/planning/sessions');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.keys().length).toBe(0);
+    req.flush([]);
+  });
+
+  it('listSessions with partial params', () => {
+    api.listSessions({ groupId: 'g1' }).subscribe();
+    const req = httpMock.expectOne((request) => request.url === 'http://localhost:3000/api/planning/sessions');
+    expect(req.request.params.get('groupId')).toBe('g1');
+    expect(req.request.params.get('teacherId')).toBeNull();
+    req.flush([]);
+  });
+
   it('createSession posts payload', () => {
     api
       .createSession({

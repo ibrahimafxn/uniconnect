@@ -98,12 +98,31 @@ describe('StudentsApi', () => {
     req.flush({ items: [], total: 0, page: 1, limit: 20, skip: 0 });
   });
 
+  it('listStudentDocuments uses default params', () => {
+    api.listStudentDocuments('s1').subscribe();
+    const req = httpMock.expectOne(
+      'http://localhost:3000/api/students/s1/documents?page=1&limit=20',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ items: [], total: 0, page: 1, limit: 20, skip: 0 });
+  });
+
   it('uploadStudentDocument posts formdata', () => {
     const file = new File(['hello'], 'doc.pdf', { type: 'application/pdf' });
     api.uploadStudentDocument('s1', file, 'Inscription').subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/students/s1/documents');
     expect(req.request.method).toBe('POST');
     expect(req.request.body instanceof FormData).toBeTrue();
+    req.flush({ _id: 'd1' });
+  });
+
+  it('uploadStudentDocument without label', () => {
+    const file = new File(['hello'], 'doc.pdf', { type: 'application/pdf' });
+    api.uploadStudentDocument('s1', file).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/students/s1/documents');
+    expect(req.request.method).toBe('POST');
+    const body = req.request.body as FormData;
+    expect(body.get('label')).toBeNull();
     req.flush({ _id: 'd1' });
   });
 
@@ -117,5 +136,12 @@ describe('StudentsApi', () => {
     const req = httpMock.expectOne('http://localhost:3000/api/students/documents/d1');
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true });
+  });
+
+  it('updateStudentDocument patches payload', () => {
+    api.updateStudentDocument('d1', { label: 'Bulletin' }).subscribe();
+    const req = httpMock.expectOne('http://localhost:3000/api/students/documents/d1');
+    expect(req.request.method).toBe('PATCH');
+    req.flush({ _id: 'd1' });
   });
 });
