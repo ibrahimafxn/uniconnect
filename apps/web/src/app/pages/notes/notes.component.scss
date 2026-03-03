@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&family=Prata&display=swap');
+
+:host {
+  --bg: #f7f5f1;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --accent: #2f6bff;
+  --border: rgba(47, 107, 255, 0.15);
+  --shadow: 0 14px 30px rgba(31, 41, 55, 0.08);
+  font-family: 'Archivo', sans-serif;
+}
+
+.page {
+  padding: 26px;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(47, 107, 255, 0.15), transparent),
+    radial-gradient(600px 420px at 90% 0%, rgba(99, 102, 241, 0.12), transparent),
+    var(--bg);
+  min-height: calc(100vh - 80px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+h1 {
+  font-family: 'Prata', serif;
+  font-size: 28px;
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card.full {
+  grid-column: 1 / -1;
+}
+
+form {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+
+input,
+select {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 41, 55, 0.15);
+  padding: 0 10px;
+}
+
+button {
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid rgba(31, 41, 55, 0.2);
+  color: var(--ink);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.table {
+  display: grid;
+  gap: 6px;
+}
+
+.table .row {
+  grid-template-columns: 2fr 1fr;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(31, 41, 55, 0.06);
+}
+
+.table .row.header {
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px;
+  }
+}

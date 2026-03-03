@@ -1,0 +1,57 @@
+<header class="app-header" [class.menu-open]="isMenuOpen">
+  <div class="brand">
+    <div class="logo">UC</div>
+    <div class="brand-text">
+      <span class="name">UniConnect ENT</span>
+      <span class="tagline">Plateforme académique & administrative centralisée</span>
+    </div>
+  </div>
+
+  <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Ouvrir le menu">
+    <span></span>
+    <span></span>
+  </button>
+
+  <nav class="nav-links">
+    <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
+      {{ item.label }}
+    </a>
+    <button class="nav-disabled" type="button" disabled title="Module en préparation">Notes</button>
+  </nav>
+
+  <div class="actions">
+    <div class="user-chip">
+      <div class="avatar">{{ userEmail.slice(0, 1).toUpperCase() }}</div>
+      <div class="meta">
+        <span class="email">{{ userEmail }}</span>
+        <span class="role">{{ userRole }}</span>
+      </div>
+    </div>
+    <a class="help" routerLink="/support" title="Ouvrir l'aide et support">
+      Aide/Support
+    </a>
+    <button class="logout" type="button" (click)="logout()">Déconnexion</button>
+  </div>
+</header>
+
+<div class="mobile-panel" *ngIf="isMenuOpen">
+  <nav class="mobile-nav">
+    <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
+      {{ item.label }}
+    </a>
+    <button class="nav-disabled" type="button" disabled title="Module en préparation">Notes</button>
+  </nav>
+  <div class="mobile-actions">
+    <div class="user-chip">
+      <div class="avatar">{{ userEmail.slice(0, 1).toUpperCase() }}</div>
+      <div class="meta">
+        <span class="email">{{ userEmail }}</span>
+        <span class="role">{{ userRole }}</span>
+      </div>
+    </div>
+    <a class="help" routerLink="/support" title="Ouvrir l'aide et support" (click)="closeMenu()">
+      Aide/Support
+    </a>
+    <button class="logout" type="button" (click)="logout()">Déconnexion</button>
+  </div>
+</div>

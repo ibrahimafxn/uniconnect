@@ -1,0 +1,85 @@
+<div class="support-page">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Aide & Support</p>
+      <h1>Nous sommes là pour vous aider rapidement.</h1>
+      <p class="lead">
+        Un point d’entrée unique pour résoudre les incidents, suivre vos demandes et
+        obtenir des réponses claires sur l’ENT.
+      </p>
+      <div class="hero-actions">
+        <a class="primary" [href]="supportMailto">
+          Contacter le support
+        </a>
+        <a class="ghost" routerLink="/dashboard">Retour au tableau de bord</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <div class="card-item">
+        <span class="label">Délai cible</span>
+        <strong>&lt; 24h ouvrées</strong>
+      </div>
+      <div class="card-item">
+        <span class="label">Canaux</span>
+        <strong>Email + Suivi interne</strong>
+      </div>
+      <div class="card-item">
+        <span class="label">Disponibilité</span>
+        <strong>Lun–Ven, 8h–18h</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="status">
+    <div class="status-card">
+      <div class="badge">Statut</div>
+      <div>
+        <h2>{{ supportStatus }}</h2>
+        <p>{{ supportStatusDetail }}</p>
+      </div>
+      <div class="contact">
+        <span>Support:</span>
+        <strong>{{ supportEmail }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Quand contacter le support</h2>
+      <ul>
+        <li>Accès bloqué ou compte désactivé.</li>
+        <li>Erreur sur le planning, notes ou paiements.</li>
+        <li>Bug d’affichage ou problème de performance.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Informations à fournir</h2>
+      <ul>
+        <li>Votre rôle et votre email.</li>
+        <li>Le module concerné (Planning, Administration, Messagerie).</li>
+        <li>Une capture d’écran ou l’identifiant de l’élément.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="faq">
+    <h2>Questions fréquentes</h2>
+    <div class="faq-list">
+      <div class="faq-item" *ngFor="let item of faqs">
+        <h3>{{ item.question }}</h3>
+        <p>{{ item.answer }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div>
+      <h2>Besoin d’une assistance immédiate ?</h2>
+      <p>Le support peut escalader vers l’équipe technique et la scolarité.</p>
+    </div>
+    <a class="primary" [href]="supportMailto">
+      Ouvrir une demande
+    </a>
+  </section>
+</div>

@@ -1,10 +1,19 @@
 import {TestBed} from '@angular/core/testing';
 import {AppComponent} from './app.component';
+import {RouterTestingModule} from '@angular/router/testing';
+import {AuthService} from './core/auth.service';
+import {of} from 'rxjs';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
+    const authStub = {
+      getUserEmail: () => 'user@test.local',
+      getUserRole: () => 'Admin',
+      logout: () => of({ success: true }),
+    };
     await TestBed.configureTestingModule({
-      imports: [AppComponent],
+      imports: [AppComponent, RouterTestingModule.withRoutes([])],
+      providers: [{ provide: AuthService, useValue: authStub }],
     }).compileComponents();
   });
 
