@@ -151,7 +151,7 @@
                 <span class="muted">— {{ s.startTime }}-{{ s.endTime }}</span>
                 <span class="muted">({{ s.label || 'Séance' }})</span>
                 <span class="muted">
-                  — Groupe: {{ groupName(groups.items ?? [], s.groupId) }}
+                  — Groupe: {{ groupName(groups.items, s.groupId) }}
                 </span>
                 <span class="muted">— Salle: {{ roomName(rooms, s.roomId) }}</span>
                 <span class="muted">
