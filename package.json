@@ -1,0 +1,15 @@
+{
+  "name": "uniconnect",
+  "private": true,
+  "packageManager": "npm@11.8.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "echo 'Use workspace scripts: npm run dev -w apps/web or apps/api'",
+    "lint": "echo 'Add lint per workspace'",
+    "test": "echo 'Add tests per workspace'",
+    "test:coverage": "npm run -w apps/api test -- --runInBand && npm run -w apps/web test -- --watch=false"
+  }
+}
