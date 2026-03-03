@@ -57,4 +57,16 @@ describe('AuthService', () => {
   it('isLoggedIn returns false without token', () => {
     expect(service.isLoggedIn()).toBe(false);
   });
+
+  it('getUserRole and getUserEmail decode token payload', () => {
+    const payload = btoa(JSON.stringify({ role: 'admin', email: 'a@b.c' })).replace(/\+/g, '-').replace(/\//g, '_');
+    localStorage.setItem('accessToken', `header.${payload}.sig`);
+    expect(service.getUserRole()).toBe('admin');
+    expect(service.getUserEmail()).toBe('a@b.c');
+  });
+
+  it('getUserRole returns null for invalid token', () => {
+    localStorage.setItem('accessToken', 'invalid-token');
+    expect(service.getUserRole()).toBeNull();
+  });
 });
