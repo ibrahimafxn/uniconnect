@@ -25,6 +25,7 @@ export class PlanningComponent {
   groups$ = this.academic.listGroups();
   teachers$ = this.users.listTeachers();
   editingRoomId: string | null = null;
+  editingSessionId: string | null = null;
   readonly isAdmin = ['admin', 'super_admin'].includes(this.auth.getUserRole() ?? '');
 
   roomForm = this.fb.group({
@@ -40,6 +41,16 @@ export class PlanningComponent {
   });
 
   sessionForm = this.fb.group({
+    date: ['', Validators.required],
+    startTime: ['', Validators.required],
+    endTime: ['', Validators.required],
+    groupId: ['', Validators.required],
+    teacherId: ['', Validators.required],
+    roomId: ['', Validators.required],
+    label: [''],
+  });
+
+  editSessionForm = this.fb.group({
     date: ['', Validators.required],
     startTime: ['', Validators.required],
     endTime: ['', Validators.required],
@@ -112,6 +123,34 @@ export class PlanningComponent {
     this.planning.deleteSession(id).subscribe(() => this.refresh());
   }
 
+  selectSessionForEdit(session: any) {
+    this.editingSessionId = session._id;
+    this.editSessionForm.setValue({
+      date: this.formatDateForInput(session.date),
+      startTime: session.startTime ?? '',
+      endTime: session.endTime ?? '',
+      groupId: session.groupId ?? '',
+      teacherId: session.teacherId ?? '',
+      roomId: session.roomId ?? '',
+      label: session.label ?? '',
+    });
+  }
+
+  cancelEditSession() {
+    this.editingSessionId = null;
+    this.editSessionForm.reset();
+  }
+
+  saveSessionEdit() {
+    if (!this.editingSessionId || this.editSessionForm.invalid) return;
+    this.planning
+      .updateSession(this.editingSessionId, this.editSessionForm.value as any)
+      .subscribe(() => {
+        this.cancelEditSession();
+        this.refresh();
+      });
+  }
+
   applyFilters() {
     const params = this.filterForm.value as any;
     this.sessions$ = this.planning.listSessions(params);
@@ -120,5 +159,30 @@ export class PlanningComponent {
   resetFilters() {
     this.filterForm.reset();
     this.sessions$ = this.planning.listSessions();
+  }
+
+  roomName(rooms: Array<{ _id: string; name: string }> | null, roomId: string) {
+    if (!rooms || !roomId) return roomId;
+    return rooms.find((room) => room._id === roomId)?.name ?? roomId;
+  }
+
+  groupName(groups: Array<{ _id: string; name: string }> | null, groupId: string) {
+    if (!groups || !groupId) return groupId;
+    return groups.find((group) => group._id === groupId)?.name ?? groupId;
+  }
+
+  teacherEmail(
+    teachers: Array<{ id: string; email: string }> | null,
+    teacherId: string,
+  ) {
+    if (!teachers || !teacherId) return teacherId;
+    return teachers.find((teacher) => teacher.id === teacherId)?.email ?? teacherId;
+  }
+
+  private formatDateForInput(value: string | Date | undefined) {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
   }
 }

@@ -1,6 +1,6 @@
 # Sprint Status (Auto-updated)
 
-Date: 2026-03-01
+Date: 2026-03-03
 
 This file summarizes sprint progress based on repository evidence (code, docs, and tests).
 
@@ -26,13 +26,13 @@ Source: `CHANGELOG.md`
 - API e2e tests (minimal) pass with `.env.test`.
   Evidence: `npm run -w apps/api test:e2e` (2026-03-01)
 
-## Test Runs (2026-03-01)
+## Test Runs (2026-03-03)
 
 ### Coverage
 - Command: `npm run test:coverage`
 - Result: PASS
-- API coverage (statements): 97.1%
-- Web coverage (statements): 83.27%
+- API coverage (statements): 98.62%
+- Web coverage (statements): 81.95%
 
 ### API e2e
 - Command: `npm run -w apps/api test:e2e`
@@ -80,6 +80,8 @@ Planned scope:
 
 Source: `extras/roadmap_gantt.md`, `extras/sprint_4_trello.csv`
 
-### Avancement (2026-03-01)
+### Avancement (2026-03-03)
 - API: salles CRUD, seances EDT, conflits simples (salle/enseignant/groupe), consultation par profil.
-- UI: page Planning (salles + seances).
+- API: audit log sur actions sensibles + tags Swagger Planning.
+- UI: page Planning (salles + seances) avec refonte visuelle et actions clarifiees.
+- Docs: module Planning documente (`docs/planning.md`).

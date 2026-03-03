@@ -53,6 +53,12 @@ Fichiers:
 npm run -w apps/api test
 ```
 
+Couverture fin de sprint:
+```bash
+npm run test:coverage
+```
+Derniere mesure (2026-03-03): 83.99% statements, 58.54% branches, 80.43% functions, 84.6% lines.
+
 ## Sprint 2 (Admin MVP)
 
 Fonctionnel:
@@ -88,6 +94,27 @@ API:
 
 Email (optionnel):
 - Configurer `SMTP_*` dans `apps/api/.env`.
+
+## Sprint 4 (Planning MVP)
+
+Fonctionnel:
+- Gestion des salles (CRUD + capacité).
+- Création des séances (EDT) avec conflits salle/enseignant/groupe.
+- Consultation par profil (admin, enseignant, étudiant).
+ - Audit log pour actions sensibles.
+
+API:
+- `GET /api/planning/rooms`
+- `POST /api/planning/rooms`
+- `PATCH /api/planning/rooms/:id`
+- `DELETE /api/planning/rooms/:id`
+- `GET /api/planning/sessions`
+- `POST /api/planning/sessions`
+- `PATCH /api/planning/sessions/:id`
+- `DELETE /api/planning/sessions/:id`
+
+Doc module:
+- `docs/planning.md`
 
 ## Couverture (fin de sprint)
 

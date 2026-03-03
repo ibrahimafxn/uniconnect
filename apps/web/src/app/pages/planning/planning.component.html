@@ -7,21 +7,46 @@
     <button class="ghost" (click)="refresh()">Rafraîchir</button>
   </div>
 
+  <div class="stats">
+    <div class="stat" *ngIf="(rooms$ | async) as rooms">
+      <span class="stat-label">Salles</span>
+      <span class="stat-value">{{ rooms.length }}</span>
+    </div>
+    <div class="stat" *ngIf="(sessions$ | async) as sessions">
+      <span class="stat-label">Séances</span>
+      <span class="stat-value">{{ sessions.length }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Accès</span>
+      <span class="stat-value">{{ isAdmin ? 'Admin' : 'Lecture' }}</span>
+    </div>
+  </div>
+
   <section class="grid">
     <div class="card" *ngIf="isAdmin; else roomsReadonly">
-      <h2>Salles</h2>
+      <div class="card-title">
+        <h2>Salles</h2>
+        <span class="pill">Admin</span>
+      </div>
       <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
         <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
         <input type="number" formControlName="capacity" placeholder="Capacité" />
         <input formControlName="location" placeholder="Localisation (optionnel)" />
         <button type="submit">Ajouter</button>
       </form>
-      <ul>
-        <li *ngFor="let r of (rooms$ | async)">
-          {{ r.name }} — {{ r.capacity }}
-          <span class="muted" *ngIf="r.location">({{ r.location }})</span>
-          <button type="button" class="ghost" (click)="selectRoomForEdit(r)">Éditer</button>
-          <button type="button" class="ghost" (click)="deleteRoom(r._id)">Supprimer</button>
+      <ul class="list">
+        <li class="list-item" *ngFor="let r of (rooms$ | async)">
+          <div>
+            <strong>{{ r.name }}</strong>
+            <span class="muted">— {{ r.capacity }} places</span>
+            <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+          </div>
+          <div class="actions">
+            <button type="button" class="ghost" (click)="selectRoomForEdit(r)">Éditer</button>
+            <button type="button" class="ghost danger" (click)="deleteRoom(r._id)">
+              Supprimer
+            </button>
+          </div>
         </li>
       </ul>
 
@@ -40,19 +65,29 @@
     </div>
     <ng-template #roomsReadonly>
       <div class="card">
-        <h2>Salles</h2>
+        <div class="card-title">
+          <h2>Salles</h2>
+          <span class="pill muted">Lecture seule</span>
+        </div>
         <p class="muted">Lecture seule.</p>
-        <ul>
-          <li *ngFor="let r of (rooms$ | async)">
-            {{ r.name }} — {{ r.capacity }}
-            <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+        <ul class="list">
+          <li class="list-item" *ngFor="let r of (rooms$ | async)">
+            <div>
+              <strong>{{ r.name }}</strong>
+              <span class="muted">— {{ r.capacity }} places</span>
+              <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+            </div>
           </li>
         </ul>
       </div>
     </ng-template>
 
     <div class="card full">
-      <h2>Séances</h2>
+      <div class="card-title">
+        <h2>Séances</h2>
+        <span class="pill" *ngIf="isAdmin">Admin</span>
+        <span class="pill muted" *ngIf="!isAdmin">Lecture seule</span>
+      </div>
       <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter">
         <input type="date" formControlName="dateFrom" />
         <input type="date" formControlName="dateTo" />
@@ -107,20 +142,68 @@
         <input formControlName="label" placeholder="Libellé (optionnel)" />
         <button type="submit">Créer</button>
       </form>
-      <ul>
-        <li *ngFor="let s of (sessions$ | async)">
-          {{ s.date | date }} — {{ s.startTime }}-{{ s.endTime }}
-          <span class="muted">({{ s.label || 'Séance' }})</span>
-          <button
-            *ngIf="isAdmin"
-            type="button"
-            class="ghost"
-            (click)="deleteSession(s._id)"
-          >
-            Supprimer
-          </button>
-        </li>
+      <ul class="list" *ngIf="(rooms$ | async) as rooms">
+        <ng-container *ngIf="(groups$ | async) as groups">
+          <ng-container *ngIf="(teachers$ | async) as teachers">
+            <li class="list-item" *ngFor="let s of (sessions$ | async)">
+              <div>
+                <strong>{{ s.date | date }}</strong>
+                <span class="muted">— {{ s.startTime }}-{{ s.endTime }}</span>
+                <span class="muted">({{ s.label || 'Séance' }})</span>
+                <span class="muted">
+                  — Groupe: {{ groupName(groups.items ?? [], s.groupId) }}
+                </span>
+                <span class="muted">— Salle: {{ roomName(rooms, s.roomId) }}</span>
+                <span class="muted">
+                  — Enseignant: {{ teacherEmail(teachers, s.teacherId) }}
+                </span>
+              </div>
+              <div class="actions" *ngIf="isAdmin">
+                <button type="button" class="ghost" (click)="selectSessionForEdit(s)">
+                  Éditer
+                </button>
+                <button type="button" class="ghost danger" (click)="deleteSession(s._id)">
+                  Supprimer
+                </button>
+              </div>
+            </li>
+          </ng-container>
+        </ng-container>
       </ul>
+
+      <div class="edit-card" *ngIf="editingSessionId && isAdmin">
+        <h3>Modifier séance</h3>
+        <form [formGroup]="editSessionForm" (ngSubmit)="saveSessionEdit()">
+          <input type="date" formControlName="date" />
+          <div class="row">
+            <input type="time" formControlName="startTime" />
+            <input type="time" formControlName="endTime" />
+          </div>
+          <select formControlName="groupId">
+            <option value="">Choisir groupe</option>
+            <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
+              {{ g.name }}
+            </option>
+          </select>
+          <select formControlName="teacherId">
+            <option value="">Choisir enseignant</option>
+            <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
+              {{ t.email }} ({{ t.role }})
+            </option>
+          </select>
+          <select formControlName="roomId">
+            <option value="">Choisir salle</option>
+            <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
+              {{ r.name }}
+            </option>
+          </select>
+          <input formControlName="label" placeholder="Libellé (optionnel)" />
+          <div class="row">
+            <button type="submit">Enregistrer</button>
+            <button type="button" class="ghost" (click)="cancelEditSession()">Annuler</button>
+          </div>
+        </form>
+      </div>
     </div>
   </section>
 </div>

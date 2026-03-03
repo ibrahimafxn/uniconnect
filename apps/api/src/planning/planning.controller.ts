@@ -19,38 +19,93 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { UpdateSessionDto } from './dto/update-session.dto';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @Controller('planning')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@ApiTags('Planning')
+@ApiBearerAuth()
 export class PlanningController {
   constructor(private readonly planningService: PlanningService) {}
 
   @Get('rooms')
   @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: 'Lister les salles' })
+  @ApiResponse({ status: 200, description: 'Liste des salles' })
   listRooms() {
     return this.planningService.listRooms();
   }
 
   @Post('rooms')
   @Roles(Role.Admin, Role.SuperAdmin)
-  createRoom(@Body() dto: CreateRoomDto) {
-    return this.planningService.createRoom(dto);
+  @ApiOperation({ summary: 'Créer une salle' })
+  @ApiResponse({ status: 201, description: 'Salle créée' })
+  createRoom(
+    @Body() dto: CreateRoomDto,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.createRoom(dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Patch('rooms/:id')
   @Roles(Role.Admin, Role.SuperAdmin)
-  updateRoom(@Param('id') id: string, @Body() dto: UpdateRoomDto) {
-    return this.planningService.updateRoom(id, dto);
+  @ApiOperation({ summary: 'Mettre à jour une salle' })
+  @ApiResponse({ status: 200, description: 'Salle mise à jour' })
+  updateRoom(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoomDto,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.updateRoom(id, dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Delete('rooms/:id')
   @Roles(Role.Admin, Role.SuperAdmin)
-  deleteRoom(@Param('id') id: string) {
-    return this.planningService.deleteRoom(id);
+  @ApiOperation({ summary: 'Supprimer une salle' })
+  @ApiResponse({ status: 200, description: 'Salle supprimée' })
+  deleteRoom(
+    @Param('id') id: string,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.deleteRoom(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Get('sessions')
   @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @ApiOperation({ summary: 'Lister les séances' })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  @ApiQuery({ name: 'groupId', required: false })
+  @ApiQuery({ name: 'teacherId', required: false })
+  @ApiQuery({ name: 'roomId', required: false })
+  @ApiResponse({ status: 200, description: 'Liste des séances' })
   listSessions(
     @Request() req: { user: { userId: string; email: string; role: Role } },
     @Query('dateFrom') dateFrom?: string,
@@ -71,19 +126,56 @@ export class PlanningController {
 
   @Post('sessions')
   @Roles(Role.Admin, Role.SuperAdmin)
-  createSession(@Body() dto: CreateSessionDto) {
-    return this.planningService.createSession(dto);
+  @ApiOperation({ summary: 'Créer une séance' })
+  @ApiResponse({ status: 201, description: 'Séance créée' })
+  createSession(
+    @Body() dto: CreateSessionDto,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.createSession(dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Patch('sessions/:id')
   @Roles(Role.Admin, Role.SuperAdmin)
-  updateSession(@Param('id') id: string, @Body() dto: UpdateSessionDto) {
-    return this.planningService.updateSession(id, dto as any);
+  @ApiOperation({ summary: 'Mettre à jour une séance' })
+  @ApiResponse({ status: 200, description: 'Séance mise à jour' })
+  updateSession(
+    @Param('id') id: string,
+    @Body() dto: UpdateSessionDto,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.updateSession(id, dto as any, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Delete('sessions/:id')
   @Roles(Role.Admin, Role.SuperAdmin)
-  deleteSession(@Param('id') id: string) {
-    return this.planningService.deleteSession(id);
+  @ApiOperation({ summary: 'Supprimer une séance' })
+  @ApiResponse({ status: 200, description: 'Séance supprimée' })
+  deleteSession(
+    @Param('id') id: string,
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.deleteSession(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 }

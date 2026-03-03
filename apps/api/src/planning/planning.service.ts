@@ -6,6 +6,7 @@ import { Session } from './session.schema';
 import { StudentProfile } from '../students/student-profile.schema';
 import { Role } from '../common/roles.enum';
 import { User } from '../users/user.schema';
+import { AuditLogService, AuditActor } from '../audit/audit-log.service';
 
 type SessionUser = {
   userId: string;
@@ -24,22 +25,56 @@ export class PlanningService {
     private readonly studentModel: Model<StudentProfile>,
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   listRooms() {
     return this.roomModel.find().sort({ name: 1 }).exec();
   }
 
-  createRoom(data: { name: string; capacity: number; location?: string }) {
-    return this.roomModel.create(data);
+  async createRoom(
+    data: { name: string; capacity: number; location?: string },
+    actor: AuditActor,
+  ) {
+    const room = await this.roomModel.create(data);
+    await this.auditLog.log({
+      action: 'planning.room.create',
+      entity: 'room',
+      entityId: String(room._id),
+      actor,
+      metadata: { name: room.name, capacity: room.capacity, location: room.location ?? null },
+    });
+    return room;
   }
 
-  updateRoom(id: string, data: Partial<Room>) {
-    return this.roomModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  async updateRoom(id: string, data: Partial<Room>, actor: AuditActor) {
+    const room = await this.roomModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
+    if (room) {
+      await this.auditLog.log({
+        action: 'planning.room.update',
+        entity: 'room',
+        entityId: String(room._id),
+        actor,
+        metadata: data,
+      });
+    }
+    return room;
   }
 
-  deleteRoom(id: string) {
-    return this.roomModel.findByIdAndDelete(id).exec();
+  async deleteRoom(id: string, actor: AuditActor) {
+    const room = await this.roomModel.findByIdAndDelete(id).exec();
+    if (room) {
+      await this.auditLog.log({
+        action: 'planning.room.delete',
+        entity: 'room',
+        entityId: String(room._id),
+        actor,
+        metadata: { name: room.name },
+      });
+    }
+    return room;
   }
 
   async listSessions(params: {
@@ -81,15 +116,18 @@ export class PlanningService {
       .exec();
   }
 
-  async createSession(data: {
-    date: string;
-    startTime: string;
-    endTime: string;
-    groupId: string;
-    teacherId: string;
-    roomId: string;
-    label?: string;
-  }) {
+  async createSession(
+    data: {
+      date: string;
+      startTime: string;
+      endTime: string;
+      groupId: string;
+      teacherId: string;
+      roomId: string;
+      label?: string;
+    },
+    actor: AuditActor,
+  ) {
     await this.ensureTeacherExists(data.teacherId);
     const { startMinutes, endMinutes } = this.computeMinutes(
       data.startTime,
@@ -104,15 +142,35 @@ export class PlanningService {
       teacherId: data.teacherId,
       roomId: data.roomId,
     });
-    return this.sessionModel.create({
+    const session = await this.sessionModel.create({
       ...data,
       date,
       startMinutes,
       endMinutes,
     });
+    await this.auditLog.log({
+      action: 'planning.session.create',
+      entity: 'session',
+      entityId: String(session._id),
+      actor,
+      metadata: {
+        date: session.date,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        groupId: String(session.groupId),
+        teacherId: String(session.teacherId),
+        roomId: String(session.roomId),
+        label: session.label ?? null,
+      },
+    });
+    return session;
   }
 
-  async updateSession(id: string, data: Partial<Session> & { date?: string }) {
+  async updateSession(
+    id: string,
+    data: Partial<Session> & { date?: string },
+    actor: AuditActor,
+  ) {
     const current = await this.sessionModel.findById(id).lean().exec();
     if (!current) {
       throw new BadRequestException('Séance introuvable.');
@@ -141,7 +199,7 @@ export class PlanningService {
       id,
     );
 
-    return this.sessionModel
+    const session = await this.sessionModel
       .findByIdAndUpdate(
         id,
         {
@@ -155,10 +213,37 @@ export class PlanningService {
         { new: true },
       )
       .exec();
+    if (session) {
+      await this.auditLog.log({
+        action: 'planning.session.update',
+        entity: 'session',
+        entityId: String(session._id),
+        actor,
+        metadata: data,
+      });
+    }
+    return session;
   }
 
-  deleteSession(id: string) {
-    return this.sessionModel.findByIdAndDelete(id).exec();
+  async deleteSession(id: string, actor: AuditActor) {
+    const session = await this.sessionModel.findByIdAndDelete(id).exec();
+    if (session) {
+      await this.auditLog.log({
+        action: 'planning.session.delete',
+        entity: 'session',
+        entityId: String(session._id),
+        actor,
+        metadata: {
+          date: session.date,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          groupId: String(session.groupId),
+          teacherId: String(session.teacherId),
+          roomId: String(session.roomId),
+        },
+      });
+    }
+    return session;
   }
 
   private computeMinutes(start: string, end: string) {
