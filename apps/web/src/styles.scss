@@ -1,1 +1,25 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --ink-900: #0b1f2a;
+  --ink-700: #174153;
+  --ink-500: #3d6272;
+  --cloud-100: #f4f7fb;
+  --cloud-200: #e6edf3;
+  --mint-400: #30c4a3;
+  --mint-500: #1fa989;
+  --amber-400: #f5b546;
+  --shadow-soft: 0 14px 35px rgba(11, 31, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Sora', sans-serif;
+  color: var(--ink-900);
+  background: radial-gradient(circle at top, #fefbf4 0%, #f4f7fb 45%, #e9f1f6 100%);
+}

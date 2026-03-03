@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { PlanningModule } from './planning/planning.module';
 import { AuditModule } from './audit/audit.module';
 import { MessagesModule } from './messages/messages.module';
+import { NotesModule } from './notes/notes.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MessagesModule } from './messages/messages.module';
     PlanningModule,
     AuditModule,
     MessagesModule,
+    NotesModule,
   ],
   controllers: [AppController],
   providers: [],

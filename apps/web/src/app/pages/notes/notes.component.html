@@ -1,0 +1,101 @@
+<div class="page">
+  <header class="header">
+    <div>
+      <h1>Notes</h1>
+      <p class="subtitle">Paramétrage des matières et saisie des notes.</p>
+    </div>
+    <button class="ghost" (click)="refresh()">Rafraîchir</button>
+  </header>
+
+  <section class="grid">
+    <div class="card" *ngIf="isAdmin">
+      <h2>Matières</h2>
+      <form [formGroup]="subjectForm" (ngSubmit)="createSubject()">
+        <input formControlName="name" placeholder="Nom de la matière" />
+        <input formControlName="code" placeholder="Code (optionnel)" />
+        <input type="number" formControlName="coefficient" placeholder="Coefficient" />
+        <select formControlName="levelId">
+          <option value="">Choisir niveau</option>
+          <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
+        </select>
+        <button type="submit">Ajouter</button>
+      </form>
+      <ul class="list">
+        <li *ngFor="let s of (subjects$ | async)">
+          {{ s.name }} (coef {{ s.coefficient }})
+        </li>
+      </ul>
+    </div>
+
+    <div class="card" *ngIf="isAdmin || isTeacher">
+      <h2>Évaluations</h2>
+      <form [formGroup]="evaluationForm" (ngSubmit)="createEvaluation()">
+        <input formControlName="title" placeholder="Libellé (DS, TP...)" />
+        <input type="date" formControlName="date" />
+        <select formControlName="subjectId">
+          <option value="">Choisir matière</option>
+          <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
+        </select>
+        <select formControlName="groupId">
+          <option value="">Choisir groupe</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+        <input type="number" formControlName="maxScore" placeholder="Note max" />
+        <button type="submit">Créer</button>
+      </form>
+      <ul class="list">
+        <li *ngFor="let e of (evaluations$ | async)">
+          {{ e.title }} — {{ e.date | date }} (max {{ e.maxScore }})
+        </li>
+      </ul>
+    </div>
+
+    <div class="card full" *ngIf="isAdmin || isTeacher">
+      <h2>Saisie des notes</h2>
+      <form [formGroup]="gradeForm" class="row">
+        <select formControlName="groupId">
+          <option value="">Choisir groupe</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+        <select formControlName="evaluationId">
+          <option value="">Choisir évaluation</option>
+          <option *ngFor="let e of (evaluations$ | async)" [value]="e._id">{{ e.title }}</option>
+        </select>
+      </form>
+
+      <div class="table" *ngIf="(gradeEntries$ | async) as entries">
+        <div class="row header">
+          <span>Étudiant</span>
+          <span>Note</span>
+        </div>
+        <div class="row" *ngFor="let entry of entries">
+          <span>{{ entry.student.lastName }} {{ entry.student.firstName }}</span>
+          <input type="number" [(ngModel)]="entry.score" />
+        </div>
+        <button (click)="saveGrades(entries)">Enregistrer</button>
+      </div>
+    </div>
+
+    <div class="card full">
+      <h2>Résumé étudiant</h2>
+      <div *ngIf="isAdmin || isTeacher" class="row">
+        <input #studentIdInput placeholder="ID étudiant" />
+        <button (click)="loadSummary(studentIdInput.value)">Charger</button>
+      </div>
+      <div *ngIf="summary$ | async as summary">
+        <p *ngIf="!summary">Aucun résumé disponible.</p>
+        <ng-container *ngIf="summary">
+          <h3>{{ summary.student.lastName }} {{ summary.student.firstName }}</h3>
+          <p class="muted">Moyenne générale: {{ summary.overallAverage | number:'1.2-2' }}</p>
+          <ul class="list">
+            <li *ngFor="let s of summary.subjects">
+              {{ s.name }} —
+              <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
+              <span *ngIf="s.average === null">N/A</span>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+    </div>
+  </section>
+</div>

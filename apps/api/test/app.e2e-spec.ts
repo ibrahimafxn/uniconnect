@@ -18,6 +18,8 @@ describe('AppController (e2e)', () => {
   let roomId = '';
   let studentId = '';
   let planId = '';
+  let subjectId = '';
+  let evaluationId = '';
   let conversationId = '';
 
   beforeAll(async () => {
@@ -268,6 +270,55 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(fetched.body.studentNumber).toBe(studentNumber);
+  });
+
+  it('creates subject, evaluation and grades', async () => {
+    const subject = await request(app.getHttpServer())
+      .post(`${baseUrl}/notes/subjects`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        name: `Math-${Date.now()}`,
+        code: 'MATH',
+        coefficient: 2,
+        levelId,
+      })
+      .expect(201);
+
+    subjectId = subject.body._id;
+    expect(subjectId).toBeTruthy();
+
+    const evaluation = await request(app.getHttpServer())
+      .post(`${baseUrl}/notes/evaluations`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        title: 'DS1',
+        date: '2026-06-12',
+        subjectId,
+        groupId,
+        maxScore: 20,
+      })
+      .expect(201);
+
+    evaluationId = evaluation.body._id;
+    expect(evaluationId).toBeTruthy();
+
+    await request(app.getHttpServer())
+      .post(`${baseUrl}/notes/grades/bulk`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        evaluationId,
+        grades: [{ studentId, score: 15 }],
+      })
+      .expect(201);
+  });
+
+  it('gets student notes summary', async () => {
+    const summary = await request(app.getHttpServer())
+      .get(`${baseUrl}/notes/students/${studentId}/summary`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(summary.body.student).toBeTruthy();
   });
 
   it('creates payment plan and payment', async () => {

@@ -1,9 +1,4 @@
 <div class="page">
-  <header class="topbar">
-    <div class="brand">UniConnect ENT</div>
-    <button (click)="logout()">Deconnexion</button>
-  </header>
-
   <main class="content">
     <h1>Tableau de bord</h1>
     <p>Base MVP. Prochaines étapes : inscriptions, planning, messagerie.</p>
@@ -27,7 +22,7 @@
       <div class="card">
         <h3>Notes</h3>
         <p>Saisie et consultation des notes.</p>
-        <button class="action" disabled title="Module en préparation">Bientôt</button>
+        <a class="action" routerLink="/notes">Ouvrir</a>
       </div>
     </div>
   </main>

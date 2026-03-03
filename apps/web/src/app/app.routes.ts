@@ -4,6 +4,8 @@ import {DashboardComponent} from './pages/dashboard/dashboard.component';
 import {AdminComponent} from './pages/admin/admin.component';
 import {PlanningComponent} from './pages/planning/planning.component';
 import {MessagesComponent} from './pages/messages/messages.component';
+import {NotesComponent} from './pages/notes/notes.component';
+import {SupportComponent} from './pages/support/support.component';
 import {authGuard} from './core/auth.guard';
 
 export const routes: Routes = [
@@ -12,6 +14,8 @@ export const routes: Routes = [
   { path: 'admin', component: AdminComponent, canActivate: [authGuard] },
   { path: 'planning', component: PlanningComponent, canActivate: [authGuard] },
   { path: 'messages', component: MessagesComponent, canActivate: [authGuard] },
+  { path: 'notes', component: NotesComponent, canActivate: [authGuard] },
+  { path: 'support', component: SupportComponent, canActivate: [authGuard] },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

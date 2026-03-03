@@ -137,6 +137,39 @@ API:
 Doc module:
 - `docs/messaging.md`
 
+## Module transverse (Aide & Support)
+
+Fonctionnel:
+- Point d’entrée unique vers le support depuis le header.
+- Contact support par email (V1).
+
+Doc module:
+- `docs/support.md`
+
+## Sprint 6 (Notes + Stabilisation)
+
+Fonctionnel:
+- CRUD matieres + coefficients.
+- Saisie notes par groupe.
+- Consultation etudiant + moyennes.
+
+API:
+- `GET /api/notes/subjects`
+- `POST /api/notes/subjects`
+- `PATCH /api/notes/subjects/:id`
+- `DELETE /api/notes/subjects/:id`
+- `GET /api/notes/evaluations`
+- `POST /api/notes/evaluations`
+- `PATCH /api/notes/evaluations/:id`
+- `GET /api/notes/groups/:id/students`
+- `GET /api/notes/evaluations/:id/grades`
+- `POST /api/notes/grades/bulk`
+- `GET /api/notes/students/:id/summary`
+- `GET /api/notes/students/me/summary`
+
+Doc module:
+- `docs/notes.md`
+
 ## Couverture (fin de sprint)
 
 ```bash
