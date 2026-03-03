@@ -39,3 +39,14 @@ extras/
 
 # Nested repo
 uniconnect/
+
+# Local tools / docs / misc
+.github/
+.idea/
+AGENTS.md
+CHECKLIST_ONBOARDING.md
+IDEAS.md
+scripts/
+apps/api/tmp/
+sprint_2_trello.csv
+trello_mvp.csv
