@@ -1,0 +1,97 @@
+<div class="page">
+  <header class="header">
+    <div>
+      <h1>Messagerie</h1>
+      <p class="subtitle">Conversations privées et groupes de discussion.</p>
+    </div>
+    <button class="ghost" (click)="refreshConversations()">Rafraîchir</button>
+  </header>
+
+  <section class="layout">
+    <aside class="panel">
+      <div class="panel-title">
+        <h2>Conversations</h2>
+        <span class="pill">MVP</span>
+      </div>
+
+      <form [formGroup]="directForm" (ngSubmit)="createDirect()" class="form">
+        <label>Conversation directe</label>
+        <input formControlName="participantId" placeholder="UserId du participant" />
+        <button type="submit">Créer</button>
+      </form>
+
+      <form [formGroup]="groupForm" (ngSubmit)="createGroup()" class="form">
+        <label>Groupe</label>
+        <input formControlName="title" placeholder="Nom du groupe" />
+        <input formControlName="participantIds" placeholder="Participants (IDs séparés par virgule)" />
+        <button type="submit">Créer</button>
+      </form>
+
+      <ul class="list">
+        <li
+          class="list-item"
+          *ngFor="let c of (conversations$ | async)"
+          (click)="selectConversation(c)"
+        >
+          <div>
+            <strong>{{ c.title || (c.type === 'direct' ? 'Conversation directe' : 'Groupe') }}</strong>
+            <div class="muted">{{ c.lastMessageSnippet || 'Aucun message' }}</div>
+          </div>
+          <span class="badge">{{ c.type }}</span>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="panel chat">
+      <ng-container *ngIf="(selectedConversation$ | async) as selected; else empty">
+        <div class="chat-header">
+          <div>
+            <h2>{{ selected.title || (selected.type === 'direct' ? 'Conversation directe' : 'Groupe') }}</h2>
+            <p class="muted">{{ selected.participantIds.length }} participants</p>
+          </div>
+          <button class="ghost" (click)="refreshMessages()">Actualiser</button>
+        </div>
+
+        <div class="messages">
+          <div class="message" *ngFor="let m of (messages$ | async)">
+            <div class="message-body">
+              <p *ngIf="m.body">{{ m.body }}</p>
+              <div class="attachments" *ngIf="m.attachmentIds?.length">
+                <a
+                  *ngFor="let a of m.attachmentIds"
+                  [href]="attachmentUrl(a)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Pièce jointe
+                </a>
+              </div>
+            </div>
+            <div class="meta muted">{{ m.createdAt | date:'short' }}</div>
+          </div>
+        </div>
+
+        <form class="composer" [formGroup]="messageForm" (ngSubmit)="sendMessage()">
+          <textarea formControlName="body" placeholder="Écrire un message..."></textarea>
+          <div class="composer-actions">
+            <label class="file">
+              <input type="file" (change)="onFileSelected($event)" />
+              Ajouter une pièce jointe
+            </label>
+            <button type="submit" [disabled]="uploading">Envoyer</button>
+          </div>
+          <div class="pending" *ngIf="pendingAttachments.length">
+            <span *ngFor="let a of pendingAttachments">{{ a.originalName }}</span>
+          </div>
+        </form>
+      </ng-container>
+
+      <ng-template #empty>
+        <div class="empty">
+          <h3>Choisir une conversation</h3>
+          <p class="muted">Sélectionne une conversation pour afficher les messages.</p>
+        </div>
+      </ng-template>
+    </main>
+  </section>
+</div>

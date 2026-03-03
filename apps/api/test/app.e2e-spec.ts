@@ -18,6 +18,7 @@ describe('AppController (e2e)', () => {
   let roomId = '';
   let studentId = '';
   let planId = '';
+  let conversationId = '';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -161,6 +162,41 @@ describe('AppController (e2e)', () => {
 
     teacherId = teacher.body.id;
     expect(teacherId).toBeTruthy();
+  });
+
+  it('creates a direct conversation and sends message', async () => {
+    const convo = await request(app.getHttpServer())
+      .post(`${baseUrl}/messages/conversations/direct`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ participantId: teacherId })
+      .expect(201);
+
+    conversationId = convo.body._id;
+    expect(conversationId).toBeTruthy();
+
+    const message = await request(app.getHttpServer())
+      .post(`${baseUrl}/messages/conversations/${conversationId}/messages`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ body: 'Hello' })
+      .expect(201);
+
+    expect(message.body._id).toBeTruthy();
+  });
+
+  it('lists conversations and messages', async () => {
+    const conversations = await request(app.getHttpServer())
+      .get(`${baseUrl}/messages/conversations`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(Array.isArray(conversations.body)).toBe(true);
+
+    const messages = await request(app.getHttpServer())
+      .get(`${baseUrl}/messages/conversations/${conversationId}/messages`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(Array.isArray(messages.body.items)).toBe(true);
   });
 
   it('creates room and session', async () => {

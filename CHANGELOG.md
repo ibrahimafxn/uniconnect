@@ -30,3 +30,9 @@ Sprint 4 (Planning MVP)
 - UI Planning: refonte visuelle + stats rapides + listes plus lisibles.
 - Doc module: `docs/planning.md`.
 - Tests: `npm run test:coverage` OK (API 98.62% statements, Web 81.95% statements).
+
+Sprint 5 (Messagerie MVP)
+- API: conversations, messages, pieces jointes + audit log.
+- UI: page Messagerie (inbox + fil de discussion).
+- Docs: `docs/messaging.md`.
+- Tests: `npm run test:coverage` OK (API 99.2% statements, Web 82.93% statements).
