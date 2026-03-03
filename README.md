@@ -116,6 +116,27 @@ API:
 Doc module:
 - `docs/planning.md`
 
+## Sprint 5 (Messagerie MVP)
+
+Fonctionnel:
+- Conversations 1-1.
+- Groupes de discussion.
+- Pieces jointes simples.
+- Notifications email (optionnel).
+- UI inbox + recherche simple.
+
+API:
+- `GET /api/messages/conversations`
+- `POST /api/messages/conversations/direct`
+- `POST /api/messages/conversations/group`
+- `GET /api/messages/conversations/:id/messages`
+- `POST /api/messages/conversations/:id/messages`
+- `POST /api/messages/attachments?conversationId=...`
+- `GET /api/messages/attachments/:id/download`
+
+Doc module:
+- `docs/messaging.md`
+
 ## Couverture (fin de sprint)
 
 ```bash
