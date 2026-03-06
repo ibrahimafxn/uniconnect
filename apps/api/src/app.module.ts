@@ -11,6 +11,8 @@ import { PlanningModule } from './planning/planning.module';
 import { AuditModule } from './audit/audit.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotesModule } from './notes/notes.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { NotesModule } from './notes/notes.module';
     AuditModule,
     MessagesModule,
     NotesModule,
+    AttendanceModule,
+    TeacherProfileModule,
   ],
   controllers: [AppController],
   providers: [],

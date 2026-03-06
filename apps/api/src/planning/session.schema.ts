@@ -32,6 +32,12 @@ export class Session extends Document {
 
   @Prop({ trim: true })
   label?: string;
+
+  @Prop({ trim: true })
+  content?: string; // cahier de texte : contenu effectué
+
+  @Prop({ trim: true })
+  homework?: string; // devoirs / travail à faire
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);

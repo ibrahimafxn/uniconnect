@@ -4,10 +4,13 @@
       <h1>Mon Planning</h1>
       <p class="subtitle">Vos séances de cours assignées.</p>
     </div>
-    <button class="ghost" (click)="resetFilters()">Rafraîchir</button>
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Liste</button>
+      <button [class.active]="viewMode === 'calendar'" (click)="viewMode = 'calendar'">Calendrier</button>
+    </div>
   </div>
 
-  <div class="filter-bar">
+  <div class="filter-bar" *ngIf="viewMode === 'list'">
     <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
       <label>Du <input type="date" formControlName="dateFrom" /></label>
       <label>Au <input type="date" formControlName="dateTo" /></label>
@@ -20,48 +23,112 @@
     <ng-container *ngIf="(groups$ | async) as groups">
       <ng-container *ngIf="(rooms$ | async) as rooms">
 
-        <p class="empty" *ngIf="sessions.length === 0">
-          Aucune séance trouvée pour cette période.
-        </p>
+        <ng-container *ngIf="viewMode === 'list'">
+          <p class="empty" *ngIf="sessions.length === 0">Aucune séance trouvée.</p>
 
-        <div class="stats" *ngIf="sessions.length > 0">
-          <div class="stat">
-            <span class="stat-label">Total séances</span>
-            <span class="stat-value">{{ sessions.length }}</span>
-          </div>
-        </div>
-
-        <div
-          class="day-block"
-          *ngFor="let group of groupSessionsByDate(sessions)"
-          [class.today]="isToday(group.date)"
-          [class.past]="isPast(group.date)"
-        >
-          <div class="day-header">
-            <span class="day-label">{{ formatDate(group.date) }}</span>
-            <span class="today-badge" *ngIf="isToday(group.date)">Aujourd'hui</span>
-            <span class="past-badge" *ngIf="isPast(group.date)">Passé</span>
+          <div class="stats" *ngIf="sessions.length > 0">
+            <div class="stat"><span class="stat-label">Total séances</span><span class="stat-value">{{ sessions.length }}</span></div>
           </div>
 
-          <div class="sessions">
-            <div class="session-card" *ngFor="let s of group.sessions">
-              <div class="time-block">
-                <span class="start">{{ s.startTime }}</span>
-                <div class="time-line"></div>
-                <span class="end">{{ s.endTime }}</span>
-              </div>
-              <div class="session-body">
-                <div class="session-label">{{ s.label || 'Séance' }}</div>
-                <div class="session-meta">
-                  <span class="tag group">{{ groupName(groups.items, s.groupId) }}</span>
-                  <span class="tag room">{{ roomName(rooms, s.roomId) }}</span>
+          <div
+            class="day-block"
+            *ngFor="let group of groupSessionsByDate(sessions)"
+            [class.today]="isToday(group.date)"
+            [class.past]="isPast(group.date)"
+          >
+            <div class="day-header">
+              <span class="day-label">{{ formatDate(group.date) }}</span>
+              <span class="today-badge" *ngIf="isToday(group.date)">Aujourd'hui</span>
+              <span class="past-badge" *ngIf="isPast(group.date)">Passé</span>
+            </div>
+
+            <div class="sessions">
+              <div class="session-card" *ngFor="let s of group.sessions">
+                <div class="time-block">
+                  <span class="start">{{ s.startTime }}</span>
+                  <div class="time-line"></div>
+                  <span class="end">{{ s.endTime }}</span>
                 </div>
+                <div class="session-body">
+                  <div class="session-label">{{ s.label || 'Séance' }}</div>
+                  <div class="session-meta">
+                    <span class="tag group">{{ groupName(groups.items, s.groupId) }}</span>
+                    <span class="tag room">{{ roomName(rooms, s.roomId) }}</span>
+                  </div>
+                  <div class="journal-preview" *ngIf="s.content || s.homework">
+                    <div *ngIf="s.content"><strong>Contenu :</strong> {{ s.content }}</div>
+                    <div *ngIf="s.homework"><strong>Devoirs :</strong> {{ s.homework }}</div>
+                  </div>
+                </div>
+                <button class="edit-btn" (click)="openContentEditor(s)" title="Cahier de texte">✏</button>
               </div>
             </div>
           </div>
-        </div>
+        </ng-container>
+
+        <ng-container *ngIf="viewMode === 'calendar'">
+          <div class="cal-nav">
+            <button class="ghost" (click)="prevWeek()">Semaine préc.</button>
+            <div class="cal-range">
+              <strong>{{ getWeekRange() }}</strong>
+              <button class="ghost small" (click)="goToCurrentWeek()">Aujourd'hui</button>
+            </div>
+            <button class="ghost" (click)="nextWeek()">Semaine suiv.</button>
+          </div>
+
+          <div class="calendar">
+            <div class="cal-grid">
+              <div class="cal-time-header"></div>
+              <div
+                class="cal-day-header"
+                *ngFor="let day of buildCalendar(sessions, getWeekDays())"
+                [class.today]="day.isToday"
+              >{{ day.label }}</div>
+
+              <ng-container *ngFor="let hour of hours">
+                <div class="cal-time">{{ hour }}h</div>
+                <div
+                  class="cal-cell"
+                  *ngFor="let day of buildCalendar(sessions, getWeekDays())"
+                  [class.today]="day.isToday"
+                >
+                  <div class="cal-session" *ngFor="let s of getSlotSessions(day, hour)">
+                    <div class="cal-s-label">{{ s.label || 'Séance' }}</div>
+                    <div class="cal-s-time">{{ s.startTime }}-{{ s.endTime }}</div>
+                    <div class="cal-s-group">{{ groupName(groups.items, s.groupId) }}</div>
+                    <button class="cal-edit-btn" (click)="openContentEditor(s)">✏</button>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
 
       </ng-container>
     </ng-container>
   </ng-container>
+
+  <div class="journal-overlay" *ngIf="editingSessionId" (click)="closeContentEditor()"></div>
+  <div class="journal-panel" *ngIf="editingSessionId">
+    <div class="journal-header">
+      <h3>Cahier de texte</h3>
+      <button class="ghost" (click)="closeContentEditor()">Fermer</button>
+    </div>
+    <form [formGroup]="contentForm" (ngSubmit)="saveContent()">
+      <div class="field">
+        <label>Contenu effectué</label>
+        <textarea formControlName="content" rows="4" placeholder="Ex: Introduction aux dérivées, exercices 1 à 5…"></textarea>
+      </div>
+      <div class="field">
+        <label>Devoirs / Travail à faire</label>
+        <textarea formControlName="homework" rows="3" placeholder="Ex: Exercices 6 à 10, lire le chapitre 3…"></textarea>
+      </div>
+      <div class="journal-actions">
+        <button type="submit" class="btn-save" [disabled]="savingContent">
+          {{ savingContent ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <span class="success-msg" *ngIf="contentSaved">Enregistré</span>
+      </div>
+    </form>
+  </div>
 </div>

@@ -236,6 +236,38 @@ export class NotesService {
     };
   }
 
+  async buildEvaluationExport(evaluationId: string) {
+    const evaluation = await this.evaluationModel.findById(evaluationId).lean().exec();
+    if (!evaluation) throw new Error('Evaluation introuvable.');
+
+    const subject = await this.subjectModel.findById(evaluation.subjectId).lean().exec();
+    const group = await this.groupModel.findById(evaluation.groupId).lean().exec();
+
+    const students = await this.studentModel
+      .find({ groupId: evaluation.groupId })
+      .sort({ lastName: 1, firstName: 1 })
+      .lean()
+      .exec();
+
+    const grades = await this.gradeModel
+      .find({ evaluationId: new Types.ObjectId(evaluationId) })
+      .lean()
+      .exec();
+
+    const rows = students.map((s) => {
+      const grade = grades.find((g) => String(g.studentId) === String(s._id));
+      return {
+        studentNumber: s.studentNumber,
+        lastName: s.lastName,
+        firstName: s.firstName,
+        score: grade?.score ?? null,
+        comment: grade?.comment ?? '',
+      };
+    });
+
+    return { evaluation, subject, group, rows };
+  }
+
   async getStudentSummaryForEmail(
     email: string | undefined,
     actor: { userId: string; role: Role; email?: string },

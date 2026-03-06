@@ -178,4 +178,23 @@ export class PlanningController {
       userAgent: req.headers?.['user-agent'],
     });
   }
+
+  @Patch('sessions/:id/content')
+  @Roles(Role.Teacher, Role.External)
+  @ApiOperation({ summary: 'Mettre à jour le cahier de texte d\'une séance' })
+  @ApiResponse({ status: 200, description: 'Contenu mis à jour' })
+  updateSessionContent(
+    @Param('id') id: string,
+    @Body() body: { content?: string; homework?: string },
+    @Request()
+    req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.planningService.updateSessionContent(id, body, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
 }

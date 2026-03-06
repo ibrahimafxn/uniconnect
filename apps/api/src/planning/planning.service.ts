@@ -225,6 +225,26 @@ export class PlanningService {
     return session;
   }
 
+  async updateSessionContent(
+    id: string,
+    data: { content?: string; homework?: string },
+    actor: AuditActor,
+  ) {
+    const session = await this.sessionModel
+      .findByIdAndUpdate(id, { $set: data }, { new: true })
+      .exec();
+    if (session) {
+      await this.auditLog.log({
+        action: 'planning.session.content',
+        entity: 'session',
+        entityId: String(session._id),
+        actor,
+        metadata: data,
+      });
+    }
+    return session;
+  }
+
   async deleteSession(id: string, actor: AuditActor) {
     const session = await this.sessionModel.findByIdAndDelete(id).exec();
     if (session) {

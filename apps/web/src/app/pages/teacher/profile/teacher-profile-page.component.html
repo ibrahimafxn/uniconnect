@@ -1,0 +1,73 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Mon Profil</h1>
+      <p class="subtitle">Renseignez vos informations professionnelles.</p>
+    </div>
+    <div class="email-chip">{{ email }}</div>
+  </div>
+
+  <div class="card" *ngIf="loaded">
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="section-title">Informations personnelles</div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Prénom *</label>
+          <input formControlName="firstName" placeholder="Ex: Amadou" />
+        </div>
+        <div class="field">
+          <label>Nom *</label>
+          <input formControlName="lastName" placeholder="Ex: Diallo" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Spécialité</label>
+          <input formControlName="specialty" placeholder="Ex: Mathématiques, Droit civil…" />
+        </div>
+        <div class="field">
+          <label>Grade / Statut</label>
+          <select formControlName="grade">
+            <option *ngFor="let g of gradeOptions" [value]="g.value">{{ g.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title">Contact & Bureau</div>
+
+      <div class="row-2">
+        <div class="field">
+          <label>Téléphone</label>
+          <input formControlName="phone" placeholder="Ex: +225 07 00 00 00 00" />
+        </div>
+        <div class="field">
+          <label>Bureau / Salle</label>
+          <input formControlName="office" placeholder="Ex: Bâtiment A, Bureau 204" />
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Biographie courte</label>
+        <textarea
+          formControlName="bio"
+          rows="4"
+          placeholder="Quelques mots sur votre parcours, vos domaines d'expertise…"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="form.invalid || saving">
+          {{ saving ? 'Enregistrement…' : 'Enregistrer le profil' }}
+        </button>
+        <span class="success-msg" *ngIf="saved">✓ Profil enregistré avec succès</span>
+        <span class="error-msg" *ngIf="error">{{ error }}</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="loading" *ngIf="!loaded">
+    <p class="muted">Chargement du profil…</p>
+  </div>
+</div>
