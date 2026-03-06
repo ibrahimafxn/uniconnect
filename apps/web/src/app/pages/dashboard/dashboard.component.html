@@ -1,29 +1,101 @@
 <div class="page">
-  <main class="content">
-    <h1>Tableau de bord</h1>
-    <p>Base MVP. Prochaines étapes : inscriptions, planning, messagerie.</p>
+  <div class="page-header">
+    <div>
+      <p class="date-label">{{ today }}</p>
+      <h1>Tableau de bord</h1>
+      <p class="subtitle">Bienvenue, <strong>{{ userName }}</strong></p>
+    </div>
+  </div>
 
-    <div class="grid">
-      <div class="card">
-        <h3>Administration</h3>
-        <p>Gestion des étudiants, dossiers, paiements.</p>
-        <a class="action" routerLink="/admin">Ouvrir</a>
-      </div>
-      <div class="card">
-        <h3>Planning</h3>
-        <p>Création et consultation des EDT.</p>
-        <a class="action" routerLink="/planning">Ouvrir</a>
-      </div>
-      <div class="card">
-        <h3>Messagerie</h3>
-        <p>Conversations internes et groupes.</p>
-        <a class="action" routerLink="/messages">Ouvrir</a>
-      </div>
-      <div class="card">
-        <h3>Notes</h3>
-        <p>Saisie et consultation des notes.</p>
-        <a class="action" routerLink="/notes">Ouvrir</a>
+  <!-- KPIs -->
+  <div class="kpis" *ngIf="!loadingKpis">
+    <div class="kpi orange">
+      <div class="kpi-icon">🎓</div>
+      <div class="kpi-body">
+        <span class="kpi-val">{{ kpis.students }}</span>
+        <span class="kpi-label">Étudiants</span>
       </div>
     </div>
-  </main>
+    <div class="kpi teal">
+      <div class="kpi-icon">👤</div>
+      <div class="kpi-body">
+        <span class="kpi-val">{{ kpis.teachers }}</span>
+        <span class="kpi-label">Enseignants</span>
+      </div>
+    </div>
+    <div class="kpi" [class.red]="kpis.unpaid > 0" [class.green]="kpis.unpaid === 0">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-body">
+        <span class="kpi-val">{{ kpis.unpaid }}</span>
+        <span class="kpi-label">Impayés</span>
+      </div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-body">
+        <span class="kpi-val">{{ kpis.sessions }}</span>
+        <span class="kpi-label">Séances à venir</span>
+      </div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-body">
+        <span class="kpi-val">{{ kpis.groups }}</span>
+        <span class="kpi-label">Groupes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis skeleton" *ngIf="loadingKpis">
+    <div class="kpi-skeleton" *ngFor="let _ of [1,2,3,4,5]"></div>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="main-grid">
+    <!-- Accès rapides -->
+    <div class="panel">
+      <h2 class="panel-title">Accès rapides</h2>
+      <div class="quick-links">
+        <a class="quick-link" *ngFor="let l of quickLinks" [routerLink]="l.path" [class]="'link-' + l.color">
+          <div class="ql-body">
+            <strong>{{ l.label }}</strong>
+            <span>{{ l.desc }}</span>
+          </div>
+          <span class="ql-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Impayés récents -->
+    <div class="panel" *ngIf="recentUnpaid.length > 0">
+      <div class="panel-head">
+        <h2 class="panel-title">Impayés en attente</h2>
+        <a routerLink="/admin" class="see-all">Voir tout →</a>
+      </div>
+      <div class="unpaid-list">
+        <div class="unpaid-item" *ngFor="let u of recentUnpaid">
+          <div class="ui-name">{{ u.studentName }}</div>
+          <div class="ui-meta">{{ u.studentNumber }}</div>
+          <div class="ui-amount">{{ u.balanceDue | number }} {{ u.currency }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prochaines séances -->
+    <div class="panel" *ngIf="upcomingSessions.length > 0">
+      <div class="panel-head">
+        <h2 class="panel-title">Prochaines séances</h2>
+        <a routerLink="/planning" class="see-all">Voir tout →</a>
+      </div>
+      <div class="session-list">
+        <div class="session-item" *ngFor="let s of upcomingSessions">
+          <div class="si-date">{{ formatDate(s.date) }}</div>
+          <div class="si-body">
+            <strong>{{ s.label || 'Séance' }}</strong>
+            <span class="muted">{{ s.startTime }}–{{ s.endTime }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
