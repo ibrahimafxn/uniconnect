@@ -36,7 +36,9 @@ export class LoginComponent {
     this.authService.login(email!, password!).subscribe({
       next: () => {
         this.loading = false;
-        this.router.navigateByUrl('/dashboard');
+        const role = this.authService.getUserRole();
+        const target = (role === 'teacher' || role === 'external') ? '/teacher' : '/dashboard';
+        this.router.navigateByUrl(target);
       },
       error: () => {
         this.loading = false;

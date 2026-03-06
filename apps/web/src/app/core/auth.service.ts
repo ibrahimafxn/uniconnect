@@ -58,6 +58,13 @@ export class AuthService {
     return payload?.email ?? null;
   }
 
+  getUserId(): string | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const payload = this.decodeToken(token);
+    return payload?.userId ?? null;
+  }
+
   private decodeToken(token: string): any | null {
     try {
       const [, payload] = token.split('.');

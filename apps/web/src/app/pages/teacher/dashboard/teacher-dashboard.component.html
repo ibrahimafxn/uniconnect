@@ -1,0 +1,83 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Espace Enseignant</h1>
+      <p class="subtitle">{{ today }}</p>
+    </div>
+    <div class="user-chip">
+      <div class="avatar">{{ email.slice(0, 1).toUpperCase() }}</div>
+      <div class="meta">
+        <span class="email">{{ email }}</span>
+        <span class="badge">{{ role === 'external' ? 'Vacataire' : 'Enseignant' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat orange">
+      <span class="stat-label">Séances</span>
+      <span class="stat-value">{{ (sessions$ | async)?.length ?? '—' }}</span>
+    </div>
+    <div class="stat teal">
+      <span class="stat-label">Matières</span>
+      <span class="stat-value">{{ (subjects$ | async)?.length ?? '—' }}</span>
+    </div>
+    <div class="stat blue">
+      <span class="stat-label">Évaluations</span>
+      <span class="stat-value">{{ (evaluations$ | async)?.length ?? '—' }}</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">
+        <h2>Mon Planning</h2>
+        <span class="pill">Prochaines séances</span>
+      </div>
+      <p class="muted">Consultez votre emploi du temps et vos séances assignées.</p>
+      <a routerLink="/teacher/planning" class="btn-link">Voir le planning →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <h2>Saisie des Notes</h2>
+        <span class="pill teal">Évaluations</span>
+      </div>
+      <p class="muted">Créez des évaluations et saisissez les notes de vos étudiants.</p>
+      <a routerLink="/teacher/notes" class="btn-link">Accéder aux notes →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <h2>Messagerie</h2>
+        <span class="pill blue">Communication</span>
+      </div>
+      <p class="muted">Échangez avec vos étudiants et l'administration.</p>
+      <a routerLink="/messages" class="btn-link">Ouvrir la messagerie →</a>
+    </div>
+  </div>
+
+  <div class="card full mt">
+    <div class="card-title">
+      <h2>Prochaines séances</h2>
+    </div>
+    <ul class="list" *ngIf="(sessions$ | async) as sessions; else loading">
+      <li *ngIf="sessions.length === 0" class="empty">Aucune séance planifiée.</li>
+      <li class="list-item" *ngFor="let s of sessions | slice:0:5">
+        <div class="session-date">
+          <span class="day">{{ s.date | date:'dd' }}</span>
+          <span class="month">{{ s.date | date:'MMM' }}</span>
+        </div>
+        <div class="session-info">
+          <strong>{{ s.label || 'Séance' }}</strong>
+          <span class="muted">{{ s.startTime }} – {{ s.endTime }}</span>
+        </div>
+        <span class="time-badge">{{ s.startTime }}</span>
+      </li>
+    </ul>
+    <ng-template #loading>
+      <p class="muted">Chargement...</p>
+    </ng-template>
+    <a routerLink="/teacher/planning" class="see-all">Voir toutes les séances →</a>
+  </div>
+</div>
