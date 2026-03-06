@@ -1,0 +1,152 @@
+import {Component, inject} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {NotesApi, Evaluation, Subject} from '../../../core/api/notes.api';
+import {AcademicApi} from '../../../core/api/academic.api';
+
+type Student = {_id: string; firstName: string; lastName: string; studentNumber?: string};
+type GradeEntry = {studentId: string; score: number | null; comment: string};
+
+@Component({
+  selector: 'app-teacher-notes',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './teacher-notes.component.html',
+  styleUrls: ['./teacher-notes.component.scss'],
+})
+export class TeacherNotesComponent {
+  private readonly notes = inject(NotesApi);
+  private readonly academic = inject(AcademicApi);
+  private readonly fb = inject(FormBuilder);
+
+  groups$ = this.academic.listGroups();
+  subjects$ = this.notes.listSubjects();
+
+  selectedGroupId: string | null = null;
+  selectedSubjectId: string | null = null;
+  selectedEvaluation: Evaluation | null = null;
+
+  evaluations: Evaluation[] = [];
+  students: Student[] = [];
+  gradeEntries: GradeEntry[] = [];
+
+  saving = false;
+  saveSuccess = false;
+  saveError: string | null = null;
+  showEvalForm = false;
+
+  evalForm = this.fb.group({
+    title: ['', Validators.required],
+    date: ['', Validators.required],
+    subjectId: ['', Validators.required],
+    maxScore: [20, [Validators.required, Validators.min(1)]],
+  });
+
+  selectGroup(groupId: string) {
+    this.selectedGroupId = groupId;
+    this.selectedEvaluation = null;
+    this.gradeEntries = [];
+    this.evaluations = [];
+    this.students = [];
+    this.showEvalForm = false;
+
+    this.notes.listGroupStudents(groupId).subscribe((s: any[]) => {
+      this.students = s;
+    });
+    this.loadEvaluations();
+  }
+
+  loadEvaluations() {
+    if (!this.selectedGroupId) return;
+    this.notes.listEvaluations(this.selectedGroupId, this.selectedSubjectId ?? undefined)
+      .subscribe((evals) => (this.evaluations = evals));
+  }
+
+  filterBySubject(subjectId: string) {
+    this.selectedSubjectId = subjectId || null;
+    this.selectedEvaluation = null;
+    this.gradeEntries = [];
+    this.loadEvaluations();
+  }
+
+  selectEvaluation(eval_: Evaluation) {
+    this.selectedEvaluation = eval_;
+    this.gradeEntries = this.students.map((s) => ({
+      studentId: s._id,
+      score: null,
+      comment: '',
+    }));
+
+    this.notes.listGrades(eval_._id).subscribe((grades) => {
+      for (const g of grades) {
+        const entry = this.gradeEntries.find((e) => e.studentId === g.studentId);
+        if (entry) {
+          entry.score = g.score;
+          entry.comment = g.comment ?? '';
+        }
+      }
+    });
+  }
+
+  createEvaluation() {
+    if (this.evalForm.invalid || !this.selectedGroupId) return;
+    const v = this.evalForm.value;
+    this.notes.createEvaluation({
+      title: v.title!,
+      date: v.date!,
+      subjectId: v.subjectId!,
+      groupId: this.selectedGroupId,
+      maxScore: v.maxScore!,
+    }).subscribe(() => {
+      this.evalForm.reset({maxScore: 20});
+      this.showEvalForm = false;
+      this.loadEvaluations();
+    });
+  }
+
+  updateScore(studentId: string, score: string) {
+    const entry = this.gradeEntries.find((e) => e.studentId === studentId);
+    if (entry) entry.score = score === '' ? null : parseFloat(score);
+  }
+
+  updateComment(studentId: string, comment: string) {
+    const entry = this.gradeEntries.find((e) => e.studentId === studentId);
+    if (entry) entry.comment = comment;
+  }
+
+  saveGrades() {
+    if (!this.selectedEvaluation) return;
+    this.saving = true;
+    this.saveSuccess = false;
+    this.saveError = null;
+
+    const grades = this.gradeEntries
+      .filter((e) => e.score !== null)
+      .map((e) => ({studentId: e.studentId, score: e.score!, comment: e.comment || undefined}));
+
+    this.notes.upsertGrades(this.selectedEvaluation._id, grades).subscribe({
+      next: () => {
+        this.saving = false;
+        this.saveSuccess = true;
+        setTimeout(() => (this.saveSuccess = false), 3000);
+      },
+      error: () => {
+        this.saving = false;
+        this.saveError = 'Erreur lors de la sauvegarde.';
+      },
+    });
+  }
+
+  studentName(s: Student): string {
+    return `${s.firstName} ${s.lastName}`;
+  }
+
+  gradeEntry(studentId: string): GradeEntry | undefined {
+    return this.gradeEntries.find((e) => e.studentId === studentId);
+  }
+
+  subjectName(subjects: Subject[] | null, subjectId: string): string {
+    if (!subjects) return subjectId;
+    return subjects.find((s) => s._id === subjectId)?.name ?? subjectId;
+  }
+}

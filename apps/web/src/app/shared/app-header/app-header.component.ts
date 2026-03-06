@@ -13,14 +13,28 @@ import {AuthService} from '../../core/auth.service';
 export class AppHeaderComponent {
   isMenuOpen = false;
 
-  readonly navItems = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Administration', path: '/admin' },
-    { label: 'Planning', path: '/planning' },
-    { label: 'Messagerie', path: '/messages' },
+  private readonly adminNavItems = [
+    {label: 'Dashboard', path: '/dashboard'},
+    {label: 'Administration', path: '/admin'},
+    {label: 'Planning', path: '/planning'},
+    {label: 'Messagerie', path: '/messages'},
+  ];
+
+  private readonly teacherNavItems = [
+    {label: 'Tableau de bord', path: '/teacher'},
+    {label: 'Mon Planning', path: '/teacher/planning'},
+    {label: 'Mes Notes', path: '/teacher/notes'},
+    {label: 'Messagerie', path: '/messages'},
   ];
 
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
+
+  get navItems() {
+    const role = this.auth.getUserRole();
+    return (role === 'teacher' || role === 'external')
+      ? this.teacherNavItems
+      : this.adminNavItems;
+  }
 
   get userEmail(): string {
     return this.auth.getUserEmail() ?? 'Utilisateur';
