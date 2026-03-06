@@ -1,0 +1,132 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Feuille de Présence</h1>
+      <p class="subtitle">Marquez les présences pour chacune de vos séances.</p>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Colonne gauche : liste des séances -->
+    <div class="sessions-panel">
+      <h2 class="panel-title">Séances</h2>
+
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter">
+        <input type="date" formControlName="dateFrom" placeholder="Du" />
+        <input type="date" formControlName="dateTo" placeholder="Au" />
+        <button type="submit">Filtrer</button>
+        <button type="button" class="ghost" (click)="resetFilters()">Reset</button>
+      </form>
+
+      <ul class="session-list">
+        <ng-container *ngIf="(sessions$ | async) as sessions">
+          <ng-container *ngIf="(groups$ | async) as groups">
+            <li *ngIf="sessions.length === 0" class="empty">Aucune séance.</li>
+            <li
+              class="session-item"
+              *ngFor="let s of sessions"
+              [class.active]="selectedSession?._id === s._id"
+              (click)="selectSession(s)"
+            >
+              <div class="s-date">{{ s.date | date:'dd/MM' }}</div>
+              <div class="s-info">
+                <strong>{{ s.label || 'Séance' }}</strong>
+                <span class="muted">{{ s.startTime }}–{{ s.endTime }}</span>
+                <span class="tag">{{ groupName(groups.items, s.groupId) }}</span>
+              </div>
+            </li>
+          </ng-container>
+        </ng-container>
+      </ul>
+    </div>
+
+    <!-- Colonne droite : feuille de présence -->
+    <div class="presence-panel">
+      <div *ngIf="!selectedSession" class="empty-state">
+        <p>Sélectionnez une séance pour afficher la feuille de présence.</p>
+      </div>
+
+      <div *ngIf="selectedSession">
+        <div class="presence-header">
+          <div>
+            <h2>{{ selectedSession.label || 'Séance' }}</h2>
+            <p class="muted">
+              {{ formatDate(selectedSession.date) }} &bull;
+              {{ selectedSession.startTime }}–{{ selectedSession.endTime }}
+            </p>
+          </div>
+          <div class="header-actions">
+            <button class="ghost small" (click)="markAll('present')">Tous présents</button>
+            <button class="ghost small danger" (click)="markAll('absent')">Tous absents</button>
+          </div>
+        </div>
+
+        <div class="stats-row" *ngIf="attendanceEntries.length > 0">
+          <div class="mini-stat green">
+            <span>{{ countByStatus('present') }}</span> présents
+          </div>
+          <div class="mini-stat red">
+            <span>{{ countByStatus('absent') }}</span> absents
+          </div>
+          <div class="mini-stat orange">
+            <span>{{ countByStatus('excused') }}</span> excusés
+          </div>
+          <div class="mini-stat">
+            Taux : <span>{{ presentRate() }}</span>
+          </div>
+        </div>
+
+        <p class="muted" *ngIf="loading">Chargement de la liste des étudiants…</p>
+
+        <div class="presence-table" *ngIf="!loading && attendanceEntries.length > 0">
+          <div class="table-header">
+            <span>N° Mat.</span>
+            <span>Nom complet</span>
+            <span>Statut</span>
+            <span>Note / Observation</span>
+          </div>
+          <div class="table-row" *ngFor="let e of attendanceEntries">
+            <span class="num muted">{{ e.studentNumber || '—' }}</span>
+            <span class="name">{{ e.lastName }} {{ e.firstName }}</span>
+            <div class="status-btns">
+              <button
+                class="status-btn"
+                [class.present]="e.status === 'present'"
+                (click)="setStatus(e.studentId, 'present')"
+              >P</button>
+              <button
+                class="status-btn"
+                [class.absent]="e.status === 'absent'"
+                (click)="setStatus(e.studentId, 'absent')"
+              >A</button>
+              <button
+                class="status-btn"
+                [class.excused]="e.status === 'excused'"
+                (click)="setStatus(e.studentId, 'excused')"
+              >E</button>
+            </div>
+            <input
+              type="text"
+              class="note-input"
+              [value]="e.note ?? ''"
+              (change)="setNote(e.studentId, ($event.target as HTMLInputElement).value)"
+              placeholder="Observation (optionnel)"
+            />
+          </div>
+        </div>
+
+        <p class="empty" *ngIf="!loading && attendanceEntries.length === 0">
+          Aucun étudiant trouvé pour ce groupe.
+        </p>
+
+        <div class="save-bar" *ngIf="attendanceEntries.length > 0">
+          <button class="btn-save" (click)="save()" [disabled]="saving">
+            {{ saving ? 'Enregistrement…' : 'Enregistrer la présence' }}
+          </button>
+          <span class="success-msg" *ngIf="saveSuccess">✓ Présence enregistrée</span>
+          <span class="error-msg" *ngIf="saveError">{{ saveError }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

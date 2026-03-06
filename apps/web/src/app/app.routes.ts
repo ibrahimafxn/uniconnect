@@ -9,6 +9,9 @@ import {SupportComponent} from './pages/support/support.component';
 import {TeacherDashboardComponent} from './pages/teacher/dashboard/teacher-dashboard.component';
 import {TeacherPlanningComponent} from './pages/teacher/planning/teacher-planning.component';
 import {TeacherNotesComponent} from './pages/teacher/notes/teacher-notes.component';
+import {TeacherPresenceComponent} from './pages/teacher/presence/teacher-presence.component';
+import {TeacherProfilePageComponent} from './pages/teacher/profile/teacher-profile-page.component';
+import {TeacherStatsComponent} from './pages/teacher/stats/teacher-stats.component';
 import {authGuard} from './core/auth.guard';
 import {teacherGuard} from './core/teacher.guard';
 
@@ -19,6 +22,9 @@ export const routes: Routes = [
   {path: 'teacher', component: TeacherDashboardComponent, canActivate: [teacherGuard]},
   {path: 'teacher/planning', component: TeacherPlanningComponent, canActivate: [teacherGuard]},
   {path: 'teacher/notes', component: TeacherNotesComponent, canActivate: [teacherGuard]},
+  {path: 'teacher/presence', component: TeacherPresenceComponent, canActivate: [teacherGuard]},
+  {path: 'teacher/profile', component: TeacherProfilePageComponent, canActivate: [teacherGuard]},
+  {path: 'teacher/stats', component: TeacherStatsComponent, canActivate: [teacherGuard]},
 
   // Routes admin / générales
   {path: 'dashboard', component: DashboardComponent, canActivate: [authGuard]},

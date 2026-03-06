@@ -8,8 +8,11 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import PDFDocument from 'pdfkit';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -183,5 +186,82 @@ export class NotesController {
   @ApiOperation({ summary: 'Resume des notes (etudiant connecte)' })
   meSummary(@Request() req: { user: { userId: string; email?: string; role: Role } }) {
     return this.notesService.getStudentSummaryForEmail(req.user.email, req.user);
+  }
+
+  @Get('evaluations/:id/export')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @ApiOperation({ summary: 'Exporter les notes d\'une evaluation en PDF' })
+  async exportEvaluation(@Param('id') id: string, @Res() res: Response) {
+    const { evaluation, subject, group, rows } = await this.notesService.buildEvaluationExport(id);
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="notes-${id}.pdf"`);
+      res.send(buffer);
+    });
+
+    // En-tête
+    doc.fontSize(20).font('Helvetica-Bold').text('UniConnect ENT', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.fontSize(14).font('Helvetica').text('Relevé de notes', { align: 'center' });
+    doc.moveDown(0.5);
+
+    // Informations évaluation
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.5);
+    doc.fontSize(12).font('Helvetica-Bold').text('Évaluation : ', { continued: true });
+    doc.font('Helvetica').text(String(evaluation.title ?? ''));
+    doc.font('Helvetica-Bold').text('Matière : ', { continued: true });
+    doc.font('Helvetica').text(String((subject as any)?.name ?? evaluation.subjectId));
+    doc.font('Helvetica-Bold').text('Groupe : ', { continued: true });
+    doc.font('Helvetica').text(String((group as any)?.name ?? evaluation.groupId));
+    doc.font('Helvetica-Bold').text('Date : ', { continued: true });
+    doc.font('Helvetica').text(new Date(evaluation.date).toLocaleDateString('fr-FR'));
+    doc.font('Helvetica-Bold').text('Note maximale : ', { continued: true });
+    doc.font('Helvetica').text(String(evaluation.maxScore ?? 20));
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    // En-têtes du tableau
+    const colX = { num: 50, nom: 110, prenom: 250, note: 390, commentaire: 430 };
+    doc.fontSize(11).font('Helvetica-Bold');
+    doc.text('N° Mat.', colX.num, doc.y, { width: 55 });
+    const headerY = doc.y - doc.currentLineHeight();
+    doc.text('Nom', colX.nom, headerY, { width: 135 });
+    doc.text('Prénom', colX.prenom, headerY, { width: 135 });
+    doc.text('Note', colX.note, headerY, { width: 35 });
+    doc.text('Commentaire', colX.commentaire, headerY, { width: 115 });
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.3);
+
+    // Lignes
+    doc.font('Helvetica').fontSize(10);
+    for (const row of rows) {
+      if (doc.y > 720) { doc.addPage(); }
+      const rowY = doc.y;
+      doc.text(row.studentNumber ?? '—', colX.num, rowY, { width: 55 });
+      doc.text(row.lastName, colX.nom, rowY, { width: 135 });
+      doc.text(row.firstName, colX.prenom, rowY, { width: 135 });
+      doc.text(row.score !== null ? String(row.score) : '—', colX.note, rowY, { width: 35 });
+      doc.text(row.comment || '', colX.commentaire, rowY, { width: 115 });
+      doc.moveDown(0.4);
+    }
+
+    // Pied de page
+    doc.moveDown();
+    const scored = rows.filter((r) => r.score !== null);
+    if (scored.length > 0) {
+      const avg = scored.reduce((s, r) => s + (r.score as number), 0) / scored.length;
+      doc.font('Helvetica-Bold').fontSize(11);
+      doc.text(`Moyenne de la promotion : ${avg.toFixed(2)} / ${evaluation.maxScore ?? 20}`);
+      doc.text(`Étudiants notés : ${scored.length} / ${rows.length}`);
+    }
+    doc.end();
   }
 }

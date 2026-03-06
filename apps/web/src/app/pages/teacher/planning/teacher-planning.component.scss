@@ -275,8 +275,230 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* View toggle */
+.view-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+
+  button {
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 0;
+    background: #fff;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: none;
+
+    &:hover { background: #fcfaf5; }
+    &.active { background: var(--ink); color: #fff; }
+    &:first-child { border-radius: 9px 0 0 9px; }
+    &:last-child { border-radius: 0 9px 9px 0; }
+  }
+}
+
+/* Session edit button */
+.edit-btn {
+  height: 32px; width: 32px; border: 1px solid var(--border);
+  border-radius: 8px; background: #fff; cursor: pointer;
+  font-size: 14px; flex-shrink: 0;
+  &:hover { background: #fff6f0; border-color: rgba(239,111,58,.4); }
+}
+
+/* Journal preview */
+.journal-preview {
+  font-size: 12px;
+  color: var(--muted);
+  background: #f2faf9;
+  border: 1px solid rgba(43,122,120,.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Calendar */
+.cal-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cal-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ghost.small {
+  height: 30px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.calendar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: auto;
+  box-shadow: var(--shadow);
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: 50px repeat(5, 1fr);
+  min-width: 600px;
+}
+
+.cal-time-header { border-bottom: 2px solid var(--border); }
+
+.cal-day-header {
+  padding: 10px 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-left: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+
+  &.today { background: rgba(239,111,58,.08); color: #b64b23; }
+}
+
+.cal-time {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 6px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.cal-cell {
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+
+  &.today { background: rgba(239,111,58,.04); }
+}
+
+.cal-session {
+  background: var(--accent-2);
+  color: #fff;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: default;
+  flex: 1;
+  overflow: hidden;
+}
+
+.cal-s-label { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-s-time { opacity: .8; }
+.cal-s-group { opacity: .8; font-size: 10px; }
+
+.cal-edit-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 1px 4px;
+  align-self: flex-start;
+}
+
+/* Journal panel (side drawer) */
+.journal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.3);
+  z-index: 200;
+}
+
+.journal-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 380px;
+  background: var(--card);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 30px rgba(31,41,55,.15);
+  z-index: 201;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: slideIn 280ms ease;
+}
+
+.journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h3 { margin: 0; font-size: 17px; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  textarea {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    &:focus { outline: none; border-color: var(--accent-2); }
+  }
+}
+
+.journal-actions { display: flex; align-items: center; gap: 12px; }
+
+.btn-save {
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  &:disabled { opacity: .5; cursor: default; }
+}
+
+.success-msg { color: #15803d; font-size: 14px; font-weight: 600; }
+
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
 @media (max-width: 640px) {
   .page { padding: 16px; }
   .header { flex-direction: column; align-items: flex-start; }
   .filter-bar form { flex-direction: column; align-items: flex-start; }
+  .journal-panel { width: 100%; }
 }

@@ -24,7 +24,10 @@ export class AppHeaderComponent {
     {label: 'Tableau de bord', path: '/teacher'},
     {label: 'Mon Planning', path: '/teacher/planning'},
     {label: 'Mes Notes', path: '/teacher/notes'},
+    {label: 'Présences', path: '/teacher/presence'},
+    {label: 'Statistiques', path: '/teacher/stats'},
     {label: 'Messagerie', path: '/messages'},
+    {label: 'Mon Profil', path: '/teacher/profile'},
   ];
 
   constructor(private readonly auth: AuthService, private readonly router: Router) {}

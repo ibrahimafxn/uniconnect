@@ -1,0 +1,119 @@
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>Statistiques</h1>
+      <p class="subtitle">Moyennes, distributions et présences par groupe.</p>
+    </div>
+  </div>
+
+  <!-- Sélection du groupe -->
+  <section class="section">
+    <h2 class="section-title"><span class="step">1</span> Choisir un groupe</h2>
+    <div class="groups-grid" *ngIf="(groups$ | async) as groups">
+      <button
+        class="group-btn"
+        *ngFor="let g of groups.items"
+        [class.active]="selectedGroupId === g._id"
+        (click)="selectGroup(g._id, g.name)"
+      >{{ g.name }}</button>
+    </div>
+  </section>
+
+  <p class="loading-msg" *ngIf="loading">Calcul des statistiques…</p>
+
+  <!-- Stats par matière -->
+  <ng-container *ngIf="groupStats && !loading">
+    <section class="section">
+      <h2 class="section-title">
+        <span class="step">2</span> Notes — {{ groupStats.groupName }}
+      </h2>
+
+      <p class="empty" *ngIf="groupStats.subjectStats.length === 0">
+        Aucune évaluation enregistrée pour ce groupe.
+      </p>
+
+      <div class="subject-card" *ngFor="let s of groupStats.subjectStats">
+        <div class="subject-header">
+          <strong>{{ s.subject.name }}</strong>
+          <span class="pill">{{ s.count }} éval.</span>
+          <span class="pill muted">{{ s.gradedCount }} notes</span>
+          <span class="avg-badge" [style.color]="getScoreColor(s.avg)">
+            Moy. {{ s.avg !== null ? s.avg + ' / 20' : '—' }}
+          </span>
+        </div>
+
+        <div class="kpis" *ngIf="s.avg !== null">
+          <div class="kpi">
+            <span class="kpi-val">{{ s.avg }}</span>
+            <span class="kpi-label">Moyenne</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-val green">{{ s.max }}</span>
+            <span class="kpi-label">Max</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-val red">{{ s.min }}</span>
+            <span class="kpi-label">Min</span>
+          </div>
+        </div>
+
+        <!-- Distribution -->
+        <div class="distribution" *ngIf="s.gradedCount > 0">
+          <div class="dist-label">Distribution des notes (/20)</div>
+          <div class="bars">
+            <div class="bar-group" *ngFor="let bucket of [
+              {label:'0–4', idx:0},
+              {label:'5–9', idx:1},
+              {label:'10–12', idx:2},
+              {label:'13–15', idx:3},
+              {label:'16–18', idx:4},
+              {label:'19–20', idx:5}
+            ]">
+              <div class="bar-outer">
+                <div
+                  class="bar-inner"
+                  [style.height]="barWidth(s.distribution[bucket.idx], barMax(s.distribution))"
+                  [class.good]="bucket.idx >= 2"
+                  [class.bad]="bucket.idx === 0"
+                ></div>
+              </div>
+              <span class="bar-count">{{ s.distribution[bucket.idx] }}</span>
+              <span class="bar-label">{{ bucket.label }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Présences -->
+    <section class="section" *ngIf="groupStats.attendanceSummary.length > 0">
+      <h2 class="section-title">
+        <span class="step">3</span> Présences — {{ groupStats.groupName }}
+        <span class="avg-badge" *ngIf="groupStats.presentRate !== null">
+          Taux moyen : {{ groupStats.presentRate }}%
+        </span>
+      </h2>
+
+      <div class="attendance-table">
+        <div class="att-header">
+          <span>N° Mat.</span>
+          <span>Étudiant</span>
+          <span>Présent</span>
+          <span>Absent</span>
+          <span>Excusé</span>
+          <span>Taux</span>
+        </div>
+        <div class="att-row" *ngFor="let a of groupStats.attendanceSummary">
+          <span class="muted num">{{ a.studentNumber || '—' }}</span>
+          <span class="name">{{ a.lastName }} {{ a.firstName }}</span>
+          <span class="green">{{ a.present }}</span>
+          <span class="red">{{ a.absent }}</span>
+          <span class="orange">{{ a.excused }}</span>
+          <span class="rate" [class.danger]="a.rate !== null && a.rate < 70">
+            {{ a.rate !== null ? a.rate + '%' : '—' }}
+          </span>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</div>
