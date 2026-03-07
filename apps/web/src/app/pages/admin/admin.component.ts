@@ -638,11 +638,38 @@ export class AdminComponent implements OnInit {
     if (this.editingPlanId) {
       this.confirmAndRun(
         { title: 'Modifier plan', message: 'Confirmer la modification du plan de paiement ?' },
-        () => obs.subscribe(() => { this.cancelEditPlan(); this.refreshPayments(); this.closeDrawer(); }),
+        () => obs.subscribe(
+          () => {
+            this.cancelEditPlan();
+            this.refreshPayments();
+            this.closeDrawer();
+            alert('✅ Plan modifié avec succès');
+          },
+          (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Modification échouée'))
+        ),
       );
       return;
     }
-    obs.subscribe(() => { this.cancelEditPlan(); this.refreshPayments(); this.closeDrawer(); });
+    obs.subscribe(
+      () => {
+        this.cancelEditPlan();
+        this.refreshPayments();
+        this.closeDrawer();
+        alert('✅ Plan créé avec succès');
+      },
+      (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Création échouée'))
+    );
+  }
+
+  createPlanFromPayment() {
+    const studentId = this.paymentForm.get('studentId')?.value;
+    if (!studentId) {
+      alert('⚠️ Veuillez d\'abord sélectionner un étudiant');
+      return;
+    }
+    this.cancelEditPlan();
+    this.planForm.patchValue({ studentId }, { emitEvent: false });
+    this.openDrawer('plan', 'Créer un plan de paiement');
   }
 
   selectPlanForEdit(p: any) {
@@ -659,7 +686,13 @@ export class AdminComponent implements OnInit {
   deletePlan(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer plan', message: 'Confirmer la suppression du plan de paiement ?', danger: true, confirmLabel: 'Supprimer' },
-      () => this.payments.deletePlan(id).subscribe(() => this.refreshPayments()),
+      () => this.payments.deletePlan(id).subscribe(
+        () => {
+          this.refreshPayments();
+          alert('✅ Plan supprimé avec succès');
+        },
+        (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Suppression échouée'))
+      ),
     );
   }
 
@@ -876,6 +909,21 @@ export class AdminComponent implements OnInit {
     if (!value) return '';
     const d = value instanceof Date ? value : new Date(value);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  // Calculate installment payment status (paid, partial, unpaid)
+  getInstallmentStatus(plan: any, installmentId: string): { status: 'paid' | 'partial' | 'unpaid'; paid: number } {
+    const payments = (this.payments$ as any).value || [];
+    const paid = payments
+      .filter((p: any) => p.planId === plan._id && p.installmentId === installmentId)
+      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+
+    const installment = plan.installments?.find((i: any) => i._id === installmentId);
+    const dueAmount = installment?.amount || 0;
+
+    if (paid >= dueAmount) return { status: 'paid', paid };
+    if (paid > 0) return { status: 'partial', paid };
+    return { status: 'unpaid', paid };
   }
 
   plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
