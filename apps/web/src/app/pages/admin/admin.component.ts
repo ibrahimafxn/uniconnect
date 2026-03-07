@@ -740,6 +740,14 @@ export class AdminComponent implements OnInit {
   }
   receiptUrl(id: string) { return this.payments.receiptUrl(id); }
 
+  downloadPlanPdf(planId: string, planLabel: string) {
+    const url = this.payments.exportPlanPdfUrl(planId);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `plan-${planLabel?.replace(/\s+/g, '_')}-${new Date().getTime()}.pdf`;
+    link.click();
+  }
+
   refreshPayments() {
     this.plans$ = this.payments.listPlans();
     this.payments$ = this.payments.listPayments();

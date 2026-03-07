@@ -223,6 +223,42 @@ export class PaymentsService {
     return { payment, student, plan };
   }
 
+  async buildPlanExport(planId: string) {
+    const plan = await this.planModel.findById(planId).lean().exec();
+    if (!plan) throw new NotFoundException('Plan not found');
+    
+    const student = await this.studentModel
+      .findById(plan.studentId)
+      .lean()
+      .exec();
+    
+    // Get all payments for this plan
+    const payments = await this.paymentModel
+      .find({ planId })
+      .lean()
+      .exec();
+    
+    // Calculate paid amount per installment
+    const installmentStats: Record<string, { paid: number; status: 'paid' | 'partial' | 'unpaid' }> = {};
+    (plan.installments ?? []).forEach((inst: any) => {
+      const paidForInst = payments
+        .filter((p) => p.installmentId === (inst._id || ''))
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      
+      const dueAmount = inst.amount || 0;
+      let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
+      if (paidForInst >= dueAmount) {
+        status = 'paid';
+      } else if (paidForInst > 0) {
+        status = 'partial';
+      }
+      
+      installmentStats[inst._id || ''] = { paid: paidForInst, status };
+    });
+    
+    return { plan, student, installmentStats };
+  }
+
   private async sendPaymentConfirmationIfPossible(
     studentId: string,
     amount: number,
