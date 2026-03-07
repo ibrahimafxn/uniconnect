@@ -1,11 +1,12 @@
 import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import type { LevelCycle } from '../level.schema';
 
 export class CreateLevelDto {
   @IsString()
   name!: string;
 
   @IsIn(['L', 'M', 'D', 'BTS', 'BUT', 'CPGE'])
-  cycle!: string;
+  cycle!: LevelCycle;
 
   @IsOptional()
   @IsNumber()

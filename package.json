@@ -11,5 +11,8 @@
     "lint": "echo 'Add lint per workspace'",
     "test": "echo 'Add tests per workspace'",
     "test:coverage": "npm run -w apps/api test -- --runInBand && npm run -w apps/web test -- --watch=false"
+  },
+  "dependencies": {
+    "@angular/service-worker": "^19.2.19"
   }
 }

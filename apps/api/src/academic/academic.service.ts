@@ -3,8 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { BadRequestException } from '@nestjs/common';
 import { AcademicYear } from './academic-year.schema';
-import { Program } from './program.schema';
-import { Level } from './level.schema';
+import { Program, ProgramType } from './program.schema';
+import { Level, LevelCycle } from './level.schema';
 import { ProgramOffer } from './program-offer.schema';
 import { Group } from './group.schema';
 import { Semester } from './semester.schema';
@@ -61,7 +61,7 @@ export class AcademicService {
     return { items, total };
   }
 
-  createProgram(data: { name: string; code?: string }) {
+  createProgram(data: { name: string; code?: string; domaine?: string; type?: ProgramType }) {
     return this.programModel.create(data);
   }
 
@@ -112,10 +112,8 @@ export class AcademicService {
     return this.offerModel.create(data);
   }
 
-  createLevel(data: { name: string }) {
-    return this.levelModel.create({
-      name: data.name,
-    });
+  createLevel(data: { name: string; cycle: LevelCycle; ects?: number; order?: number }) {
+    return this.levelModel.create(data);
   }
 
   async listGroups(pagination: { skip: number; limit: number }) {

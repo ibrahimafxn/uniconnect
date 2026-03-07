@@ -30,6 +30,9 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { CreateEvaluationDto } from './dto/create-evaluation.dto';
 import { UpdateEvaluationDto } from './dto/update-evaluation.dto';
 import { UpsertGradesDto } from './dto/upsert-grades.dto';
+import { CreateNoteClaimDto } from './dto/create-note-claim.dto';
+import { UpdateNoteClaimDto } from './dto/update-note-claim.dto';
+import { NoteClaimStatus } from './schemas/note-claim.schema';
 
 @Controller('notes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -105,6 +108,13 @@ export class NotesController {
     @Query('subjectId') subjectId?: string,
   ) {
     return this.notesService.listEvaluations({ groupId, subjectId });
+  }
+
+  @Get('evaluations/me')
+  @Roles(Role.Student)
+  @ApiOperation({ summary: 'Lister mes evaluations' })
+  listMyEvaluations(@Request() req: { user: { userId: string; email?: string; role: Role } }) {
+    return this.notesService.listMyEvaluations(req.user.email);
   }
 
   @Post('evaluations')
@@ -186,6 +196,82 @@ export class NotesController {
   @ApiOperation({ summary: 'Resume des notes (etudiant connecte)' })
   meSummary(@Request() req: { user: { userId: string; email?: string; role: Role } }) {
     return this.notesService.getStudentSummaryForEmail(req.user.email, req.user);
+  }
+
+  @Post('claims')
+  @Roles(Role.Student)
+  @ApiOperation({ summary: 'Creer une reclamation de note' })
+  createClaim(
+    @Body() dto: CreateNoteClaimDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role } },
+  ) {
+    return this.notesService.createNoteClaim(dto, { email: req.user.email ?? '' });
+  }
+
+  @Get('claims')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: 'Lister les reclamations de note' })
+  @ApiQuery({ name: 'status', required: false })
+  listClaims(@Query('status') status?: NoteClaimStatus) {
+    return this.notesService.listNoteClaims({ status });
+  }
+
+  @Get('claims/export')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: 'Exporter les reclamations en CSV' })
+  @ApiQuery({ name: 'status', required: false })
+  async exportClaims(@Query('status') status: NoteClaimStatus | undefined, @Res() res: Response) {
+    const claims = await this.notesService.listNoteClaims({ status });
+    const rows = claims.map((c: any) => ({
+      createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : '',
+      studentNumber: c.studentId?.studentNumber ?? '',
+      studentName: c.studentId ? `${c.studentId.lastName ?? ''} ${c.studentId.firstName ?? ''}`.trim() : '',
+      evaluation: c.evaluationId?.title ?? '',
+      status: c.status ?? '',
+      deadlineAt: c.deadlineAt ? new Date(c.deadlineAt).toISOString() : '',
+      decisionNote: c.decisionNote ?? '',
+    }));
+    const header = ['createdAt', 'studentNumber', 'studentName', 'evaluation', 'status', 'deadlineAt', 'decisionNote'];
+    const csv = [
+      header.join(','),
+      ...rows.map((r) =>
+        header
+          .map((k) => {
+            const value = String((r as any)[k] ?? '');
+            const escaped = value.replace(/\"/g, '\"\"');
+            return `"${escaped}"`;
+          })
+          .join(','),
+      ),
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=\"note-claims.csv\"');
+    res.send(csv);
+  }
+
+  @Get('claims/me')
+  @Roles(Role.Student)
+  @ApiOperation({ summary: 'Lister mes reclamations' })
+  listMyClaims(@Request() req: { user: { userId: string; email?: string; role: Role } }) {
+    return this.notesService.listMyNoteClaims({ email: req.user.email ?? '' });
+  }
+
+  @Patch('claims/:id')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: 'Traiter une reclamation' })
+  updateClaim(
+    @Param('id') id: string,
+    @Body() dto: UpdateNoteClaimDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.notesService.updateNoteClaim(id, dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Get('evaluations/:id/export')

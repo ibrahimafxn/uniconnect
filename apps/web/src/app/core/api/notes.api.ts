@@ -19,6 +19,20 @@ export type Evaluation = {
   maxScore: number;
 };
 
+export type NoteClaim = {
+  _id: string;
+  studentId: string;
+  evaluationId: string;
+  reason: string;
+  requestedScore?: number;
+  status: 'pending' | 'in_review' | 'accepted' | 'rejected';
+  decisionNote?: string;
+  deadlineAt?: string;
+  handledBy?: string;
+  handledAt?: string;
+  createdAt?: string;
+};
+
 export type Grade = {
   _id: string;
   evaluationId: string;
@@ -57,6 +71,10 @@ export class NotesApi {
     return this.http.get<Evaluation[]>(`${this.baseUrl}/evaluations`, { params });
   }
 
+  listMyEvaluations(): Observable<Evaluation[]> {
+    return this.http.get<Evaluation[]>(`${this.baseUrl}/evaluations/me`);
+  }
+
   createEvaluation(payload: Omit<Evaluation, '_id'>) {
     return this.http.post<Evaluation>(`${this.baseUrl}/evaluations`, payload);
   }
@@ -83,5 +101,30 @@ export class NotesApi {
 
   mySummary() {
     return this.http.get<any>(`${this.baseUrl}/students/me/summary`);
+  }
+
+  createClaim(payload: { evaluationId: string; reason: string; requestedScore?: number }) {
+    return this.http.post<NoteClaim>(`${this.baseUrl}/claims`, payload);
+  }
+
+  listClaims(status?: NoteClaim['status']) {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get<NoteClaim[]>(`${this.baseUrl}/claims`, { params });
+  }
+
+  listMyClaims() {
+    return this.http.get<NoteClaim[]>(`${this.baseUrl}/claims/me`);
+  }
+
+  updateClaim(id: string, payload: { status: NoteClaim['status']; decisionNote?: string }) {
+    return this.http.patch<NoteClaim>(`${this.baseUrl}/claims/${id}`, payload);
+  }
+
+  exportClaims(status?: NoteClaim['status']) {
+    const params = status ? new HttpParams().set('status', status) : undefined;
+    return this.http.get(`${this.baseUrl}/claims/export`, {
+      params,
+      responseType: 'blob',
+    });
   }
 }

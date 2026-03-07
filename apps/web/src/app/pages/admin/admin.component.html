@@ -241,6 +241,20 @@
   <ng-container *ngIf="activeTab === 'payments'">
     <div class="payments-grid">
 
+      <!-- Statistiques rapides -->
+      <div class="pay-card stat">
+        <div class="stat-label">Total collecté</div>
+        <div class="stat-value">250,000 FC</div>
+      </div>
+      <div class="pay-card stat">
+        <div class="stat-label">Montant dû</div>
+        <div class="stat-value" style="color: #dc2626;">125,000 FC</div>
+      </div>
+      <div class="pay-card stat">
+        <div class="stat-label">Taux de paiement</div>
+        <div class="stat-value" style="color: #16a34a;">66.7%</div>
+      </div>
+
       <!-- Impayés -->
       <div class="pay-card alert">
         <h2>⚠️ Impayés</h2>
@@ -268,18 +282,25 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Libellé</th><th>Total</th><th>Échéances</th><th></th></tr></thead>
+            <thead><tr><th>Libellé</th><th>Total</th><th>Échéances</th><th>Reste par échéance</th><th></th></tr></thead>
             <tbody>
-              <tr *ngFor="let p of (plans$ | async)">
+              <tr *ngFor="let p of (plansView$ | async)">
                 <td><strong>{{ p.label }}</strong></td>
                 <td>{{ p.totalAmount | number }} {{ p.currency }}</td>
                 <td class="muted">{{ p.installments?.length ?? 0 }} échéance(s)</td>
+                <td class="muted">
+                  <div *ngIf="(p.installmentStatus?.length ?? 0) === 0">—</div>
+                  <div *ngFor="let inst of p.installmentStatus">
+                    {{ inst.dueDate | date:'dd/MM/yyyy' }} :
+                    <strong>{{ inst.remaining | number }} {{ p.currency }}</strong>
+                  </div>
+                </td>
                 <td class="actions">
                   <button class="icon-btn" (click)="selectPlanForEdit(p)">✏</button>
                   <button class="icon-btn danger" (click)="deletePlan(p._id)">🗑</button>
                 </td>
               </tr>
-              <tr *ngIf="(plans$ | async)?.length === 0"><td colspan="4" class="empty-row">Aucun plan.</td></tr>
+              <tr *ngIf="(plansView$ | async)?.length === 0"><td colspan="5" class="empty-row">Aucun plan.</td></tr>
             </tbody>
           </table>
         </div>
@@ -293,11 +314,21 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Montant</th><th>Référence</th><th>Reçu</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Montant</th><th>Échéance</th><th>Anticipé</th><th>Référence</th><th>Reçu</th><th></th></tr></thead>
             <tbody>
-              <tr *ngFor="let p of (payments$ | async)">
+              <tr *ngFor="let p of (paymentsView$ | async)">
                 <td>{{ p.paidAt | date:'dd/MM/yyyy' }}</td>
                 <td><strong>{{ p.amount | number }} {{ p.currency }}</strong></td>
+                <td class="muted">
+                  <ng-container *ngIf="p.installmentDueDate; else noInst">
+                    {{ p.installmentDueDate | date:'dd/MM/yyyy' }}<span *ngIf="p.installmentLabel"> — {{ p.installmentLabel }}</span>
+                  </ng-container>
+                  <ng-template #noInst>—</ng-template>
+                </td>
+                <td class="muted">
+                  <ng-container *ngIf="p.installmentDueDate; else noEarly"> {{ p.isEarly ? 'Oui' : 'Non' }} </ng-container>
+                  <ng-template #noEarly>—</ng-template>
+                </td>
                 <td class="muted">{{ p.reference || '—' }}</td>
                 <td><a class="receipt-link" [href]="receiptUrl(p._id)" target="_blank" rel="noopener">PDF</a></td>
                 <td class="actions">
@@ -305,7 +336,7 @@
                   <button class="icon-btn danger" (click)="deletePayment(p._id)">🗑</button>
                 </td>
               </tr>
-              <tr *ngIf="(payments$ | async)?.length === 0"><td colspan="5" class="empty-row">Aucun paiement.</td></tr>
+              <tr *ngIf="(paymentsView$ | async)?.length === 0"><td colspan="7" class="empty-row">Aucun paiement.</td></tr>
             </tbody>
           </table>
         </div>
@@ -579,12 +610,23 @@
           <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">{{ s.lastName }} {{ s.firstName }}</option>
         </select>
       </div>
-      <div class="field"><label>Plan (optionnel)</label>
-        <select formControlName="planId">
-          <option value="">— Aucun —</option>
-          <option *ngFor="let p of (plans$ | async)" [value]="p._id">{{ p.label }}</option>
-        </select>
-      </div>
+      <ng-container *ngIf="(plans$ | async) as plans">
+        <div class="field"><label>Plan (optionnel)</label>
+          <select formControlName="planId">
+            <option value="">— Aucun —</option>
+            <option *ngFor="let p of plans" [value]="p._id">{{ p.label }}</option>
+          </select>
+        </div>
+        <div class="field" *ngIf="paymentForm.get('planId')?.value">
+          <label>Échéance *</label>
+          <select formControlName="installmentId">
+            <option value="">— Choisir —</option>
+            <option *ngFor="let inst of getPlanInstallments(plans, paymentForm.get('planId')?.value)" [value]="inst._id">
+              {{ inst.dueDate | date:'dd/MM/yyyy' }} — {{ inst.amount | number }} {{ paymentForm.get('currency')?.value || 'XOF' }}
+            </option>
+          </select>
+        </div>
+      </ng-container>
       <div class="field"><label>Montant *</label><input type="number" formControlName="amount" /></div>
       <div class="field"><label>Devise</label><input formControlName="currency" /></div>
       <div class="field"><label>Date de paiement *</label><input type="date" formControlName="paidAt" /></div>

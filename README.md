@@ -170,14 +170,42 @@ API:
 Doc module:
 - `docs/notes.md`
 
+## Sprint 7 (Administration MVP Complet)
+
+**Statut**: Planifié (2026-06-22 → 2026-07-13)
+
+Fonctionnel:
+- Gestion structure académique (années, programmes, niveaux, offres, groupes).
+- Import en masse d'étudiants (XLSX avec validation et rapport).
+- Paramétrage des paiements (frais, plans d'échéances, modes Mobile Money).
+- Gestion utilisateurs complets et RBAC détaillé.
+- Supervision & rapports (dashboard, audit logs, alertes).
+- Configurations globales (SMTP, templates, paramètres système).
+
+API (tous endpoints taggés `@ApiTags('Administration')`):
+- Structure: `GET/POST /admin/academic-years`, `GET/POST /admin/programs`, etc.
+- Import: `POST /admin/students/import/preview`, `POST /admin/students/import/commit`, `GET /admin/students/import/:id`
+- Paiements: `POST /admin/payment-configs`, `POST /admin/installment-plans`, `PATCH /admin/payment-methods/:id`
+- Utilisateurs: `GET/POST /admin/users`, `PATCH /admin/users/:id/roles`, `PATCH /admin/users/:id/status`
+- Supervision: `GET /admin/dashboard`, `GET /admin/audit-logs`, `GET /admin/reports/{payments,students,attendance}`
+- Config: `PATCH /admin/config/:key`, `PATCH /admin/email-templates/:code`
+
+UI Admin:
+- Dashboard avec KPIs rapides.
+- Gestion structure académique (CRUD visuelle).
+- Import d'étudiants (upload + preview + rapport).
+- Gestion utilisateurs (CRUD + permissions).
+- Configuration paiements.
+- Audit logs et rapports.
+- Configurations globales.
+
+Doc module:
+- `docs/administration.md`
+- `SPRINT_7_PLAN.md`
+- `SPRINT_7_GETTING_STARTED.md`
+
 ## Couverture (fin de sprint)
 
 ```bash
 npm run test:coverage
-```
-
-## Onboarding rapide
-
-```bash
-./scripts/setup.sh
 ```

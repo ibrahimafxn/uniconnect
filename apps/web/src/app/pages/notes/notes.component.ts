@@ -6,7 +6,7 @@ import { AcademicApi } from '../../core/api/academic.api';
 import { AuthService } from '../../core/auth.service';
 import { combineLatest, map, of, switchMap } from 'rxjs';
 
-export type NotesTab = 'subjects' | 'evaluations' | 'grades' | 'results';
+export type NotesTab = 'subjects' | 'evaluations' | 'grades' | 'results' | 'claims';
 
 @Component({
   selector: 'app-notes',
@@ -23,9 +23,10 @@ export class NotesComponent {
 
   readonly isAdmin = ['admin', 'super_admin'].includes(this.auth.getUserRole() ?? '');
   readonly isTeacher = ['teacher', 'external'].includes(this.auth.getUserRole() ?? '');
+  readonly isStudent = (this.auth.getUserRole() ?? '') === 'student';
 
   // === TABS ===
-  activeTab: NotesTab = this.isAdmin ? 'subjects' : this.isAdmin || this.isTeacher ? 'evaluations' : 'results';
+  activeTab: NotesTab = this.isAdmin ? 'subjects' : this.isTeacher ? 'evaluations' : 'results';
 
   // === DRAWER ===
   drawerOpen = false;
@@ -178,6 +179,76 @@ export class NotesComponent {
     this.summary$ = this.notes.studentSummary(studentId);
   }
 
+  // === CLAIMS ===
+  claimForm = this.fb.group({
+    evaluationId: ['', Validators.required],
+    reason: ['', [Validators.required, Validators.maxLength(500)]],
+    requestedScore: [''],
+  });
+
+  myEvaluations$ = this.isStudent ? this.notes.listMyEvaluations() : of([]);
+  myClaims$ = this.isStudent ? this.notes.listMyClaims() : of([]);
+  claimsStatusFilter = '';
+  claims$ = this.isAdmin ? this.notes.listClaims() : of([]);
+  claimStatus: Record<string, string> = {};
+  claimDecision: Record<string, string> = {};
+  now = () => new Date().getTime();
+
+  createClaim() {
+    if (this.claimForm.invalid) return;
+    const raw = this.claimForm.value as any;
+    const requestedScore =
+      raw.requestedScore !== undefined && raw.requestedScore !== ''
+        ? Number(raw.requestedScore)
+        : undefined;
+    this.notes
+      .createClaim({
+        evaluationId: raw.evaluationId,
+        reason: raw.reason,
+        requestedScore,
+      })
+      .subscribe(() => {
+        this.claimForm.reset();
+        this.refreshMyClaims();
+      });
+  }
+
+  refreshClaims() {
+    if (!this.isAdmin) return;
+    const status = this.claimsStatusFilter || undefined;
+    this.claims$ = this.notes.listClaims(status as any);
+  }
+
+  refreshMyClaims() {
+    if (!this.isStudent) return;
+    this.myClaims$ = this.notes.listMyClaims();
+  }
+
+  saveClaim(id: string, currentStatus: string, currentDecision?: string) {
+    const status = (this.claimStatus[id] ?? currentStatus) as any;
+    const decisionNote = this.claimDecision[id] ?? currentDecision;
+    this.notes.updateClaim(id, { status, decisionNote }).subscribe(() => this.refreshClaims());
+  }
+
+  isOverdue(deadlineAt?: string, status?: string) {
+    if (!deadlineAt) return false;
+    if (status === 'accepted' || status === 'rejected') return false;
+    return new Date(deadlineAt).getTime() < this.now();
+  }
+
+  exportClaims() {
+    if (!this.isAdmin) return;
+    const status = this.claimsStatusFilter || undefined;
+    this.notes.exportClaims(status as any).subscribe((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'note-claims.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
   // === HELPERS ===
   subjectName(subjects: any[] | null, id: string): string {
     return subjects?.find((s) => s._id === id)?.name ?? id;
@@ -196,9 +267,35 @@ export class NotesComponent {
     return avg >= 10 ? 'avg-pass' : 'avg-fail';
   }
 
+  claimStudentName(claim: any): string {
+    const student = claim?.studentId;
+    if (student && typeof student === 'object') {
+      return `${student.lastName ?? ''} ${student.firstName ?? ''}`.trim();
+    }
+    return '';
+  }
+
+  claimStudentNumber(claim: any): string {
+    const student = claim?.studentId;
+    if (student && typeof student === 'object') {
+      return student.studentNumber ?? '';
+    }
+    return String(student ?? '');
+  }
+
+  claimEvaluationTitle(claim: any): string {
+    const evaluation = claim?.evaluationId;
+    if (evaluation && typeof evaluation === 'object') {
+      return evaluation.title ?? '';
+    }
+    return String(evaluation ?? '');
+  }
+
   refresh() {
     this.subjects$ = this.notes.listSubjects();
     this.evaluations$ = this.notes.listEvaluations();
+    this.refreshClaims();
+    this.refreshMyClaims();
   }
 
   private fmtDate(value: string | Date | undefined): string {

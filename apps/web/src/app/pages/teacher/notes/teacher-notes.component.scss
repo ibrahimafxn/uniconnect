@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Unbounded:wght@600&display=swap');
 
 :host {
   --bg: #f5f2ea;
@@ -47,7 +46,6 @@ h1 {
   border-radius: var(--radius);
   padding: 20px;
   box-shadow: var(--shadow);
-  animation: floatIn 400ms ease both;
 }
 
 .section-header {
@@ -107,7 +105,6 @@ h1 {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 160ms;
 
   &:hover {
     background: #fff6f0;
@@ -197,7 +194,6 @@ button[type='submit'] {
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform 160ms;
 
   &:hover:not(:disabled) { transform: translateY(-1px); }
   &:disabled { opacity: 0.5; cursor: default; }
@@ -228,7 +224,6 @@ button[type='submit'] {
   border-radius: 10px;
   background: #fcfaf5;
   cursor: pointer;
-  transition: all 160ms;
 
   &:hover {
     background: #fff6f0;
@@ -304,7 +299,6 @@ button[type='submit'] {
   border-bottom: 1px solid var(--border);
   align-items: center;
   background: #fff;
-  transition: background 120ms;
 
   &:last-child { border-bottom: none; }
   &:hover { background: #fcfaf5; }
@@ -334,7 +328,6 @@ button[type='submit'] {
   font-size: 14px;
   font-weight: 600;
   text-align: center;
-  transition: border-color 160ms;
 
   &:focus {
     outline: none;
@@ -377,7 +370,6 @@ button[type='submit'] {
   font-family: inherit;
   font-size: 14px;
   cursor: pointer;
-  transition: transform 160ms;
 
   &:hover:not(:disabled) { transform: translateY(-1px); }
   &:disabled { opacity: 0.5; cursor: default; }
@@ -394,7 +386,6 @@ button[type='submit'] {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 160ms;
 
   &:hover {
     background: #fff6f0;
@@ -432,11 +423,6 @@ button[type='submit'] {
 
 .muted {
   color: var(--muted);
-}
-
-@keyframes floatIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {

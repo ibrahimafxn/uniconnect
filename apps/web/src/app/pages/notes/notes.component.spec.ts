@@ -10,6 +10,7 @@ describe('NotesComponent', () => {
   const notesMock = () => ({
     listSubjects: jasmine.createSpy('listSubjects').and.returnValue(of([])),
     listEvaluations: jasmine.createSpy('listEvaluations').and.returnValue(of([])),
+    listMyEvaluations: jasmine.createSpy('listMyEvaluations').and.returnValue(of([])),
     listGroupStudents: jasmine.createSpy('listGroupStudents').and.returnValue(of([])),
     listGrades: jasmine.createSpy('listGrades').and.returnValue(of([])),
     createSubject: jasmine.createSpy('createSubject').and.returnValue(of({})),
@@ -17,6 +18,10 @@ describe('NotesComponent', () => {
     upsertGrades: jasmine.createSpy('upsertGrades').and.returnValue(of({ success: true })),
     studentSummary: jasmine.createSpy('studentSummary').and.returnValue(of({})),
     mySummary: jasmine.createSpy('mySummary').and.returnValue(of(null)),
+    createClaim: jasmine.createSpy('createClaim').and.returnValue(of({})),
+    listClaims: jasmine.createSpy('listClaims').and.returnValue(of([])),
+    listMyClaims: jasmine.createSpy('listMyClaims').and.returnValue(of([])),
+    updateClaim: jasmine.createSpy('updateClaim').and.returnValue(of({})),
   });
 
   const academicMock = () => ({
@@ -53,9 +58,11 @@ describe('NotesComponent', () => {
     const { comp, notes } = setup('admin');
     const subjectsCalls = notes.listSubjects.calls.count();
     const evaluationsCalls = notes.listEvaluations.calls.count();
+    const claimsCalls = notes.listClaims.calls.count();
     comp.refresh();
     expect(notes.listSubjects.calls.count()).toBe(subjectsCalls + 1);
     expect(notes.listEvaluations.calls.count()).toBe(evaluationsCalls + 1);
+    expect(notes.listClaims.calls.count()).toBe(claimsCalls + 1);
   });
 
   it('creates subject', () => {

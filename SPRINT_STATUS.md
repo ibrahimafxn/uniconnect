@@ -1,6 +1,6 @@
 # Sprint Status (Auto-updated)
 
-Date: 2026-03-03
+Date: 2026-03-07
 
 This file summarizes sprint progress based on repository evidence (code, docs, and tests).
 
@@ -124,3 +124,22 @@ Planned scope:
 - API: module Notes (matieres, evaluations, notes) + calculs de moyennes + audit log.
 - UI: page Notes (matieres, evaluations, saisie de notes, moyenne etudiant).
 - Docs: module Notes documente (`docs/notes.md`).
+
+## Sprint 7 — Administration MVP Complet (Planifie)
+
+Window: 2026-06-22 → 2026-07-13 (tests/docs to 2026-07-13)
+
+Planned scope:
+- Gestion structure academique (annees, programmes, niveaux, offres, groupes).
+- Import en masse d'etudiants depuis Excel.
+- Parametrage des paiements (frais, modes Mobile Money).
+- Gestion utilisateurs et RBAC complet.
+- Supervision & rapports admin (dashboard, logs d'audit, alertes).
+- Configurations globales (SMTP, URLs, templates).
+- Tests + doc Administration.
+
+### Statut (2026-03-07)
+- PLAN: `SPRINT_7_PLAN.md` cree avec scope complet (UC-A01 a UC-A06).
+- Work breakdown: 4 semaines avec deliverables API + UI + tests.
+- Metriques: Coverage API >= 85%, Web >= 75%.
+- Definition of Done: audit log, Swagger tags, seed data, doc.
