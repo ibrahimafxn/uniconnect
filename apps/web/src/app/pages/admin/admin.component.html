@@ -80,11 +80,11 @@
             </div>
           </div>
 
-          <!-- Filières -->
+          <!-- Mentions (Mentions LMD) -->
           <div class="struct-card">
             <div class="struct-head">
-              <h2>Filières</h2>
-              <button (click)="openDrawer('program', 'Nouvelle filière')">+ Ajouter</button>
+              <h2>Mentions</h2>
+              <button (click)="openDrawer('program', 'Nouvelle mention')">+ Ajouter</button>
             </div>
             <div class="table-wrap">
               <table>
@@ -98,7 +98,7 @@
                       <button class="icon-btn danger" (click)="deleteProgram(p._id)">🗑</button>
                     </td>
                   </tr>
-                  <tr *ngIf="programs.items?.length === 0"><td colspan="3" class="empty-row">Aucune filière.</td></tr>
+                  <tr *ngIf="programs.items?.length === 0"><td colspan="3" class="empty-row">Aucune mention.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -127,7 +127,7 @@
             </div>
           </div>
 
-          <!-- Offres (Filière + Niveau + Année) -->
+          <!-- Offres (Mention + Niveau + Année) -->
           <div class="struct-card">
             <div class="struct-head">
               <h2>Offres</h2>
@@ -135,7 +135,7 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Niveau</th><th>Filière</th><th>Année</th><th>Capacité</th><th></th></tr></thead>
+                <thead><tr><th>Niveau</th><th>Mention</th><th>Année</th><th>Capacité</th><th></th></tr></thead>
                 <tbody>
                   <tr *ngFor="let o of (offers$ | async)?.items">
                     <td class="muted">{{ levelName(levels.items, o.levelId) }}</td>
@@ -161,7 +161,7 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Nom</th><th>Niveau</th><th>Filière</th><th></th></tr></thead>
+                <thead><tr><th>Nom</th><th>Niveau</th><th>Mention</th><th></th></tr></thead>
                 <tbody>
                   <tr *ngFor="let g of (groups$ | async)?.items">
                     <td><strong>{{ g.name }}</strong></td>
@@ -206,7 +206,7 @@
         <table>
           <thead>
             <tr>
-              <th>Matricule</th><th>Nom complet</th><th>Groupe</th><th>Filière</th><th>Statut</th><th>Email</th><th></th>
+              <th>Matricule</th><th>Nom complet</th><th>Groupe</th><th>Mention</th><th>Statut</th><th>Email</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -398,7 +398,7 @@
       <button type="submit" [disabled]="yearForm.invalid">{{ editingYearId ? 'Enregistrer' : 'Créer' }}</button>
     </form>
 
-    <!-- Filière -->
+    <!-- Mention -->
     <form *ngIf="drawerMode === 'program'" [formGroup]="programForm" (ngSubmit)="createProgram()">
       <div class="field"><label>Nom *</label><input formControlName="name" placeholder="Informatique" /></div>
       <div class="field"><label>Code</label><input formControlName="code" placeholder="INFO" /></div>
@@ -429,7 +429,7 @@
     <!-- Offre -->
     <form *ngIf="drawerMode === 'offer'" [formGroup]="offerForm" (ngSubmit)="createOffer()">
       <div class="field">
-        <label>Filière *</label>
+        <label>Mention *</label>
         <select formControlName="programId">
           <option value="">— Choisir —</option>
           <option *ngFor="let p of (programs$ | async)?.items" [value]="p._id">{{ p.name }}</option>
@@ -457,7 +457,7 @@
     <form *ngIf="drawerMode === 'group'" [formGroup]="groupForm" (ngSubmit)="createGroup()">
       <div class="field"><label>Nom *</label><input formControlName="name" placeholder="G1" /></div>
       <div class="field">
-        <label>Offre (Filière + Niveau + Année) *</label>
+        <label>Offre (Mention + Niveau + Année) *</label>
         <select formControlName="offerId">
           <option value="">— Choisir —</option>
           <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">
@@ -482,7 +482,7 @@
       <div class="field"><label>Email</label><input formControlName="email" /></div>
       <div class="field"><label>Téléphone</label><input formControlName="phone" /></div>
       <div class="field"><label>Adresse</label><input formControlName="address" /></div>
-      <div class="field"><label>Offre (Filière + Niveau + Année) *</label>
+      <div class="field"><label>Offre (Mention + Niveau + Année) *</label>
         <select formControlName="offerId" (change)="onStudentOfferChange($any($event.target).value, 'create')">
           <option value="">— Choisir —</option>
           <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">
@@ -521,7 +521,7 @@
       <div class="field"><label>Email</label><input formControlName="email" /></div>
       <div class="field"><label>Téléphone</label><input formControlName="phone" /></div>
       <div class="field"><label>Adresse</label><input formControlName="address" /></div>
-      <div class="field"><label>Offre (Filière + Niveau + Année) *</label>
+      <div class="field"><label>Offre (Mention + Niveau + Année) *</label>
         <select formControlName="offerId" (change)="onStudentOfferChange($any($event.target).value, 'edit')">
           <option value="">— Choisir —</option>
           <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">

@@ -5,6 +5,7 @@ import { NotesController } from './notes.controller';
 import { Subject, SubjectSchema } from './schemas/subject.schema';
 import { Evaluation, EvaluationSchema } from './schemas/evaluation.schema';
 import { Grade, GradeSchema } from './schemas/grade.schema';
+import { UE, UESchema } from './schemas/ue.schema';
 import { StudentProfile, StudentProfileSchema } from '../students/student-profile.schema';
 import { Group, GroupSchema } from '../academic/group.schema';
 import { AuditModule } from '../audit/audit.module';
@@ -16,6 +17,7 @@ import { AuditModule } from '../audit/audit.module';
       { name: Subject.name, schema: SubjectSchema },
       { name: Evaluation.name, schema: EvaluationSchema },
       { name: Grade.name, schema: GradeSchema },
+      { name: UE.name, schema: UESchema },
       { name: StudentProfile.name, schema: StudentProfileSchema },
       { name: Group.name, schema: GroupSchema },
     ]),

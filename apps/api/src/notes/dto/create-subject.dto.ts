@@ -16,4 +16,9 @@ export class CreateSubjectDto {
 
   @IsMongoId()
   levelId!: string;
+
+  /** UE parente (structure LMD) */
+  @IsOptional()
+  @IsMongoId()
+  ueId?: string;
 }

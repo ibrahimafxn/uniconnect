@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Subject } from './schemas/subject.schema';
 import { Evaluation } from './schemas/evaluation.schema';
 import { Grade } from './schemas/grade.schema';
+import { UE } from './schemas/ue.schema';
 import { StudentProfile } from '../students/student-profile.schema';
 import { Group } from '../academic/group.schema';
 import { Role } from '../common/roles.enum';
@@ -18,6 +19,8 @@ export class NotesService {
     private readonly evaluationModel: Model<Evaluation>,
     @InjectModel(Grade.name)
     private readonly gradeModel: Model<Grade>,
+    @InjectModel(UE.name)
+    private readonly ueModel: Model<UE>,
     @InjectModel(StudentProfile.name)
     private readonly studentModel: Model<StudentProfile>,
     @InjectModel(Group.name)
@@ -25,12 +28,71 @@ export class NotesService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  listSubjects(levelId?: string) {
-    const filter = levelId ? { levelId: new Types.ObjectId(levelId) } : {};
+  // ==================== UE (Unités d'Enseignement) ====================
+
+  listUE(levelId?: string, semesterId?: string) {
+    const filter: any = {};
+    if (levelId) filter.levelId = new Types.ObjectId(levelId);
+    if (semesterId) filter.semesterId = new Types.ObjectId(semesterId);
+    return this.ueModel.find(filter).sort({ name: 1 }).exec();
+  }
+
+  async createUE(
+    data: { name: string; code?: string; ects: number; levelId: string; semesterId?: string },
+    actor: AuditActor,
+  ) {
+    const ue = await this.ueModel.create(data);
+    await this.auditLog.log({
+      action: 'notes.ue.create',
+      entity: 'ue',
+      entityId: String(ue._id),
+      actor,
+      metadata: { name: ue.name, ects: ue.ects, levelId: ue.levelId },
+    });
+    return ue;
+  }
+
+  async updateUE(id: string, data: Partial<UE>, actor: AuditActor) {
+    const ue = await this.ueModel.findByIdAndUpdate(id, data, { returnDocument: 'after' }).exec();
+    if (ue) {
+      await this.auditLog.log({
+        action: 'notes.ue.update',
+        entity: 'ue',
+        entityId: String(ue._id),
+        actor,
+        metadata: data,
+      });
+    }
+    return ue;
+  }
+
+  async deleteUE(id: string, actor: AuditActor) {
+    const ue = await this.ueModel.findByIdAndDelete(id).exec();
+    if (ue) {
+      await this.auditLog.log({
+        action: 'notes.ue.delete',
+        entity: 'ue',
+        entityId: String(ue._id),
+        actor,
+        metadata: { name: ue.name },
+      });
+    }
+    return ue;
+  }
+
+  // ==================== Subjects (ECUE) ====================
+
+  listSubjects(levelId?: string, ueId?: string) {
+    const filter: any = {};
+    if (ueId) filter.ueId = new Types.ObjectId(ueId);
+    else if (levelId) filter.levelId = new Types.ObjectId(levelId);
     return this.subjectModel.find(filter).sort({ name: 1 }).exec();
   }
 
-  async createSubject(data: { name: string; code?: string; coefficient: number; levelId: string }, actor: AuditActor) {
+  async createSubject(
+    data: { name: string; code?: string; coefficient: number; levelId: string; ueId?: string },
+    actor: AuditActor,
+  ) {
     const subject = await this.subjectModel.create(data);
     await this.auditLog.log({
       action: 'notes.subject.create',
@@ -72,6 +134,8 @@ export class NotesService {
     return subject;
   }
 
+  // ==================== Evaluations ====================
+
   listEvaluations(filter: { groupId?: string; subjectId?: string }) {
     const query: any = {};
     if (filter.groupId) query.groupId = new Types.ObjectId(filter.groupId);
@@ -79,7 +143,10 @@ export class NotesService {
     return this.evaluationModel.find(query).sort({ date: -1 }).exec();
   }
 
-  async createEvaluation(data: { title: string; date: string; subjectId: string; groupId: string; maxScore?: number }, actor: AuditActor) {
+  async createEvaluation(
+    data: { title: string; date: string; subjectId: string; groupId: string; maxScore?: number },
+    actor: AuditActor,
+  ) {
     const date = new Date(data.date);
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException('Date invalide.');
@@ -171,6 +238,8 @@ export class NotesService {
     return { success: true };
   }
 
+  // ==================== Résumé étudiant (calcul LMD) ====================
+
   async getStudentSummary(
     studentId: string,
     actor: { userId: string; role: Role; email?: string },
@@ -195,37 +264,95 @@ export class NotesService {
       throw new BadRequestException('Groupe introuvable.');
     }
 
-    const subjects = await this.subjectModel.find({ levelId: group.levelId }).exec();
-    const evaluations = await this.evaluationModel.find({ groupId: student.groupId }).exec();
+    // UE du niveau
+    const ues = await this.ueModel.find({ levelId: group.levelId }).lean().exec();
+
+    // ECUE (matières) du niveau
+    const subjects = await this.subjectModel.find({ levelId: group.levelId }).lean().exec();
+
+    const evaluations = await this.evaluationModel.find({ groupId: student.groupId }).lean().exec();
     const evaluationIds = evaluations.map((e) => e._id);
     const grades = await this.gradeModel
       .find({ studentId: new Types.ObjectId(studentId), evaluationId: { $in: evaluationIds } })
       .lean()
       .exec();
 
-    const subjectAverages = subjects.map((subject) => {
-      const subjectEvaluations = evaluations.filter((e) => String(e.subjectId) === String(subject._id));
-      const subjectGrades = subjectEvaluations.flatMap((e) =>
-        grades.filter((g) => String(g.evaluationId) === String(e._id)).map((g) => ({
-          score: g.score,
-          maxScore: e.maxScore ?? 20,
-        })),
+    // Calcul de la moyenne par ECUE (matière)
+    const ecueAverages = subjects.map((subject) => {
+      const subjectEvals = evaluations.filter((e) => String(e.subjectId) === String(subject._id));
+      const subjectGrades = subjectEvals.flatMap((e) =>
+        grades
+          .filter((g) => String(g.evaluationId) === String(e._id))
+          .map((g) => ({ score: g.score, maxScore: e.maxScore ?? 20 })),
       );
 
       if (subjectGrades.length === 0) {
-        return { subjectId: subject._id, name: subject.name, coefficient: subject.coefficient, average: null };
+        return {
+          subjectId: subject._id,
+          name: subject.name,
+          code: subject.code,
+          coefficient: subject.coefficient,
+          ueId: subject.ueId ? String(subject.ueId) : null,
+          average: null as number | null,
+        };
       }
 
       const normalizedScores = subjectGrades.map((g) => (g.score / g.maxScore) * 20);
       const avg = normalizedScores.reduce((a, b) => a + b, 0) / normalizedScores.length;
-      return { subjectId: subject._id, name: subject.name, coefficient: subject.coefficient, average: avg };
+      return {
+        subjectId: subject._id,
+        name: subject.name,
+        code: subject.code,
+        coefficient: subject.coefficient,
+        ueId: subject.ueId ? String(subject.ueId) : null,
+        average: avg,
+      };
     });
 
-    const weighted = subjectAverages.filter((s) => s.average !== null);
-    const totalCoeff = weighted.reduce((acc, s) => acc + s.coefficient, 0);
-    const overall = totalCoeff
-      ? weighted.reduce((acc, s) => acc + (s.average as number) * s.coefficient, 0) / totalCoeff
+    // Calcul par UE avec pondération par crédits ECTS
+    const ueSummaries = ues.map((ue) => {
+      const ueEcues = ecueAverages.filter((s) => s.ueId === String(ue._id));
+      const scored = ueEcues.filter((s) => s.average !== null);
+
+      let ueAverage: number | null = null;
+      if (scored.length > 0) {
+        const totalCoeff = scored.reduce((acc, s) => acc + s.coefficient, 0);
+        ueAverage = totalCoeff
+          ? scored.reduce((acc, s) => acc + (s.average as number) * s.coefficient, 0) / totalCoeff
+          : null;
+      }
+
+      return {
+        ueId: ue._id,
+        name: ue.name,
+        code: ue.code,
+        ects: ue.ects,
+        validated: ueAverage !== null && ueAverage >= 10,
+        average: ueAverage,
+        ecues: ueEcues,
+      };
+    });
+
+    // ECUE sans UE (mode sans structure LMD — compatibilité ascendante)
+    const orphanSubjects = ecueAverages.filter((s) => !s.ueId);
+
+    // Moyenne générale : pondérée par ECTS si des UE existent, sinon par coefficient
+    const uesWithGrade = ueSummaries.filter((u) => u.average !== null);
+    const totalEcts = uesWithGrade.reduce((acc, u) => acc + u.ects, 0);
+
+    const ectsWeighted = totalEcts
+      ? uesWithGrade.reduce((acc, u) => acc + (u.average as number) * u.ects, 0) / totalEcts
       : null;
+
+    const orphanWeighted = (() => {
+      const scored = orphanSubjects.filter((s) => s.average !== null);
+      const totalCoeff = scored.reduce((acc, s) => acc + s.coefficient, 0);
+      return totalCoeff
+        ? scored.reduce((acc, s) => acc + (s.average as number) * s.coefficient, 0) / totalCoeff
+        : null;
+    })();
+
+    const overall = ectsWeighted ?? orphanWeighted;
 
     return {
       student: {
@@ -235,9 +362,28 @@ export class NotesService {
         studentNumber: student.studentNumber,
       },
       group,
-      subjects: subjectAverages,
+      ues: ueSummaries,
+      subjects: orphanSubjects,
+      allSubjects: ecueAverages,
       overallAverage: overall,
     };
+  }
+
+  async getStudentSummaryForEmail(
+    email: string | undefined,
+    actor: { userId: string; role: Role; email?: string },
+  ) {
+    if (!email) {
+      throw new BadRequestException('Email manquant.');
+    }
+    const profile = await this.studentModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!profile) {
+      throw new BadRequestException('Etudiant introuvable.');
+    }
+    return this.getStudentSummary(String(profile._id), actor);
   }
 
   async buildEvaluationExport(evaluationId: string) {
@@ -270,22 +416,5 @@ export class NotesService {
     });
 
     return { evaluation, subject, group, rows };
-  }
-
-  async getStudentSummaryForEmail(
-    email: string | undefined,
-    actor: { userId: string; role: Role; email?: string },
-  ) {
-    if (!email) {
-      throw new BadRequestException('Email manquant.');
-    }
-    const profile = await this.studentModel
-      .findOne({ email: email.toLowerCase().trim() })
-      .lean()
-      .exec();
-    if (!profile) {
-      throw new BadRequestException('Etudiant introuvable.');
-    }
-    return this.getStudentSummary(String(profile._id), actor);
   }
 }

@@ -1,7 +1,7 @@
 import { IsMongoId, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class UpdateSubjectDto {
+export class UpdateUEDto {
   @IsOptional()
   @IsString()
   name?: string;
@@ -13,8 +13,8 @@ export class UpdateSubjectDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  @Min(0.1)
-  coefficient?: number;
+  @Min(1)
+  ects?: number;
 
   @IsOptional()
   @IsMongoId()
@@ -22,5 +22,5 @@ export class UpdateSubjectDto {
 
   @IsOptional()
   @IsMongoId()
-  ueId?: string;
+  semesterId?: string;
 }

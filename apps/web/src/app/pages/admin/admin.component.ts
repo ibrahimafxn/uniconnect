@@ -187,7 +187,7 @@ export class AdminComponent {
       : this.academic.createProgram(this.programForm.value as any);
     if (this.editingProgramId) {
       this.confirmAndRun(
-        { title: 'Modifier filière', message: 'Confirmer la modification de la filière ?' },
+        { title: 'Modifier mention', message: 'Confirmer la modification de la mention ?' },
         () => obs.subscribe(() => { this.cancelEditProgram(); this.refreshAcademic(); this.closeDrawer(); }),
       );
       return;
@@ -198,13 +198,13 @@ export class AdminComponent {
   selectProgramForEdit(p: any) {
     this.editingProgramId = p._id;
     this.programForm.setValue({name: p.name ?? '', code: p.code ?? ''});
-    this.openDrawer('program', 'Modifier la filière');
+    this.openDrawer('program', 'Modifier la mention');
   }
 
   cancelEditProgram() { this.editingProgramId = null; this.programForm.reset(); }
   deleteProgram(id: string) {
     this.confirmAndRun(
-      { title: 'Supprimer filière', message: 'Confirmer la suppression de la filière ?', danger: true, confirmLabel: 'Supprimer' },
+      { title: 'Supprimer mention', message: 'Confirmer la suppression de la mention ?', danger: true, confirmLabel: 'Supprimer' },
       () => this.academic.deleteProgram(id).subscribe(() => this.refreshAcademic()),
     );
   }

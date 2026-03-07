@@ -6,7 +6,7 @@ import { AcademicApi } from '../../core/api/academic.api';
 import { AuthService } from '../../core/auth.service';
 import { combineLatest, map, of, switchMap } from 'rxjs';
 
-export type NotesTab = 'subjects' | 'evaluations' | 'grades' | 'results';
+export type NotesTab = 'ue' | 'subjects' | 'evaluations' | 'grades' | 'results';
 
 @Component({
   selector: 'app-notes',
@@ -25,14 +25,14 @@ export class NotesComponent {
   readonly isTeacher = ['teacher', 'external'].includes(this.auth.getUserRole() ?? '');
 
   // === TABS ===
-  activeTab: NotesTab = this.isAdmin ? 'subjects' : this.isAdmin || this.isTeacher ? 'evaluations' : 'results';
+  activeTab: NotesTab = this.isAdmin ? 'ue' : this.isAdmin || this.isTeacher ? 'evaluations' : 'results';
 
   // === DRAWER ===
   drawerOpen = false;
   drawerTitle = '';
-  drawerMode: 'subject' | 'evaluation' | null = null;
+  drawerMode: 'ue' | 'subject' | 'evaluation' | null = null;
 
-  openDrawer(mode: 'subject' | 'evaluation', title: string) {
+  openDrawer(mode: 'ue' | 'subject' | 'evaluation', title: string) {
     this.drawerMode = mode;
     this.drawerTitle = title;
     this.drawerOpen = true;
@@ -41,16 +41,68 @@ export class NotesComponent {
   closeDrawer() {
     this.drawerOpen = false;
     this.drawerMode = null;
+    this.cancelEditUE();
     this.cancelEditSubject();
     this.cancelEditEvaluation();
   }
 
   // === DATA ===
   levels$ = this.academic.listLevels();
+  semesters$ = this.academic.listSemesters();
   groups$ = this.academic.listGroups();
 
+  ue$ = this.notes.listUE();
   subjects$ = this.notes.listSubjects();
   evaluations$ = this.notes.listEvaluations();
+
+  // === UE FORM ===
+  editingUEId: string | null = null;
+
+  ueForm = this.fb.group({
+    name: ['', Validators.required],
+    code: [''],
+    ects: [3, [Validators.required, Validators.min(1)]],
+    levelId: ['', Validators.required],
+    semesterId: [''],
+  });
+
+  selectUEForEdit(ue: any) {
+    this.editingUEId = ue._id;
+    this.ueForm.setValue({
+      name: ue.name ?? '',
+      code: ue.code ?? '',
+      ects: ue.ects ?? 3,
+      levelId: ue.levelId ?? '',
+      semesterId: ue.semesterId ?? '',
+    });
+    this.openDrawer('ue', "Modifier l'UE");
+  }
+
+  cancelEditUE() {
+    this.editingUEId = null;
+    this.ueForm.reset({ ects: 3 });
+  }
+
+  createUE() {
+    if (this.ueForm.invalid) return;
+    const val = this.ueForm.value as any;
+    const payload: any = { name: val.name, ects: val.ects, levelId: val.levelId };
+    if (val.code) payload.code = val.code;
+    if (val.semesterId) payload.semesterId = val.semesterId;
+
+    const obs = this.editingUEId
+      ? this.notes.updateUE(this.editingUEId, payload)
+      : this.notes.createUE(payload);
+    obs.subscribe(() => {
+      this.cancelEditUE();
+      this.refresh();
+      this.closeDrawer();
+    });
+  }
+
+  deleteUE(id: string) {
+    this.notes.deleteUE(id).subscribe(() => this.refresh());
+  }
 
   // === SUBJECT FORM ===
   editingSubjectId: string | null = null;
@@ -60,6 +112,7 @@ export class NotesComponent {
     code: [''],
     coefficient: [1, [Validators.required, Validators.min(0.1)]],
     levelId: ['', Validators.required],
+    ueId: [''],
   });
 
   selectSubjectForEdit(s: any) {
@@ -69,8 +122,9 @@ export class NotesComponent {
       code: s.code ?? '',
       coefficient: s.coefficient ?? 1,
       levelId: s.levelId ?? '',
+      ueId: s.ueId ?? '',
     });
-    this.openDrawer('subject', 'Modifier la matière');
+    this.openDrawer('subject', 'Modifier la matière (ECUE)');
   }
 
   cancelEditSubject() {
@@ -80,9 +134,18 @@ export class NotesComponent {
 
   createSubject() {
     if (this.subjectForm.invalid) return;
+    const val = this.subjectForm.value as any;
+    const payload: any = {
+      name: val.name,
+      coefficient: val.coefficient,
+      levelId: val.levelId,
+    };
+    if (val.code) payload.code = val.code;
+    if (val.ueId) payload.ueId = val.ueId;
+
     const obs = this.editingSubjectId
-      ? this.notes.updateSubject(this.editingSubjectId, this.subjectForm.value as any)
-      : this.notes.createSubject(this.subjectForm.value as any);
+      ? this.notes.updateSubject(this.editingSubjectId, payload)
+      : this.notes.createSubject(payload);
     obs.subscribe(() => {
       this.cancelEditSubject();
       this.refresh();
@@ -114,7 +177,7 @@ export class NotesComponent {
       groupId: e.groupId ?? '',
       maxScore: e.maxScore ?? 20,
     });
-    this.openDrawer('evaluation', 'Modifier l\'évaluation');
+    this.openDrawer('evaluation', "Modifier l'évaluation");
   }
 
   cancelEditEvaluation() {
@@ -191,12 +254,23 @@ export class NotesComponent {
     return levels?.find((l) => l._id === id)?.name ?? id;
   }
 
+  semesterName(semesters: any[] | null, id: string): string {
+    if (!id) return '—';
+    return semesters?.find((s) => s._id === id)?.name ?? '—';
+  }
+
+  ueName(ues: any[] | null, id: string): string {
+    if (!id) return '—';
+    return ues?.find((u) => u._id === id)?.name ?? '—';
+  }
+
   averageClass(avg: number | null): string {
     if (avg === null) return '';
     return avg >= 10 ? 'avg-pass' : 'avg-fail';
   }
 
   refresh() {
+    this.ue$ = this.notes.listUE();
     this.subjects$ = this.notes.listSubjects();
     this.evaluations$ = this.notes.listEvaluations();
   }

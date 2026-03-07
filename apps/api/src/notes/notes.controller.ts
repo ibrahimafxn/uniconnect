@@ -30,6 +30,8 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { CreateEvaluationDto } from './dto/create-evaluation.dto';
 import { UpdateEvaluationDto } from './dto/update-evaluation.dto';
 import { UpsertGradesDto } from './dto/upsert-grades.dto';
+import { CreateUEDto } from './dto/create-ue.dto';
+import { UpdateUEDto } from './dto/update-ue.dto';
 
 @Controller('notes')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,12 +40,81 @@ import { UpsertGradesDto } from './dto/upsert-grades.dto';
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
+  // ==================== UE (Unités d'Enseignement) ====================
+
+  @Get('ue')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @ApiOperation({ summary: "Lister les UE (Unités d'Enseignement)" })
+  @ApiQuery({ name: 'levelId', required: false })
+  @ApiQuery({ name: 'semesterId', required: false })
+  listUE(
+    @Query('levelId') levelId?: string,
+    @Query('semesterId') semesterId?: string,
+  ) {
+    return this.notesService.listUE(levelId, semesterId);
+  }
+
+  @Post('ue')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: "Créer une UE" })
+  createUE(
+    @Body() dto: CreateUEDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.notesService.createUE(dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  @Patch('ue/:id')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: "Mettre à jour une UE" })
+  updateUE(
+    @Param('id') id: string,
+    @Body() dto: UpdateUEDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.notesService.updateUE(id, dto as any, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  @Delete('ue/:id')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: "Supprimer une UE" })
+  deleteUE(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.notesService.deleteUE(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  // ==================== Subjects (ECUE) ====================
+
   @Get('subjects')
   @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
-  @ApiOperation({ summary: 'Lister les matieres' })
+  @ApiOperation({ summary: 'Lister les ECUE (matières)' })
   @ApiQuery({ name: 'levelId', required: false })
-  listSubjects(@Query('levelId') levelId?: string) {
-    return this.notesService.listSubjects(levelId);
+  @ApiQuery({ name: 'ueId', required: false })
+  listSubjects(
+    @Query('levelId') levelId?: string,
+    @Query('ueId') ueId?: string,
+  ) {
+    return this.notesService.listSubjects(levelId, ueId);
   }
 
   @Post('subjects')

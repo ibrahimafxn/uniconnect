@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1>Notes &amp; Évaluations</h1>
-      <p class="subtitle">Gestion des matières, évaluations et résultats académiques.</p>
+      <p class="subtitle">Structure LMD — UE · ECUE · Évaluations · Résultats.</p>
     </div>
     <button class="btn-refresh ghost" (click)="refresh()">Rafraîchir</button>
   </div>
@@ -12,10 +12,18 @@
     <button
       class="tab"
       *ngIf="isAdmin"
+      [class.active]="activeTab === 'ue'"
+      (click)="activeTab = 'ue'"
+    >
+      UE
+    </button>
+    <button
+      class="tab"
+      *ngIf="isAdmin"
       [class.active]="activeTab === 'subjects'"
       (click)="activeTab = 'subjects'"
     >
-      Matières
+      ECUE (Matières)
     </button>
     <button
       class="tab"
@@ -42,22 +50,69 @@
     </button>
   </div>
 
-  <!-- ================== MATIÈRES ================== -->
+  <!-- ================== UE (UNITÉS D'ENSEIGNEMENT) ================== -->
+  <ng-container *ngIf="activeTab === 'ue' && isAdmin">
+    <ng-container *ngIf="(levels$ | async) as levelsRes">
+      <ng-container *ngIf="(semesters$ | async) as semestersRes">
+        <div class="tab-toolbar">
+          <span class="muted">Unités d'Enseignement (UE) — structure LMD avec crédits ECTS.</span>
+          <button class="btn-add" (click)="openDrawer('ue', 'Nouvelle UE')">+ Ajouter une UE</button>
+        </div>
+
+        <div class="table-wrap main-table">
+          <table>
+            <thead>
+              <tr>
+                <th>UE</th>
+                <th>Code</th>
+                <th>ECTS</th>
+                <th>Niveau</th>
+                <th>Semestre</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of (ue$ | async)">
+                <td><strong>{{ u.name }}</strong></td>
+                <td>
+                  <span class="code-chip" *ngIf="u.code">{{ u.code }}</span>
+                  <span class="muted" *ngIf="!u.code">—</span>
+                </td>
+                <td><span class="ects-badge">{{ u.ects }} ECTS</span></td>
+                <td class="muted">{{ levelName(levelsRes.items, u.levelId) }}</td>
+                <td class="muted">{{ semesterName(semestersRes.items, u.semesterId ?? '') }}</td>
+                <td class="actions">
+                  <button class="icon-btn" (click)="selectUEForEdit(u)" title="Modifier">✏</button>
+                  <button class="icon-btn danger" (click)="deleteUE(u._id)" title="Supprimer">🗑</button>
+                </td>
+              </tr>
+              <tr *ngIf="(ue$ | async)?.length === 0">
+                <td colspan="6" class="empty-row">Aucune UE enregistrée.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+
+  <!-- ================== ECUE (MATIÈRES) ================== -->
   <ng-container *ngIf="activeTab === 'subjects' && isAdmin">
     <ng-container *ngIf="(levels$ | async) as levelsRes">
       <div class="tab-toolbar">
-        <span class="muted">Liste des matières enseignées par niveau.</span>
-        <button class="btn-add" (click)="openDrawer('subject', 'Nouvelle matière')">+ Ajouter</button>
+        <span class="muted">ECUE — Éléments Constitutifs d'UE (matières enseignées).</span>
+        <button class="btn-add" (click)="openDrawer('subject', 'Nouvelle ECUE')">+ Ajouter une ECUE</button>
       </div>
 
       <div class="table-wrap main-table">
         <table>
           <thead>
             <tr>
-              <th>Matière</th>
+              <th>ECUE (Matière)</th>
               <th>Code</th>
               <th>Coefficient</th>
               <th>Niveau</th>
+              <th>UE parente</th>
               <th></th>
             </tr>
           </thead>
@@ -72,13 +127,14 @@
                 <span class="coef-badge">× {{ s.coefficient }}</span>
               </td>
               <td class="muted">{{ levelName(levelsRes.items, s.levelId) }}</td>
+              <td class="muted">{{ ueName((ue$ | async), s.ueId ?? '') }}</td>
               <td class="actions">
                 <button class="icon-btn" (click)="selectSubjectForEdit(s)" title="Modifier">✏</button>
                 <button class="icon-btn danger" (click)="deleteSubject(s._id)" title="Supprimer">🗑</button>
               </td>
             </tr>
             <tr *ngIf="(subjects$ | async)?.length === 0">
-              <td colspan="5" class="empty-row">Aucune matière enregistrée.</td>
+              <td colspan="6" class="empty-row">Aucune ECUE enregistrée.</td>
             </tr>
           </tbody>
         </table>
@@ -101,7 +157,7 @@
               <tr>
                 <th>Titre</th>
                 <th>Date</th>
-                <th>Matière</th>
+                <th>ECUE</th>
                 <th>Groupe</th>
                 <th>Note max</th>
                 <th></th>
@@ -214,7 +270,7 @@
             <div class="summary-header">
               <div>
                 <h2 class="summary-name">{{ summary.student.lastName }} {{ summary.student.firstName }}</h2>
-                <p class="muted">Récapitulatif académique</p>
+                <p class="muted">Récapitulatif académique LMD</p>
               </div>
               <div class="overall-avg" [ngClass]="averageClass(summary.overallAverage)">
                 <span class="avg-label">Moy. générale</span>
@@ -222,39 +278,98 @@
               </div>
             </div>
 
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Matière</th>
-                    <th>Moyenne</th>
-                    <th>Résultat</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let s of summary.subjects">
-                    <td><strong>{{ s.name }}</strong></td>
-                    <td>
-                      <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
-                      <span class="muted" *ngIf="s.average === null">N/A</span>
-                    </td>
-                    <td>
+            <!-- Structure UE + ECUE (LMD) -->
+            <ng-container *ngIf="summary.ues?.length > 0">
+              <div class="ue-list">
+                <div class="ue-block" *ngFor="let ue of summary.ues">
+                  <div class="ue-header">
+                    <div class="ue-title">
+                      <strong>{{ ue.name }}</strong>
+                      <span class="ects-badge">{{ ue.ects }} ECTS</span>
+                    </div>
+                    <div class="ue-avg-block">
                       <span
                         class="avg-badge"
-                        [ngClass]="averageClass(s.average)"
-                        *ngIf="s.average !== null"
+                        [ngClass]="averageClass(ue.average)"
+                        *ngIf="ue.average !== null"
                       >
-                        {{ s.average >= 10 ? 'Validé' : 'À repasser' }}
+                        {{ ue.average | number:'1.2-2' }} — {{ ue.validated ? 'Validée' : 'Non validée' }}
                       </span>
-                      <span class="muted" *ngIf="s.average === null">—</span>
-                    </td>
-                  </tr>
-                  <tr *ngIf="summary.subjects?.length === 0">
-                    <td colspan="3" class="empty-row">Aucune note disponible.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                      <span class="muted" *ngIf="ue.average === null">Non notée</span>
+                    </div>
+                  </div>
+
+                  <table class="ecue-table">
+                    <thead>
+                      <tr>
+                        <th>ECUE</th>
+                        <th>Coef.</th>
+                        <th>Moyenne</th>
+                        <th>Résultat</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let s of ue.ecues">
+                        <td>{{ s.name }}</td>
+                        <td class="muted">× {{ s.coefficient }}</td>
+                        <td>
+                          <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
+                          <span class="muted" *ngIf="s.average === null">N/A</span>
+                        </td>
+                        <td>
+                          <span
+                            class="avg-badge small"
+                            [ngClass]="averageClass(s.average)"
+                            *ngIf="s.average !== null"
+                          >
+                            {{ s.average >= 10 ? 'Validé' : 'À repasser' }}
+                          </span>
+                          <span class="muted" *ngIf="s.average === null">—</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Matières sans UE (mode sans structure LMD) -->
+            <ng-container *ngIf="summary.subjects?.length > 0">
+              <h3 class="section-title">Matières</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Matière</th>
+                      <th>Coef.</th>
+                      <th>Moyenne</th>
+                      <th>Résultat</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let s of summary.subjects">
+                      <td><strong>{{ s.name }}</strong></td>
+                      <td class="muted">× {{ s.coefficient }}</td>
+                      <td>
+                        <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
+                        <span class="muted" *ngIf="s.average === null">N/A</span>
+                      </td>
+                      <td>
+                        <span
+                          class="avg-badge"
+                          [ngClass]="averageClass(s.average)"
+                          *ngIf="s.average !== null"
+                        >
+                          {{ s.average >= 10 ? 'Validé' : 'À repasser' }}
+                        </span>
+                        <span class="muted" *ngIf="s.average === null">—</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </ng-container>
+
           </div>
         </ng-container>
       </ng-container>
@@ -275,15 +390,48 @@
   </div>
   <div class="drawer-body">
 
-    <!-- Matière -->
-    <form *ngIf="drawerMode === 'subject'" [formGroup]="subjectForm" (ngSubmit)="createSubject()">
+    <!-- UE -->
+    <form *ngIf="drawerMode === 'ue'" [formGroup]="ueForm" (ngSubmit)="createUE()">
       <div class="field">
-        <label>Nom de la matière *</label>
-        <input formControlName="name" placeholder="Ex : Mathématiques" />
+        <label>Nom de l'UE *</label>
+        <input formControlName="name" placeholder="Ex : Mathématiques Fondamentales" />
       </div>
       <div class="field">
         <label>Code (optionnel)</label>
-        <input formControlName="code" placeholder="Ex : MATH101" />
+        <input formControlName="code" placeholder="Ex : UE-MATH" />
+      </div>
+      <div class="field">
+        <label>Crédits ECTS *</label>
+        <input type="number" formControlName="ects" placeholder="3" min="1" />
+      </div>
+      <div class="field">
+        <label>Niveau *</label>
+        <select formControlName="levelId">
+          <option value="">— Choisir un niveau —</option>
+          <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Semestre (optionnel)</label>
+        <select formControlName="semesterId">
+          <option value="">— Choisir un semestre —</option>
+          <option *ngFor="let s of (semesters$ | async)?.items" [value]="s._id">{{ s.name }}</option>
+        </select>
+      </div>
+      <button type="submit" [disabled]="ueForm.invalid">
+        {{ editingUEId ? 'Enregistrer' : "Créer l'UE" }}
+      </button>
+    </form>
+
+    <!-- ECUE (Matière) -->
+    <form *ngIf="drawerMode === 'subject'" [formGroup]="subjectForm" (ngSubmit)="createSubject()">
+      <div class="field">
+        <label>Nom de l'ECUE *</label>
+        <input formControlName="name" placeholder="Ex : Algèbre linéaire" />
+      </div>
+      <div class="field">
+        <label>Code (optionnel)</label>
+        <input formControlName="code" placeholder="Ex : ECUE-ALG" />
       </div>
       <div class="field">
         <label>Coefficient *</label>
@@ -296,8 +444,15 @@
           <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
         </select>
       </div>
+      <div class="field">
+        <label>UE parente (optionnel)</label>
+        <select formControlName="ueId">
+          <option value="">— Sans UE —</option>
+          <option *ngFor="let u of (ue$ | async)" [value]="u._id">{{ u.name }} ({{ u.ects }} ECTS)</option>
+        </select>
+      </div>
       <button type="submit" [disabled]="subjectForm.invalid">
-        {{ editingSubjectId ? 'Enregistrer' : 'Créer la matière' }}
+        {{ editingSubjectId ? 'Enregistrer' : "Créer l'ECUE" }}
       </button>
     </form>
 
@@ -312,9 +467,9 @@
         <input type="date" formControlName="date" />
       </div>
       <div class="field">
-        <label>Matière *</label>
+        <label>ECUE (Matière) *</label>
         <select formControlName="subjectId">
-          <option value="">— Choisir une matière —</option>
+          <option value="">— Choisir une ECUE —</option>
           <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
         </select>
       </div>
@@ -330,7 +485,7 @@
         <input type="number" formControlName="maxScore" placeholder="20" min="1" />
       </div>
       <button type="submit" [disabled]="evaluationForm.invalid">
-        {{ editingEvaluationId ? 'Enregistrer' : 'Créer l\'évaluation' }}
+        {{ editingEvaluationId ? 'Enregistrer' : "Créer l'évaluation" }}
       </button>
     </form>
 
