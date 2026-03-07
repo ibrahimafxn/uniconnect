@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class CreateProgramDto {
   @IsString()
@@ -7,4 +7,12 @@ export class CreateProgramDto {
   @IsOptional()
   @IsString()
   code?: string;
+
+  @IsOptional()
+  @IsString()
+  domaine?: string;
+
+  @IsOptional()
+  @IsIn(['universitaire', 'bts', 'but', 'cpge'])
+  type?: string;
 }
