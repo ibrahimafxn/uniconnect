@@ -612,6 +612,58 @@
           <option *ngFor="let s of (students$ | async)?.items" [value]="s._id">{{ s.lastName }} {{ s.firstName }}</option>
         </select>
       </div>
+
+      <!-- Affichage automatique du plan si l'étudiant a un plan -->
+      <div class="plan-display" *ngIf="(selectedPlan$ | async) as plan">
+        <div class="plan-card">
+          <h3>📋 Plan de paiement</h3>
+          <div class="plan-info">
+            <div class="info-row">
+              <span class="label">Libellé:</span>
+              <span class="value">{{ plan.label }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Montant total:</span>
+              <span class="value">{{ plan.totalAmount | number }} {{ plan.currency }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Échéances:</span>
+              <span class="value">{{ plan.installments?.length || 0 }}</span>
+            </div>
+          </div>
+          
+          <!-- Listing des échéances -->
+          <div class="installments-list" *ngIf="plan.installments && plan.installments.length > 0">
+            <h4>Détail des échéances:</h4>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Montant</th>
+                  <th>Libellé</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inst of plan.installments">
+                  <td>{{ inst.dueDate | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ inst.amount | number }} {{ plan.currency }}</td>
+                  <td>{{ inst.label || '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message si aucun plan -->
+      <div class="no-plan-message" *ngIf="(studentPlans$ | async) as plans; else noStudent">
+        <ng-container *ngIf="plans && plans.length === 0; else hasPlan">
+          <p class="info-message">⚠️ Cet étudiant n'a pas de plan de paiement. Créez-en un d'abord.</p>
+        </ng-container>
+        <ng-template #hasPlan></ng-template>
+      </div>
+      <ng-template #noStudent></ng-template>
+
       <ng-container *ngIf="(plans$ | async) as plans">
         <div class="field"><label>Plan (optionnel)</label>
           <select formControlName="planId">
