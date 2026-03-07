@@ -626,7 +626,10 @@
       <!-- Affichage automatique du plan si l'étudiant a un plan -->
       <div class="plan-display" *ngIf="(selectedPlan$ | async) as plan">
         <div class="plan-card">
-          <h3>📋 Plan de paiement</h3>
+          <div class="plan-header">
+            <h3>📋 Plan de paiement</h3>
+            <button type="button" class="icon-btn download" title="Télécharger le plan en PDF">📥</button>
+          </div>
           <div class="plan-info">
             <div class="info-row">
               <span class="label">Libellé:</span>
@@ -651,13 +654,19 @@
                   <th>Date</th>
                   <th>Montant</th>
                   <th>Libellé</th>
+                  <th>Statut</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let inst of plan.installments">
+                <tr *ngFor="let inst of plan.installments" [ngClass]="'status-' + getInstallmentStatus(plan, inst._id || '').status">
                   <td>{{ inst.dueDate | date:'dd/MM/yyyy' }}</td>
                   <td>{{ inst.amount | number }} {{ plan.currency }}</td>
                   <td>{{ inst.label || '—' }}</td>
+                  <td class="status-cell">
+                    <span *ngIf="getInstallmentStatus(plan, inst._id || '').status === 'paid'" class="status-badge paid">✅ Payée</span>
+                    <span *ngIf="getInstallmentStatus(plan, inst._id || '').status === 'partial'" class="status-badge partial">⏳ Partielle</span>
+                    <span *ngIf="getInstallmentStatus(plan, inst._id || '').status === 'unpaid'" class="status-badge unpaid">❌ Impayée</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -668,7 +677,8 @@
       <!-- Message si aucun plan -->
       <div class="no-plan-message" *ngIf="(studentPlans$ | async) as plans; else noStudent">
         <ng-container *ngIf="plans && plans.length === 0; else hasPlan">
-          <p class="info-message">⚠️ Cet étudiant n'a pas de plan de paiement. Créez-en un d'abord.</p>
+          <p class="info-message">⚠️ Cet étudiant n'a pas de plan de paiement.</p>
+          <button type="button" class="ghost small" (click)="createPlanFromPayment()">📝 Créer un plan maintenant</button>
         </ng-container>
         <ng-template #hasPlan></ng-template>
       </div>
