@@ -4,6 +4,8 @@ import { StudentProfile } from '../students/student-profile.schema';
 
 @Schema({ _id: true })
 export class PaymentInstallment {
+  _id?: Types.ObjectId;
+
   @Prop({ required: true })
   amount!: number;
 
