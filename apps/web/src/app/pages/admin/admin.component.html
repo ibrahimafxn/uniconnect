@@ -628,7 +628,7 @@
         <div class="plan-card">
           <div class="plan-header">
             <h3>📋 Plan de paiement</h3>
-            <button type="button" class="icon-btn download" title="Télécharger le plan en PDF">📥</button>
+            <button type="button" class="icon-btn download" (click)="downloadPlanPdf(plan._id, plan.label)" title="Télécharger le plan en PDF">📥</button>
           </div>
           <div class="plan-info">
             <div class="info-row">

@@ -88,4 +88,8 @@ export class PaymentsApi {
   receiptUrl(paymentId: string) {
     return `${this.baseUrl}/${paymentId}/receipt`;
   }
+
+  exportPlanPdfUrl(planId: string) {
+    return `${this.baseUrl}/plans/${planId}/export-pdf`;
+  }
 }

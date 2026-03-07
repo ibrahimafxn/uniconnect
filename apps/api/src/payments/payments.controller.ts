@@ -57,6 +57,133 @@ export class PaymentsController {
     return this.paymentsService.deletePlan(id);
   }
 
+  @Get('plans/:id/export-pdf')
+  async exportPlanPdf(@Param('id') id: string, @Res() res: Response) {
+    const { plan, student, installmentStats } =
+      await this.paymentsService.buildPlanExport(id);
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="plan-${plan.label?.replace(/\s+/g, '_')}-${new Date().getTime()}.pdf"`,
+      );
+      res.send(buffer);
+    });
+
+    // Header
+    doc.fontSize(20).text('Plan de Paiement', { align: 'center' });
+    doc.moveDown();
+
+    // Student info
+    doc
+      .fontSize(12)
+      .text(
+        `Étudiant: ${student?.lastName ?? ''} ${student?.firstName ?? ''}`,
+      );
+    doc.text(`Matricule: ${student?.studentNumber ?? ''}`);
+    doc.moveDown();
+
+    // Plan info
+    doc.fontSize(14).text('Détails du Plan');
+    doc
+      .strokeColor('#999')
+      .lineWidth(0.5)
+      .moveTo(50, doc.y - 5)
+      .lineTo(200, doc.y - 5)
+      .stroke();
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(`Libellé: ${plan.label}`);
+    doc.text(`Montant total: ${plan.totalAmount} ${plan.currency}`);
+    doc.text(`Nombre d'échéances: ${plan.installments?.length || 0}`);
+    doc.moveDown();
+
+    // Installments table
+    if (plan.installments && plan.installments.length > 0) {
+      doc.fontSize(12).text('Détail des Échéances');
+      doc
+        .strokeColor('#999')
+        .lineWidth(0.5)
+        .moveTo(50, doc.y - 5)
+        .lineTo(250, doc.y - 5)
+        .stroke();
+      doc.moveDown(0.5);
+
+      // Table headers
+      const col1 = 50;
+      const col2 = 150;
+      const col3 = 250;
+      const col4 = 350;
+      const col5 = 450;
+      const rowHeight = 20;
+
+      doc.fontSize(10).font('Helvetica-Bold');
+      doc.text('Date', col1, doc.y);
+      doc.text('Montant', col2, doc.y);
+      doc.text('Statut', col3, doc.y);
+      doc.text('Payé', col4, doc.y);
+      doc.text('Solde', col5, doc.y);
+      doc.moveDown();
+
+      // Horizontal line
+      doc
+        .strokeColor('#999')
+        .lineWidth(0.5)
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .stroke();
+      doc.moveDown(0.5);
+
+      // Table rows
+      doc.font('Helvetica').fontSize(10);
+      (plan.installments ?? []).forEach((inst: any) => {
+        const stat =
+          installmentStats[inst._id || ''] || { paid: 0, status: 'unpaid' };
+        const status =
+          stat.status === 'paid'
+            ? '✓ Payée'
+            : stat.status === 'partial'
+              ? '⊘ Partielle'
+              : '✗ Impayée';
+
+        doc.text(
+          new Date(inst.dueDate).toLocaleDateString('fr-FR'),
+          col1,
+          doc.y,
+        );
+        doc.text(`${inst.amount} ${plan.currency}`, col2, doc.y);
+        doc.text(status, col3, doc.y);
+        doc.text(`${stat.paid} ${plan.currency}`, col4, doc.y);
+        doc.text(`${(inst.amount || 0) - stat.paid} ${plan.currency}`, col5, doc.y);
+        doc.moveDown();
+      });
+
+      // Horizontal line
+      doc
+        .strokeColor('#999')
+        .lineWidth(0.5)
+        .moveTo(50, doc.y)
+        .lineTo(550, doc.y)
+        .stroke();
+      doc.moveDown();
+    }
+
+    // Export date
+    doc
+      .fontSize(10)
+      .fillColor('#999')
+      .text(
+        `Exporté le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`,
+        { align: 'right' },
+      );
+
+    doc.end();
+  }
+
   @Get()
   listPayments() {
     return this.paymentsService.listPayments();
