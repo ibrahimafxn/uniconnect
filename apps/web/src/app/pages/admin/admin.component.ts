@@ -687,6 +687,21 @@ export class AdminComponent implements OnInit {
     this.unpaid$ = this.payments.listUnpaid();
     this.plansView$ = this.buildPlansView(this.plans$, this.payments$);
     this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
+    // Refresh KPIs with new payment data
+    this.kpis$ = combineLatest([this.payments$, this.unpaid$]).pipe(
+      map(([payments, unpaid]) => {
+        const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totalDue = unpaid.reduce((sum, u) => sum + (u.balanceDue || 0), 0);
+        const grandTotal = totalCollected + totalDue;
+        const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
+        
+        return {
+          totalCollected,
+          totalDue,
+          paymentRate: Math.round(paymentRate * 10) / 10,
+        };
+      }),
+    );
   }
 
   // === USERS ===
