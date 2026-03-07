@@ -28,17 +28,27 @@ describe('StudentsService extra', () => {
   const groupModel = {
     findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
   } as any;
+  const academicYearModel = {
+    findById: jest.fn().mockReturnValue({
+      lean: () => ({ exec: jest.fn().mockResolvedValue({ startDate: new Date('2025-09-01') }) }),
+    }),
+    findOne: jest.fn().mockReturnValue({
+      sort: () => ({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ startDate: new Date('2025-09-01') }) }),
+      }),
+    }),
+  } as any;
 
   it('createEnrollment calls model', async () => {
     const enrollmentModel = { ...mockModel() } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any, offerModel, groupModel);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
     await service.createEnrollment({ studentId: 's', academicYearId: 'y' });
     expect(enrollmentModel.create).toHaveBeenCalled();
   });
 
   it('createEnrollment respects provided status', async () => {
     const enrollmentModel = { ...mockModel() } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any, offerModel, groupModel);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
     await service.createEnrollment({
       studentId: 's',
       academicYearId: 'y',
@@ -53,7 +63,7 @@ describe('StudentsService extra', () => {
 
   it('createStudent and getStudent call model', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     const year = new Date().getFullYear();
     await service.createStudent({
       firstName: 'John',
@@ -72,14 +82,14 @@ describe('StudentsService extra', () => {
 
   it('updateStudent calls model', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.updateStudent('id', { firstName: 'John' } as any);
     expect(studentModel.findByIdAndUpdate).toHaveBeenCalled();
   });
 
   it('updateStudent converts birthDate string', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.updateStudent('id', { birthDate: '2005-01-02' } as any);
     const payload = studentModel.findByIdAndUpdate.mock.calls[0][1];
     expect(payload.birthDate).toBeInstanceOf(Date);
@@ -101,7 +111,7 @@ describe('StudentsService extra', () => {
           }) as any,
       }),
     } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.updateStudent('id', { email: 'john@u.c' } as any);
     expect(studentModel.findByIdAndUpdate).toHaveBeenCalled();
   });
@@ -122,7 +132,7 @@ describe('StudentsService extra', () => {
           }) as any,
       }),
     } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await expect(
       service.updateStudent('id', { lastName: 'Smith' } as any),
     ).rejects.toThrow('Matricule invalide');
@@ -130,7 +140,7 @@ describe('StudentsService extra', () => {
 
   it('createStudent rejects invalid birthDate', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     expect(() =>
       service.createStudent({
         firstName: 'John',
@@ -147,7 +157,7 @@ describe('StudentsService extra', () => {
 
   it('createStudent rejects invalid matricule', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     expect(() =>
       service.createStudent({
         firstName: 'John',
@@ -165,7 +175,7 @@ describe('StudentsService extra', () => {
   it('deleteStudent and deleteEnrollment call model', async () => {
     const studentModel = { ...mockModel() } as any;
     const enrollmentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, enrollmentModel, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
     await service.deleteStudent('id');
     await service.deleteEnrollment('id');
     expect(studentModel.findByIdAndDelete).toHaveBeenCalled();
@@ -174,7 +184,7 @@ describe('StudentsService extra', () => {
 
   it('updateEnrollment calls model', async () => {
     const enrollmentModel = { ...mockModel() } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any, offerModel, groupModel);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
     await service.updateEnrollment('id', { status: 'approved' } as any);
     expect(enrollmentModel.findByIdAndUpdate).toHaveBeenCalled();
   });
@@ -195,7 +205,7 @@ describe('StudentsService extra', () => {
         }),
       }),
     } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
@@ -213,7 +223,7 @@ describe('StudentsService extra', () => {
   it('createStudent accepts matricule suffix', async () => {
     const create = jest.fn().mockResolvedValue({});
     const studentModel = { ...mockModel(), create } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
@@ -246,7 +256,7 @@ describe('StudentsService extra', () => {
       findByIdAndDelete: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
       findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
     } as any;
-    const service = new StudentsService({} as any, {} as any, documentModel, offerModel, groupModel);
+    const service = new StudentsService({} as any, {} as any, documentModel, academicYearModel, offerModel, groupModel);
     const res = await service.listDocuments('s1', { skip: 0, limit: 10 });
     await service.createDocument({
       studentId: 's1',
@@ -272,7 +282,7 @@ describe('StudentsService extra', () => {
   });
 
   it('resolveStudentNumberOrThrow rejects mismatched suffix', () => {
-    const service = new StudentsService({} as any, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService({} as any, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     expect(() =>
       (service as any).resolveStudentNumberOrThrow({
         normalized: 'ML103DJ2026X',
@@ -295,7 +305,7 @@ describe('StudentsService extra', () => {
         }),
       }),
     } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     const next = await (service as any).nextAvailableStudentNumber('ML103DJ2026');
     expect(next).toBe('ML103DJ202611');
   });

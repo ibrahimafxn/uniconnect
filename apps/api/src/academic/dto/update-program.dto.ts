@@ -1,4 +1,5 @@
 import { IsIn, IsOptional, IsString } from 'class-validator';
+import type { ProgramType } from '../program.schema';
 
 export class UpdateProgramDto {
   @IsOptional()
@@ -15,5 +16,5 @@ export class UpdateProgramDto {
 
   @IsOptional()
   @IsIn(['universitaire', 'bts', 'but', 'cpge'])
-  type?: string;
+  type?: ProgramType;
 }

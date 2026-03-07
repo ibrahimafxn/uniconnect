@@ -11,6 +11,8 @@ describe('NotesService', () => {
   const oid1 = '507f1f77bcf86cd799439011';
   const oid2 = '507f1f77bcf86cd799439012';
   const actor = { userId: oid1, role: Role.Admin } as any;
+  const claimModel = {} as any;
+  const emailService = { sendMail: jest.fn().mockResolvedValue(true) } as any;
 
   it('listSubjects filters by level', async () => {
     const subjectModel = {
@@ -20,9 +22,11 @@ describe('NotesService', () => {
       subjectModel,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.listSubjects(oid1);
     expect(res).toHaveLength(1);
@@ -35,9 +39,11 @@ describe('NotesService', () => {
       subjectModel,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.createSubject({ name: 'Math', coefficient: 2, levelId: oid2 }, actor);
     expect(res._id).toBe(oid1);
@@ -53,9 +59,11 @@ describe('NotesService', () => {
       subjectModel,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.updateSubject(oid1, { name: 'Math' } as any, actor);
     expect(res._id).toBe(oid1);
@@ -71,9 +79,11 @@ describe('NotesService', () => {
       subjectModel,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.deleteSubject(oid1, actor);
     expect(res._id).toBe(oid1);
@@ -88,9 +98,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.listEvaluations({ groupId: oid1, subjectId: oid2 });
     expect(res).toHaveLength(1);
@@ -103,9 +115,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.createEvaluation({ title: 'DS1', date: '2026-06-12', subjectId: oid1, groupId: oid2 }, actor);
     expect(res._id).toBe(oid1);
@@ -117,9 +131,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.updateEvaluation(oid1, { date: 'invalid' } as any, actor)).rejects.toThrow('Date invalide');
   });
@@ -133,9 +149,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.updateEvaluation(oid1, { date: '2026-06-12', title: 'DS2' } as any, actor);
     expect(res._id).toBe(oid1);
@@ -151,9 +169,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.updateEvaluation(oid1, { title: 'DS2' } as any, actor);
     expect(res).toBeNull();
@@ -168,9 +188,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.listGroupStudents(oid1);
     expect(res).toHaveLength(1);
@@ -184,9 +206,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       gradeModel,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.listGrades(oid1);
     expect(res).toHaveLength(1);
@@ -197,9 +221,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(
       service.createEvaluation({ title: 'DS', date: 'invalid', subjectId: oid1, groupId: oid2 }, actor),
@@ -214,9 +240,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       { bulkWrite: jest.fn() } as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.upsertGrades(oid1, [{ studentId: oid2, score: 30 }], actor)).rejects.toThrow('Score invalide');
   });
@@ -229,9 +257,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       { bulkWrite: jest.fn() } as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.upsertGrades(oid1, [{ studentId: oid2, score: 10 }], actor)).rejects.toThrow('Evaluation introuvable');
   });
@@ -246,9 +276,11 @@ describe('NotesService', () => {
       {} as any,
       evaluationModel,
       gradeModel,
+      claimModel,
       {} as any,
       {} as any,
       auditLog,
+      emailService,
     );
     const res = await service.upsertGrades(oid1, [{ studentId: oid2, score: 10 }], actor);
     expect(res.success).toBe(true);
@@ -263,9 +295,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.getStudentSummary(oid2, { userId: oid2, role: Role.Student, email: 'a@b.c' } as any)).rejects.toThrow('Accès refusé');
   });
@@ -292,9 +326,11 @@ describe('NotesService', () => {
       subjectModel,
       evaluationModel,
       gradeModel,
+      claimModel,
       studentModel,
       groupModel,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.getStudentSummary(oid1, { userId: oid1, role: Role.Student, email: 'a@b.c' } as any);
     expect(res.overallAverage).toBe(10);
@@ -308,9 +344,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.getStudentSummary(oid1, { userId: oid1, role: Role.Admin } as any)).rejects.toThrow('Etudiant introuvable');
   });
@@ -326,9 +364,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       groupModel,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.getStudentSummary(oid1, { userId: oid1, role: Role.Admin } as any)).rejects.toThrow('Groupe introuvable');
   });
@@ -353,9 +393,11 @@ describe('NotesService', () => {
       subjectModel,
       evaluationModel,
       gradeModel,
+      claimModel,
       studentModel,
       groupModel,
       { log: jest.fn() } as any,
+      emailService,
     );
     const res = await service.getStudentSummary(oid1, { userId: oid1, role: Role.Admin } as any);
     expect(res.overallAverage).toBeNull();
@@ -367,9 +409,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       {} as any,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.getStudentSummaryForEmail(undefined, actor)).rejects.toThrow('Email manquant');
   });
@@ -382,9 +426,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     await expect(service.getStudentSummaryForEmail('a@b.c', actor)).rejects.toThrow('Etudiant introuvable');
   });
@@ -397,9 +443,11 @@ describe('NotesService', () => {
       {} as any,
       {} as any,
       {} as any,
+      claimModel,
       studentModel,
       {} as any,
       { log: jest.fn() } as any,
+      emailService,
     );
     const spy = jest.spyOn(service, 'getStudentSummary').mockResolvedValue({ overallAverage: 12 } as any);
     const res = await service.getStudentSummaryForEmail('a@b.c', { userId: oid1, role: Role.Admin } as any);

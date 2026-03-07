@@ -40,7 +40,7 @@ export class StudentProfile extends Document {
   })
   status!: StudentStatus;
 
-  @Prop({ trim: true })
+  @Prop({ trim: true, lowercase: true })
   email?: string;
 
   @Prop({ trim: true })
@@ -64,6 +64,13 @@ export class StudentProfile extends Document {
 
 export const StudentProfileSchema = SchemaFactory.createForClass(StudentProfile);
 StudentProfileSchema.index({ studentNumber: 1 }, { unique: true });
+StudentProfileSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { email: { $type: 'string', $ne: '' } },
+  },
+);
 StudentProfileSchema.index({ lastName: 1, firstName: 1 });
 StudentProfileSchema.index({ programId: 1 });
 StudentProfileSchema.index({ offerId: 1 });

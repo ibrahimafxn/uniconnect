@@ -1,17 +1,36 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {
   FormArray, FormBuilder, ReactiveFormsModule, Validators, FormsModule,
 } from '@angular/forms';
-import {Observable, of, tap, take} from 'rxjs';
+import {Observable, of, tap, take, combineLatest, map} from 'rxjs';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
-import {PaymentsApi} from '../../core/api/payments.api';
+import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
 import {UsersApi} from '../../core/api/users.api';
 import {Paginated, StudentDocument} from '../../core/api/students.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
 
 export type AdminTab = 'structure' | 'students' | 'payments' | 'users' | 'documents';
+
+type PaymentView = Payment & {
+  installmentDueDate?: string;
+  installmentLabel?: string;
+  isEarly?: boolean;
+};
+
+type InstallmentStatus = {
+  _id?: string;
+  amount: number;
+  dueDate: string;
+  label?: string;
+  paid: number;
+  remaining: number;
+};
+
+type PaymentPlanView = PaymentPlan & {
+  installmentStatus?: InstallmentStatus[];
+};
 
 @Component({
   selector: 'app-admin',
@@ -20,7 +39,7 @@ export type AdminTab = 'structure' | 'students' | 'payments' | 'users' | 'docume
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss'],
 })
-export class AdminComponent {
+export class AdminComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly academic = inject(AcademicApi);
   private readonly students = inject(StudentsApi);
@@ -442,7 +461,7 @@ export class AdminComponent {
   }
 
   onStudentOfferChange(offerId: string, mode: 'create' | 'edit') {
-    const form = mode === 'edit' ? this.editStudentForm : this.studentForm;
+    const form = (mode === 'edit' ? this.editStudentForm : this.studentForm) as any;
     if (offerId) {
       this.offers$.pipe(take(1)).subscribe((res) => {
         const offer = res?.items?.find((o) => o._id === offerId);
@@ -467,7 +486,7 @@ export class AdminComponent {
     this.groups$.pipe(take(1)).subscribe((res) => {
       const group = res?.items?.find((g) => g._id === groupId);
       const offerId = group?.offerId ?? '';
-      const form = mode === 'edit' ? this.editStudentForm : this.studentForm;
+      const form = (mode === 'edit' ? this.editStudentForm : this.studentForm) as any;
       if (offerId && !form.get('offerId')?.value) {
         form.get('offerId')?.setValue(offerId);
         this.onStudentOfferChange(offerId, mode);
@@ -570,6 +589,7 @@ export class AdminComponent {
 
   paymentForm = this.fb.group({
     studentId: ['', Validators.required], planId: [''],
+    installmentId: [''],
     amount: [0, Validators.required], currency: ['XOF', Validators.required],
     paidAt: ['', Validators.required], reference: [''],
   });
@@ -617,6 +637,20 @@ export class AdminComponent {
     );
   }
 
+  ngOnInit() {
+    this.paymentForm.get('planId')?.valueChanges.subscribe((planId) => {
+      const installmentCtrl = this.paymentForm.get('installmentId');
+      if (!installmentCtrl) return;
+      if (planId) {
+        installmentCtrl.setValidators([Validators.required]);
+      } else {
+        installmentCtrl.clearValidators();
+        installmentCtrl.setValue('');
+      }
+      installmentCtrl.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
   createPayment() {
     if (this.paymentForm.invalid) return;
     const obs = this.editingPaymentId
@@ -634,7 +668,7 @@ export class AdminComponent {
 
   selectPaymentForEdit(p: any) {
     this.editingPaymentId = p._id;
-    this.paymentForm.setValue({studentId: p.studentId ?? '', planId: p.planId ?? '', amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt), reference: p.reference ?? ''});
+    this.paymentForm.setValue({studentId: p.studentId ?? '', planId: p.planId ?? '', installmentId: p.installmentId ?? '', amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt), reference: p.reference ?? ''});
     this.openDrawer('payment', 'Modifier le paiement');
   }
 
@@ -651,6 +685,8 @@ export class AdminComponent {
     this.plans$ = this.payments.listPlans();
     this.payments$ = this.payments.listPayments();
     this.unpaid$ = this.payments.listUnpaid();
+    this.plansView$ = this.buildPlansView(this.plans$, this.payments$);
+    this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
   }
 
   // === USERS ===
@@ -775,5 +811,79 @@ export class AdminComponent {
     if (!value) return '';
     const d = value instanceof Date ? value : new Date(value);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  plansView$ = this.buildPlansView(this.plans$, this.payments$);
+  paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
+
+  getPlanInstallments(plans: PaymentPlan[] | null | undefined, planId: string | null | undefined) {
+    if (!plans || !planId) return [];
+    return plans.find((p) => p._id === planId)?.installments ?? [];
+  }
+
+  private buildPaymentsView(
+    plans$: Observable<PaymentPlan[]>,
+    payments$: Observable<Payment[]>,
+  ): Observable<PaymentView[]> {
+    return combineLatest([plans$, payments$]).pipe(
+      map(([plans, payments]) => {
+        const planById = new Map(plans.map((p) => [p._id, p]));
+        return payments.map((payment) => {
+          if (!payment.planId || !payment.installmentId) return payment;
+          const plan = planById.get(payment.planId);
+          const installment = plan?.installments?.find(
+            (inst) => inst._id === payment.installmentId,
+          );
+          if (!installment) return payment;
+          const paidAt = new Date(payment.paidAt);
+          const dueDate = new Date(installment.dueDate);
+          return {
+            ...payment,
+            installmentDueDate: installment.dueDate,
+            installmentLabel: installment.label,
+            isEarly: paidAt.getTime() < dueDate.getTime(),
+          };
+        });
+      }),
+    );
+  }
+
+  private buildPlansView(
+    plans$: Observable<PaymentPlan[]>,
+    payments$: Observable<Payment[]>,
+  ): Observable<PaymentPlanView[]> {
+    return combineLatest([plans$, payments$]).pipe(
+      map(([plans, payments]) => {
+        const paidByPlanInst = new Map<string, Map<string, number>>();
+        payments.forEach((payment) => {
+          if (!payment.planId || !payment.installmentId) return;
+          if (!paidByPlanInst.has(payment.planId)) {
+            paidByPlanInst.set(payment.planId, new Map());
+          }
+          const byInst = paidByPlanInst.get(payment.planId)!;
+          byInst.set(
+            payment.installmentId,
+            (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
+          );
+        });
+
+        return plans.map((plan) => {
+          const byInst = paidByPlanInst.get(plan._id) ?? new Map();
+          const installmentStatus = (plan.installments ?? []).map((inst) => {
+            const paid = byInst.get(inst._id ?? '') ?? 0;
+            const remaining = Math.max(0, (inst.amount ?? 0) - paid);
+            return {
+              _id: inst._id,
+              amount: inst.amount,
+              dueDate: inst.dueDate,
+              label: inst.label,
+              paid,
+              remaining,
+            };
+          });
+          return { ...plan, installmentStatus };
+        });
+      }),
+    );
   }
 }

@@ -1,13 +1,15 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Subject } from './schemas/subject.schema';
 import { Evaluation } from './schemas/evaluation.schema';
 import { Grade } from './schemas/grade.schema';
+import { NoteClaim, NoteClaimStatus } from './schemas/note-claim.schema';
 import { StudentProfile } from '../students/student-profile.schema';
 import { Group } from '../academic/group.schema';
 import { Role } from '../common/roles.enum';
 import { AuditActor, AuditLogService } from '../audit/audit-log.service';
+import { EmailService } from '../common/email.service';
 
 @Injectable()
 export class NotesService {
@@ -18,11 +20,14 @@ export class NotesService {
     private readonly evaluationModel: Model<Evaluation>,
     @InjectModel(Grade.name)
     private readonly gradeModel: Model<Grade>,
+    @InjectModel(NoteClaim.name)
+    private readonly claimModel: Model<NoteClaim>,
     @InjectModel(StudentProfile.name)
     private readonly studentModel: Model<StudentProfile>,
     @InjectModel(Group.name)
     private readonly groupModel: Model<Group>,
     private readonly auditLog: AuditLogService,
+    private readonly emailService: EmailService,
   ) {}
 
   listSubjects(levelId?: string) {
@@ -77,6 +82,23 @@ export class NotesService {
     if (filter.groupId) query.groupId = new Types.ObjectId(filter.groupId);
     if (filter.subjectId) query.subjectId = new Types.ObjectId(filter.subjectId);
     return this.evaluationModel.find(query).sort({ date: -1 }).exec();
+  }
+
+  async listMyEvaluations(email: string | undefined) {
+    if (!email) {
+      throw new BadRequestException('Email manquant.');
+    }
+    const student = await this.studentModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) {
+      throw new BadRequestException('Etudiant introuvable.');
+    }
+    return this.evaluationModel
+      .find({ groupId: student.groupId })
+      .sort({ date: -1 })
+      .exec();
   }
 
   async createEvaluation(data: { title: string; date: string; subjectId: string; groupId: string; maxScore?: number }, actor: AuditActor) {
@@ -270,6 +292,137 @@ export class NotesService {
     });
 
     return { evaluation, subject, group, rows };
+  }
+
+  async createNoteClaim(
+    data: { evaluationId: string; reason: string; requestedScore?: number },
+    user: { email: string },
+  ) {
+    const student = await this.studentModel
+      .findOne({ email: user.email?.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) {
+      throw new NotFoundException('Profil étudiant introuvable.');
+    }
+
+    const grade = await this.gradeModel
+      .findOne({
+        evaluationId: new Types.ObjectId(data.evaluationId),
+        studentId: new Types.ObjectId(student._id),
+      })
+      .lean()
+      .exec();
+    if (!grade) {
+      throw new BadRequestException("Note introuvable pour cette évaluation.");
+    }
+
+    const deadlineAt = new Date();
+    deadlineAt.setDate(deadlineAt.getDate() + 1);
+
+    const claim = await this.claimModel
+      .create({
+        studentId: student._id,
+        evaluationId: new Types.ObjectId(data.evaluationId),
+        reason: data.reason,
+        requestedScore: data.requestedScore,
+        status: NoteClaimStatus.Pending,
+        deadlineAt,
+      })
+      .catch((err) => {
+        if (err?.code === 11000) {
+          throw new BadRequestException('Réclamation déjà soumise.');
+        }
+        throw err;
+      });
+
+    if (student.email) {
+      this.emailService
+        .sendMail({
+          to: student.email,
+          subject: 'Réclamation de note reçue',
+          text: `Votre réclamation pour l'évaluation ${data.evaluationId} a bien été reçue. Délai de traitement: 1 jour.`,
+        })
+        .catch(() => undefined);
+    }
+
+    await this.auditLog.log({
+      action: 'notes.claim.create',
+      entity: 'note-claim',
+      entityId: String(claim._id),
+      actor: { userId: String(student._id), email: user.email, role: Role.Student },
+      metadata: { evaluationId: data.evaluationId },
+    });
+
+    return claim;
+  }
+
+  listNoteClaims(filter: { status?: NoteClaimStatus }) {
+    const query: any = {};
+    if (filter.status) query.status = filter.status;
+    return this.claimModel
+      .find(query)
+      .populate('studentId', 'firstName lastName studentNumber')
+      .populate('evaluationId', 'title date')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async listMyNoteClaims(user: { email: string }) {
+    const student = await this.studentModel
+      .findOne({ email: user.email?.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) return [];
+    return this.claimModel
+      .find({ studentId: new Types.ObjectId(student._id) })
+      .populate('evaluationId', 'title date')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async updateNoteClaim(
+    id: string,
+    data: { status: NoteClaimStatus; decisionNote?: string },
+    actor: AuditActor,
+  ) {
+    const claim = await this.claimModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            status: data.status,
+            decisionNote: data.decisionNote,
+            handledBy: new Types.ObjectId(actor.userId),
+            handledAt: new Date(),
+          },
+        },
+        { returnDocument: 'after' },
+      )
+      .exec();
+    if (!claim) {
+      throw new NotFoundException('Réclamation introuvable.');
+    }
+    const student = await this.studentModel.findById(claim.studentId).lean().exec();
+    if (student?.email) {
+      this.emailService
+        .sendMail({
+          to: student.email,
+          subject: 'Réclamation de note traitée',
+          text: `Votre réclamation est maintenant "${data.status}". ${
+            data.decisionNote ? `Décision: ${data.decisionNote}` : ''
+          }`,
+        })
+        .catch(() => undefined);
+    }
+    await this.auditLog.log({
+      action: 'notes.claim.update',
+      entity: 'note-claim',
+      entityId: String(claim._id),
+      actor,
+      metadata: { status: data.status },
+    });
+    return claim;
   }
 
   async getStudentSummaryForEmail(

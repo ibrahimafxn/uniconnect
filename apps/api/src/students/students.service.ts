@@ -7,6 +7,7 @@ import { StudentStatus } from './student-profile.schema';
 import { StudentDocument } from './student-document.schema';
 import { ProgramOffer } from '../academic/program-offer.schema';
 import { Group } from '../academic/group.schema';
+import { AcademicYear } from '../academic/academic-year.schema';
 import {
   buildStudentNumber,
   normalizeStudentNumber,
@@ -22,6 +23,8 @@ export class StudentsService {
     private readonly enrollmentModel: Model<Enrollment>,
     @InjectModel(StudentDocument.name)
     private readonly documentModel: Model<StudentDocument>,
+    @InjectModel(AcademicYear.name)
+    private readonly academicYearModel: Model<AcademicYear>,
     @InjectModel(ProgramOffer.name)
     private readonly offerModel: Model<ProgramOffer>,
     @InjectModel(Group.name)
@@ -55,7 +58,7 @@ export class StudentsService {
   async createStudent(data: {
     firstName: string;
     lastName: string;
-    studentNumber: string;
+    studentNumber?: string;
     gender: StudentGender;
     birthDate: string;
     status?: StudentStatus;
@@ -91,7 +94,7 @@ export class StudentsService {
   private async createStudentFromOffer(data: {
     firstName: string;
     lastName: string;
-    studentNumber: string;
+    studentNumber?: string;
     gender: StudentGender;
     birthDate: string;
     status?: StudentStatus;
@@ -122,7 +125,7 @@ export class StudentsService {
   private async createStudentCore(data: {
     firstName: string;
     lastName: string;
-    studentNumber: string;
+    studentNumber?: string;
     gender: StudentGender;
     birthDate: string;
     status?: StudentStatus;
@@ -138,15 +141,33 @@ export class StudentsService {
     if (Number.isNaN(birthDate.getTime())) {
       throw new BadRequestException('Date de naissance invalide.');
     }
-    const baseNumber = this.buildBaseStudentNumber({
-      studentNumber: data.studentNumber,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      gender: data.gender,
-      birthDate,
-      inscriptionYear: new Date().getFullYear(),
-    });
-    const normalized = normalizeStudentNumber(data.studentNumber);
+    const normalizedEmail = this.normalizeEmail(data.email);
+    if (normalizedEmail) {
+      await this.ensureEmailUnique(normalizedEmail);
+    }
+    const inscriptionYear = await this.resolveInscriptionYear(
+      data.academicYearId,
+    );
+    const normalizedInput = data.studentNumber
+      ? normalizeStudentNumber(data.studentNumber)
+      : undefined;
+    const baseNumber = normalizedInput
+      ? this.buildBaseStudentNumber({
+          studentNumber: normalizedInput,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          gender: data.gender,
+          birthDate,
+          inscriptionYear,
+        })
+      : buildStudentNumber({
+          gender: data.gender,
+          birthDate,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          inscriptionYear,
+        });
+    const normalized = normalizedInput ?? baseNumber;
     const studentNumber = this.resolveStudentNumberOrThrow({
       normalized,
       baseNumber,
@@ -155,6 +176,7 @@ export class StudentsService {
     return this.studentModel
       .create({
         ...data,
+        email: normalizedEmail,
         studentNumber,
         birthDate,
       })
@@ -163,6 +185,7 @@ export class StudentsService {
         const next = await this.nextAvailableStudentNumber(baseNumber);
         return this.studentModel.create({
           ...data,
+          email: normalizedEmail,
           studentNumber: next,
           birthDate,
         });
@@ -197,6 +220,15 @@ export class StudentsService {
   async updateStudent(id: string, data: Partial<StudentProfile>) {
     const current = await this.studentModel.findById(id).lean().exec();
     const payload: Partial<StudentProfile> = { ...data };
+    if (typeof (data as any).email === 'string') {
+      const normalized = this.normalizeEmail((data as any).email);
+      if (normalized) {
+        await this.ensureEmailUnique(normalized, id);
+        payload.email = normalized;
+      } else {
+        delete (payload as any).email;
+      }
+    }
     if (typeof (data as any).birthDate === 'string') {
       payload.birthDate = new Date((data as any).birthDate);
     }
@@ -254,7 +286,9 @@ export class StudentsService {
   }
 
   findByEmail(email: string) {
-    return this.studentModel.findOne({ email }).lean().exec();
+    const normalized = this.normalizeEmail(email);
+    if (!normalized) return null;
+    return this.studentModel.findOne({ email: normalized }).lean().exec();
   }
 
   updateEnrollment(id: string, data: Partial<Enrollment>) {
@@ -387,5 +421,42 @@ export class StudentsService {
       }
     }
     return `${baseNumber}${maxSuffix + 1}`;
+  }
+
+  private normalizeEmail(email?: string) {
+    if (!email) return undefined;
+    const normalized = email.trim().toLowerCase();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  private async ensureEmailUnique(email: string, excludeId?: string) {
+    const filter: any = { email };
+    if (excludeId) filter._id = { $ne: excludeId };
+    const existing = await this.studentModel.findOne(filter).select('_id').lean().exec();
+    if (existing) {
+      throw new BadRequestException('Email déjà utilisé.');
+    }
+  }
+
+  private async resolveInscriptionYear(academicYearId?: string) {
+    if (academicYearId) {
+      const year = await this.academicYearModel
+        .findById(academicYearId)
+        .lean()
+        .exec();
+      if (!year) {
+        throw new BadRequestException('Année académique introuvable.');
+      }
+      return new Date(year.startDate).getFullYear();
+    }
+    const active = await this.academicYearModel
+      .findOne({ isActive: true })
+      .sort({ startDate: -1 })
+      .lean()
+      .exec();
+    if (active) {
+      return new Date(active.startDate).getFullYear();
+    }
+    return new Date().getFullYear();
   }
 }

@@ -16,12 +16,13 @@ export class CreateStudentProfileDto {
   @IsString()
   lastName!: string;
 
+  @IsOptional()
   @IsString()
   @Matches(STUDENT_NUMBER_REGEX, {
     message:
       'Matricule invalide. Format attendu: ML{0|1}{MM}{Initiales}{YYYY}[N].',
   })
-  studentNumber!: string;
+  studentNumber?: string;
 
   @IsEnum(StudentGender)
   gender!: StudentGender;

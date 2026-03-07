@@ -18,6 +18,16 @@ describe('StudentsService', () => {
   const groupModel = {
     findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
   } as any;
+  const academicYearModel = {
+    findById: jest.fn().mockReturnValue({
+      lean: () => ({ exec: jest.fn().mockResolvedValue({ startDate: new Date('2025-09-01') }) }),
+    }),
+    findOne: jest.fn().mockReturnValue({
+      sort: () => ({
+        lean: () => ({ exec: jest.fn().mockResolvedValue({ startDate: new Date('2025-09-01') }) }),
+      }),
+    }),
+  } as any;
 
   it('listStudents uses search filter', async () => {
     const studentModel = {
@@ -27,7 +37,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.listStudents({ skip: 0, limit: 10, q: 'john' });
 
     expect(studentModel.find).toHaveBeenCalledWith({
@@ -47,7 +57,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
     await service.listStudents({ skip: 0, limit: 10 });
     expect(studentModel.find).toHaveBeenCalledWith({});
   });
@@ -59,7 +69,7 @@ describe('StudentsService', () => {
         .fn()
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any, offerModel, groupModel);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
     const res = await service.listEnrollments({ skip: 0, limit: 10 });
     expect(res.total).toBe(0);
   });

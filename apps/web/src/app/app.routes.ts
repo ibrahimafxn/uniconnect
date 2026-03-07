@@ -1,38 +1,20 @@
 import {Routes} from '@angular/router';
 import {LoginComponent} from './pages/login/login.component';
-import {DashboardComponent} from './pages/dashboard/dashboard.component';
-import {AdminComponent} from './pages/admin/admin.component';
-import {PlanningComponent} from './pages/planning/planning.component';
-import {MessagesComponent} from './pages/messages/messages.component';
-import {NotesComponent} from './pages/notes/notes.component';
-import {SupportComponent} from './pages/support/support.component';
-import {TeacherDashboardComponent} from './pages/teacher/dashboard/teacher-dashboard.component';
-import {TeacherPlanningComponent} from './pages/teacher/planning/teacher-planning.component';
-import {TeacherNotesComponent} from './pages/teacher/notes/teacher-notes.component';
-import {TeacherPresenceComponent} from './pages/teacher/presence/teacher-presence.component';
-import {TeacherProfilePageComponent} from './pages/teacher/profile/teacher-profile-page.component';
-import {TeacherStatsComponent} from './pages/teacher/stats/teacher-stats.component';
-import {authGuard} from './core/auth.guard';
-import {teacherGuard} from './core/teacher.guard';
 
 export const routes: Routes = [
   {path: 'login', component: LoginComponent},
 
-  // Routes enseignant
-  {path: 'teacher', component: TeacherDashboardComponent, canActivate: [teacherGuard]},
-  {path: 'teacher/planning', component: TeacherPlanningComponent, canActivate: [teacherGuard]},
-  {path: 'teacher/notes', component: TeacherNotesComponent, canActivate: [teacherGuard]},
-  {path: 'teacher/presence', component: TeacherPresenceComponent, canActivate: [teacherGuard]},
-  {path: 'teacher/profile', component: TeacherProfilePageComponent, canActivate: [teacherGuard]},
-  {path: 'teacher/stats', component: TeacherStatsComponent, canActivate: [teacherGuard]},
+  // Lazy-loaded teacher routes
+  {
+    path: 'teacher',
+    loadChildren: () => import('./pages/teacher/teacher.routes').then(m => m.TEACHER_ROUTES)
+  },
 
-  // Routes admin / générales
-  {path: 'dashboard', component: DashboardComponent, canActivate: [authGuard]},
-  {path: 'admin', component: AdminComponent, canActivate: [authGuard]},
-  {path: 'planning', component: PlanningComponent, canActivate: [authGuard]},
-  {path: 'messages', component: MessagesComponent, canActivate: [authGuard]},
-  {path: 'notes', component: NotesComponent, canActivate: [authGuard]},
-  {path: 'support', component: SupportComponent, canActivate: [authGuard]},
+  // Lazy-loaded general/admin routes
+  {
+    path: '',
+    loadChildren: () => import('./pages/general.routes').then(m => m.GENERAL_ROUTES)
+  },
 
   {path: '', pathMatch: 'full', redirectTo: 'dashboard'},
   {path: '**', redirectTo: 'dashboard'},

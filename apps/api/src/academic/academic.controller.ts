@@ -124,6 +124,8 @@ export class AcademicController {
     return this.academicService.createProgram({
       name: dto.name,
       code: dto.code,
+      domaine: dto.domaine,
+      type: dto.type,
     });
   }
 
@@ -151,6 +153,9 @@ export class AcademicController {
   createLevel(@Body() dto: CreateLevelDto) {
     return this.academicService.createLevel({
       name: dto.name,
+      cycle: dto.cycle,
+      ects: dto.ects,
+      order: dto.order,
     });
   }
 
