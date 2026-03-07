@@ -632,6 +632,13 @@
       <div class="field"><label>Montant *</label><input type="number" formControlName="amount" /></div>
       <div class="field"><label>Devise</label><input formControlName="currency" /></div>
       <div class="field"><label>Date de paiement *</label><input type="date" formControlName="paidAt" /></div>
+       <div class="field"><label>Méthode de paiement *</label>
+         <select formControlName="paymentMethod">
+           <option value="espece">💵 Espèce</option>
+           <option value="carte_bancaire">💳 Carte bancaire</option>
+           <option value="mobile_money">📱 Mobile Money</option>
+         </select>
+       </div>
       <div class="field"><label>Référence</label><input formControlName="reference" /></div>
       <button type="submit" [disabled]="paymentForm.invalid">{{ editingPaymentId ? 'Enregistrer' : 'Enregistrer le paiement' }}</button>
     </form>

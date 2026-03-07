@@ -25,6 +25,12 @@ export class Payment extends Document {
 
   @Prop({ trim: true })
   reference?: string;
+
+  @Prop({ 
+    enum: ['carte_bancaire', 'espece', 'mobile_money'],
+    default: 'espece'
+  })
+  paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

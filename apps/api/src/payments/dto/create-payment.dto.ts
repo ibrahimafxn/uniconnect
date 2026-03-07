@@ -1,9 +1,12 @@
 import {
   IsDateString,
   IsMongoId,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  ValidateIf,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,8 +18,9 @@ export class CreatePaymentDto {
   @IsMongoId()
   planId?: string;
 
-  @IsOptional()
+  @ValidateIf((o) => !!o.planId)
   @IsMongoId()
+  @IsNotEmpty()
   installmentId?: string;
 
   @IsNumber()
@@ -32,4 +36,8 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   reference?: string;
+
+  @IsOptional()
+  @IsIn(['carte_bancaire', 'espece', 'mobile_money'])
+  paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
 }

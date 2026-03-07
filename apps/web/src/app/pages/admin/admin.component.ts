@@ -592,6 +592,7 @@ export class AdminComponent implements OnInit {
     installmentId: [''],
     amount: [0, Validators.required], currency: ['XOF', Validators.required],
     paidAt: ['', Validators.required], reference: [''],
+    paymentMethod: ['espece', Validators.required],
   });
 
   get installments() { return this.planForm.get('installments') as FormArray; }
@@ -668,7 +669,7 @@ export class AdminComponent implements OnInit {
 
   selectPaymentForEdit(p: any) {
     this.editingPaymentId = p._id;
-    this.paymentForm.setValue({studentId: p.studentId ?? '', planId: p.planId ?? '', installmentId: p.installmentId ?? '', amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt), reference: p.reference ?? ''});
+    this.paymentForm.setValue({studentId: p.studentId ?? '', planId: p.planId ?? '', installmentId: p.installmentId ?? '', amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt), reference: p.reference ?? '', paymentMethod: p.paymentMethod ?? 'espece'});
     this.openDrawer('payment', 'Modifier le paiement');
   }
 
