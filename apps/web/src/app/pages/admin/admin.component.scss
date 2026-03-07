@@ -245,6 +245,14 @@ tbody tr {
     grid-column: 1/-1; 
   }
   
+  &.wide {
+    grid-column: span 2;
+    
+    @media (max-width: 1024px) {
+      grid-column: 1/-1;
+    }
+  }
+  
   &.alert { 
     border-left: 4px solid #ef4444;
     background: linear-gradient(135deg, #fef2f2 0%, rgba(255,255,255,.8) 100%);
