@@ -112,22 +112,31 @@
         <span class="muted">(sur {{ selectedEvaluation.maxScore }})</span>
       </h2>
       <div class="save-actions">
+        <span class="progress-badge" *ngIf="!loadingGrades">
+          {{ gradedCount }} / {{ students.length }} notés
+        </span>
         <span class="success-msg" *ngIf="saveSuccess">✓ Notes enregistrées</span>
         <span class="error-msg" *ngIf="saveError">{{ saveError }}</span>
-        <button class="btn-save" (click)="saveGrades()" [disabled]="saving">
+        <button class="btn-save" (click)="saveGrades()" [disabled]="saving || loadingGrades">
           {{ saving ? 'Enregistrement…' : 'Enregistrer les notes' }}
         </button>
       </div>
     </div>
 
-    <div class="grades-table">
+    <p class="loading-msg" *ngIf="loadingGrades">Chargement des notes…</p>
+
+    <div class="grades-table" *ngIf="!loadingGrades">
       <div class="grades-header">
         <span>Étudiant</span>
         <span>N° étudiant</span>
         <span>Note / {{ selectedEvaluation.maxScore }}</span>
         <span>Commentaire</span>
       </div>
-      <div class="grade-row" *ngFor="let student of students">
+      <div
+        class="grade-row"
+        *ngFor="let student of students"
+        [class.graded]="gradeEntry(student._id)?.score !== null && gradeEntry(student._id)?.score !== undefined"
+      >
         <span class="student-name">{{ studentName(student) }}</span>
         <span class="student-num muted">{{ student.studentNumber || '—' }}</span>
         <input
@@ -150,7 +159,7 @@
       </div>
     </div>
 
-    <div class="save-bottom">
+    <div class="save-bottom" *ngIf="!loadingGrades">
       <button class="btn-save" (click)="saveGrades()" [disabled]="saving">
         {{ saving ? 'Enregistrement…' : 'Enregistrer les notes' }}
       </button>

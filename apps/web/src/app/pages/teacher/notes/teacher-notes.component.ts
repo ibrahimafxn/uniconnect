@@ -34,6 +34,7 @@ export class TeacherNotesComponent {
   saveSuccess = false;
   saveError: string | null = null;
   showEvalForm = false;
+  loadingGrades = false;
 
   evalForm = this.fb.group({
     title: ['', Validators.required],
@@ -76,16 +77,27 @@ export class TeacherNotesComponent {
       score: null,
       comment: '',
     }));
+    this.loadingGrades = true;
 
-    this.notes.listGrades(eval_._id).subscribe((grades) => {
-      for (const g of grades) {
-        const entry = this.gradeEntries.find((e) => e.studentId === g.studentId);
-        if (entry) {
-          entry.score = g.score;
-          entry.comment = g.comment ?? '';
+    this.notes.listGrades(eval_._id).subscribe({
+      next: (grades) => {
+        for (const g of grades) {
+          const entry = this.gradeEntries.find((e) => e.studentId === g.studentId);
+          if (entry) {
+            entry.score = g.score;
+            entry.comment = g.comment ?? '';
+          }
         }
-      }
+        this.loadingGrades = false;
+      },
+      error: () => {
+        this.loadingGrades = false;
+      },
     });
+  }
+
+  get gradedCount(): number {
+    return this.gradeEntries.filter((e) => e.score !== null).length;
   }
 
   createEvaluation() {

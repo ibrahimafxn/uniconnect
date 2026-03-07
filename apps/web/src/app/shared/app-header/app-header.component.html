@@ -2,56 +2,52 @@
   <div class="brand">
     <div class="logo">UC</div>
     <div class="brand-text">
-      <span class="name">UniConnect ENT</span>
-      <span class="tagline">Plateforme académique & administrative centralisée</span>
+      <span class="name">UniConnect</span>
+      <span class="tagline">Plateforme académique</span>
     </div>
   </div>
 
-  <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Ouvrir le menu">
-    <span></span>
-    <span></span>
+  <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
   </button>
 
   <nav class="nav-links">
     <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
+      <span class="nav-icon">{{ item.icon }}</span>
       {{ item.label }}
     </a>
-    <a routerLink="/notes" routerLinkActive="active" (click)="closeMenu()">Notes</a>
   </nav>
 
   <div class="actions">
     <div class="user-chip">
-      <div class="avatar">{{ userEmail.slice(0, 1).toUpperCase() }}</div>
+      <div class="avatar">{{ avatarLetter }}</div>
       <div class="meta">
         <span class="email">{{ userEmail }}</span>
-        <span class="role">{{ userRole }}</span>
+        <span class="role-tag">{{ userRole }}</span>
       </div>
     </div>
-    <a class="help" routerLink="/support" title="Ouvrir le module Aide & Support">
-      Aide/Support
-    </a>
-    <button class="logout" type="button" (click)="logout()">Déconnexion</button>
+    <a class="help-btn" routerLink="/support" title="Aide & Support">?</a>
+    <button class="logout-btn" type="button" (click)="logout()">Déconnexion</button>
   </div>
 </header>
 
+<div class="mobile-overlay" *ngIf="isMenuOpen" (click)="closeMenu()"></div>
 <div class="mobile-panel" *ngIf="isMenuOpen">
+  <div class="mobile-user">
+    <div class="avatar lg">{{ avatarLetter }}</div>
+    <div class="meta">
+      <span class="email">{{ userEmail }}</span>
+      <span class="role-tag">{{ userRole }}</span>
+    </div>
+  </div>
   <nav class="mobile-nav">
     <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
+      <span class="nav-icon">{{ item.icon }}</span>
       {{ item.label }}
     </a>
-    <a routerLink="/notes" routerLinkActive="active" (click)="closeMenu()">Notes</a>
   </nav>
   <div class="mobile-actions">
-    <div class="user-chip">
-      <div class="avatar">{{ userEmail.slice(0, 1).toUpperCase() }}</div>
-      <div class="meta">
-        <span class="email">{{ userEmail }}</span>
-        <span class="role">{{ userRole }}</span>
-      </div>
-    </div>
-    <a class="help" routerLink="/support" title="Ouvrir le module Aide & Support" (click)="closeMenu()">
-      Aide/Support
-    </a>
-    <button class="logout" type="button" (click)="logout()">Déconnexion</button>
+    <a routerLink="/support" (click)="closeMenu()">Aide & Support</a>
+    <button type="button" (click)="logout()">Déconnexion</button>
   </div>
 </div>

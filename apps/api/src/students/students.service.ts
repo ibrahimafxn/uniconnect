@@ -253,6 +253,10 @@ export class StudentsService {
     return this.studentModel.findById(id).exec();
   }
 
+  findByEmail(email: string) {
+    return this.studentModel.findOne({ email }).lean().exec();
+  }
+
   updateEnrollment(id: string, data: Partial<Enrollment>) {
     return this.enrollmentModel
       .findByIdAndUpdate(id, data, { returnDocument: 'after' })

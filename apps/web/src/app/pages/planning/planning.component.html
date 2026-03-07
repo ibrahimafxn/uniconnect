@@ -1,209 +1,284 @@
 <div class="page">
-  <div class="header">
+
+  <!-- Page Header -->
+  <div class="page-header">
     <div>
       <h1>Planning</h1>
-      <p class="subtitle">Création des séances et gestion des salles.</p>
+      <p class="subtitle">Gestion des emplois du temps</p>
     </div>
-    <button class="ghost" (click)="refresh()">Rafraîchir</button>
+    <button class="btn-refresh ghost" (click)="refresh()">&#8635; Rafraîchir</button>
   </div>
 
-  <div class="stats">
-    <div class="stat" *ngIf="(rooms$ | async) as rooms">
-      <span class="stat-label">Salles</span>
-      <span class="stat-value">{{ rooms.length }}</span>
-    </div>
-    <div class="stat" *ngIf="(sessions$ | async) as sessions">
-      <span class="stat-label">Séances</span>
-      <span class="stat-value">{{ sessions.length }}</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Accès</span>
-      <span class="stat-value">{{ isAdmin ? 'Admin' : 'Lecture' }}</span>
-    </div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'sessions'" (click)="activeTab = 'sessions'">
+      <span class="tab-icon">&#128197;</span> Séances
+    </button>
+    <button class="tab" [class.active]="activeTab === 'rooms'" (click)="activeTab = 'rooms'">
+      <span class="tab-icon">&#127968;</span> Salles
+    </button>
   </div>
 
-  <section class="grid">
-    <div class="card" *ngIf="isAdmin; else roomsReadonly">
-      <div class="card-title">
-        <h2>Salles</h2>
-        <span class="pill">Admin</span>
-      </div>
-      <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
-        <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
-        <input type="number" formControlName="capacity" placeholder="Capacité" />
-        <input formControlName="location" placeholder="Localisation (optionnel)" />
-        <button type="submit">Ajouter</button>
-      </form>
-      <ul class="list">
-        <li class="list-item" *ngFor="let r of (rooms$ | async)">
-          <div>
-            <strong>{{ r.name }}</strong>
-            <span class="muted">— {{ r.capacity }} places</span>
-            <span class="muted" *ngIf="r.location">({{ r.location }})</span>
-          </div>
-          <div class="actions">
-            <button type="button" class="ghost" (click)="selectRoomForEdit(r)">Éditer</button>
-            <button type="button" class="ghost danger" (click)="deleteRoom(r._id)">
-              Supprimer
-            </button>
-          </div>
-        </li>
-      </ul>
+  <!-- ==================== SÉANCES TAB ==================== -->
+  <ng-container *ngIf="activeTab === 'sessions'">
 
-      <div class="edit-card" *ngIf="editingRoomId">
-        <h3>Modifier salle</h3>
-        <form [formGroup]="editRoomForm" (ngSubmit)="saveRoomEdit()">
-          <input formControlName="name" placeholder="Nom (ex: Salle A1)" />
-          <input type="number" formControlName="capacity" placeholder="Capacité" />
-          <input formControlName="location" placeholder="Localisation (optionnel)" />
-          <div class="row">
-            <button type="submit">Enregistrer</button>
-            <button type="button" class="ghost" (click)="cancelEditRoom()">Annuler</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <ng-template #roomsReadonly>
-      <div class="card">
-        <div class="card-title">
-          <h2>Salles</h2>
-          <span class="pill muted">Lecture seule</span>
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter-form">
+        <div class="field-inline">
+          <label>Du</label>
+          <input type="date" formControlName="dateFrom" />
         </div>
-        <p class="muted">Lecture seule.</p>
-        <ul class="list">
-          <li class="list-item" *ngFor="let r of (rooms$ | async)">
-            <div>
-              <strong>{{ r.name }}</strong>
-              <span class="muted">— {{ r.capacity }} places</span>
-              <span class="muted" *ngIf="r.location">({{ r.location }})</span>
+        <div class="field-inline">
+          <label>Au</label>
+          <input type="date" formControlName="dateTo" />
+        </div>
+        <div class="field-inline">
+          <label>Groupe</label>
+          <select formControlName="groupId">
+            <option value="">Tous</option>
+            <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+          </select>
+        </div>
+        <div class="field-inline">
+          <label>Enseignant</label>
+          <select formControlName="teacherId">
+            <option value="">Tous</option>
+            <option *ngFor="let t of (teachers$ | async)" [value]="t.id">{{ t.email }}</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="ghost small" (click)="resetFilters()">Réinitialiser</button>
+          <button type="submit" class="btn-apply">Appliquer</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="tab-toolbar" *ngIf="isAdmin">
+      <button class="btn-add" (click)="openDrawer('session', 'Créer une séance')">+ Créer une séance</button>
+    </div>
+
+    <!-- Sessions table -->
+    <ng-container *ngIf="(rooms$ | async) as rooms">
+      <ng-container *ngIf="(groups$ | async) as groups">
+        <ng-container *ngIf="(teachers$ | async) as teachers">
+          <ng-container *ngIf="(sessions$ | async) as sessions">
+            <div class="table-wrap" *ngIf="sessions.length > 0; else emptySessions">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Horaire</th>
+                    <th>Groupe</th>
+                    <th>Enseignant</th>
+                    <th>Salle</th>
+                    <th>Libellé</th>
+                    <th *ngIf="isAdmin"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of sessions">
+                    <td><strong>{{ s.date | date:'dd/MM/yyyy' }}</strong></td>
+                    <td class="muted">{{ s.startTime }} – {{ s.endTime }}</td>
+                    <td>{{ groupName(groups.items, s.groupId) }}</td>
+                    <td class="muted">{{ teacherEmail(teachers, s.teacherId) }}</td>
+                    <td>{{ roomName(rooms, s.roomId) }}</td>
+                    <td class="muted">{{ s.label || '—' }}</td>
+                    <td class="actions" *ngIf="isAdmin">
+                      <button class="icon-btn" (click)="selectSessionForEdit(s)" title="Modifier">&#9998;</button>
+                      <button class="icon-btn danger" (click)="deleteSession(s._id)" title="Supprimer">&#128465;</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </li>
-        </ul>
-      </div>
-    </ng-template>
-
-    <div class="card full">
-      <div class="card-title">
-        <h2>Séances</h2>
-        <span class="pill" *ngIf="isAdmin">Admin</span>
-        <span class="pill muted" *ngIf="!isAdmin">Lecture seule</span>
-      </div>
-      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter">
-        <input type="date" formControlName="dateFrom" />
-        <input type="date" formControlName="dateTo" />
-        <select formControlName="groupId">
-          <option value="">Tous les groupes</option>
-          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
-            {{ g.name }}
-          </option>
-        </select>
-        <select formControlName="teacherId">
-          <option value="">Tous les enseignants</option>
-          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
-            {{ t.email }} ({{ t.role }})
-          </option>
-        </select>
-        <select formControlName="roomId">
-          <option value="">Toutes les salles</option>
-          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
-            {{ r.name }}
-          </option>
-        </select>
-        <div class="row">
-          <button type="submit">Filtrer</button>
-          <button type="button" class="ghost" (click)="resetFilters()">Réinitialiser</button>
-        </div>
-      </form>
-      <p class="muted" *ngIf="!isAdmin">Lecture seule.</p>
-      <form *ngIf="isAdmin" [formGroup]="sessionForm" (ngSubmit)="createSession()">
-        <input type="date" formControlName="date" />
-        <div class="row">
-          <input type="time" formControlName="startTime" />
-          <input type="time" formControlName="endTime" />
-        </div>
-        <select formControlName="groupId">
-          <option value="">Choisir groupe</option>
-          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
-            {{ g.name }}
-          </option>
-        </select>
-        <select formControlName="teacherId">
-          <option value="">Choisir enseignant</option>
-          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
-            {{ t.email }} ({{ t.role }})
-          </option>
-        </select>
-        <select formControlName="roomId">
-          <option value="">Choisir salle</option>
-          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
-            {{ r.name }}
-          </option>
-        </select>
-        <input formControlName="label" placeholder="Libellé (optionnel)" />
-        <button type="submit">Créer</button>
-      </form>
-      <ul class="list" *ngIf="(rooms$ | async) as rooms">
-        <ng-container *ngIf="(groups$ | async) as groups">
-          <ng-container *ngIf="(teachers$ | async) as teachers">
-            <li class="list-item" *ngFor="let s of (sessions$ | async)">
-              <div>
-                <strong>{{ s.date | date }}</strong>
-                <span class="muted">— {{ s.startTime }}-{{ s.endTime }}</span>
-                <span class="muted">({{ s.label || 'Séance' }})</span>
-                <span class="muted">
-                  — Groupe: {{ groupName(groups.items, s.groupId) }}
-                </span>
-                <span class="muted">— Salle: {{ roomName(rooms, s.roomId) }}</span>
-                <span class="muted">
-                  — Enseignant: {{ teacherEmail(teachers, s.teacherId) }}
-                </span>
+            <ng-template #emptySessions>
+              <div class="empty-state">
+                <p>Aucune séance trouvée. Modifiez les filtres ou créez une nouvelle séance.</p>
               </div>
-              <div class="actions" *ngIf="isAdmin">
-                <button type="button" class="ghost" (click)="selectSessionForEdit(s)">
-                  Éditer
-                </button>
-                <button type="button" class="ghost danger" (click)="deleteSession(s._id)">
-                  Supprimer
-                </button>
-              </div>
-            </li>
+            </ng-template>
           </ng-container>
         </ng-container>
-      </ul>
+      </ng-container>
+    </ng-container>
 
-      <div class="edit-card" *ngIf="editingSessionId && isAdmin">
-        <h3>Modifier séance</h3>
-        <form [formGroup]="editSessionForm" (ngSubmit)="saveSessionEdit()">
-          <input type="date" formControlName="date" />
-          <div class="row">
-            <input type="time" formControlName="startTime" />
-            <input type="time" formControlName="endTime" />
-          </div>
-          <select formControlName="groupId">
-            <option value="">Choisir groupe</option>
-            <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">
-              {{ g.name }}
-            </option>
-          </select>
-          <select formControlName="teacherId">
-            <option value="">Choisir enseignant</option>
-            <option *ngFor="let t of (teachers$ | async)" [value]="t.id">
-              {{ t.email }} ({{ t.role }})
-            </option>
-          </select>
-          <select formControlName="roomId">
-            <option value="">Choisir salle</option>
-            <option *ngFor="let r of (rooms$ | async)" [value]="r._id">
-              {{ r.name }}
-            </option>
-          </select>
-          <input formControlName="label" placeholder="Libellé (optionnel)" />
-          <div class="row">
-            <button type="submit">Enregistrer</button>
-            <button type="button" class="ghost" (click)="cancelEditSession()">Annuler</button>
-          </div>
-        </form>
-      </div>
+  </ng-container>
+
+  <!-- ==================== SALLES TAB ==================== -->
+  <ng-container *ngIf="activeTab === 'rooms'">
+
+    <!-- Toolbar -->
+    <div class="tab-toolbar" *ngIf="isAdmin">
+      <button class="btn-add" (click)="openDrawer('room', 'Ajouter une salle')">+ Ajouter une salle</button>
     </div>
-  </section>
+
+    <!-- Rooms table -->
+    <ng-container *ngIf="(rooms$ | async) as rooms">
+      <div class="table-wrap" *ngIf="rooms.length > 0; else emptyRooms">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Capacité</th>
+              <th>Localisation</th>
+              <th *ngIf="isAdmin"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of rooms">
+              <td><strong>{{ r.name }}</strong></td>
+              <td>{{ r.capacity }} places</td>
+              <td class="muted">{{ r.location || '—' }}</td>
+              <td class="actions" *ngIf="isAdmin">
+                <button class="icon-btn" (click)="selectRoomForEdit(r)" title="Modifier">&#9998;</button>
+                <button class="icon-btn danger" (click)="deleteRoom(r._id)" title="Supprimer">&#128465;</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #emptyRooms>
+        <div class="empty-state">
+          <p>Aucune salle enregistrée. Ajoutez une salle pour commencer.</p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+  </ng-container>
+
+</div>
+
+<!-- ==================== OVERLAY + DRAWER ==================== -->
+<div class="overlay" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" *ngIf="drawerOpen">
+  <div class="drawer-header">
+    <h3>{{ drawerTitle }}</h3>
+    <button class="ghost small" (click)="closeDrawer()">&#10005;</button>
+  </div>
+  <div class="drawer-body">
+
+    <!-- Room form (create) -->
+    <form *ngIf="drawerMode === 'room' && !editingRoomId" [formGroup]="roomForm" (ngSubmit)="createRoom()">
+      <div class="field">
+        <label>Nom *</label>
+        <input formControlName="name" placeholder="Ex : Salle A1" />
+      </div>
+      <div class="field">
+        <label>Capacité *</label>
+        <input type="number" formControlName="capacity" placeholder="30" />
+      </div>
+      <div class="field">
+        <label>Localisation</label>
+        <input formControlName="location" placeholder="Bâtiment, étage…" />
+      </div>
+      <button type="submit" [disabled]="roomForm.invalid">Ajouter la salle</button>
+    </form>
+
+    <!-- Room form (edit) -->
+    <form *ngIf="drawerMode === 'room' && editingRoomId" [formGroup]="editRoomForm" (ngSubmit)="saveRoomEdit()">
+      <div class="field">
+        <label>Nom *</label>
+        <input formControlName="name" placeholder="Ex : Salle A1" />
+      </div>
+      <div class="field">
+        <label>Capacité *</label>
+        <input type="number" formControlName="capacity" />
+      </div>
+      <div class="field">
+        <label>Localisation</label>
+        <input formControlName="location" />
+      </div>
+      <button type="submit" [disabled]="editRoomForm.invalid">Enregistrer</button>
+    </form>
+
+    <!-- Session form (create) -->
+    <form *ngIf="drawerMode === 'session' && !editingSessionId" [formGroup]="sessionForm" (ngSubmit)="createSession()">
+      <div class="field">
+        <label>Date *</label>
+        <input type="date" formControlName="date" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Début *</label>
+          <input type="time" formControlName="startTime" />
+        </div>
+        <div class="field">
+          <label>Fin *</label>
+          <input type="time" formControlName="endTime" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Groupe *</label>
+        <select formControlName="groupId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Enseignant *</label>
+        <select formControlName="teacherId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">{{ t.email }} ({{ t.role }})</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Salle *</label>
+        <select formControlName="roomId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">{{ r.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Libellé</label>
+        <input formControlName="label" placeholder="Cours, TD, TP…" />
+      </div>
+      <button type="submit" [disabled]="sessionForm.invalid">Créer la séance</button>
+    </form>
+
+    <!-- Session form (edit) -->
+    <form *ngIf="drawerMode === 'session' && editingSessionId" [formGroup]="editSessionForm" (ngSubmit)="saveSessionEdit()">
+      <div class="field">
+        <label>Date *</label>
+        <input type="date" formControlName="date" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Début *</label>
+          <input type="time" formControlName="startTime" />
+        </div>
+        <div class="field">
+          <label>Fin *</label>
+          <input type="time" formControlName="endTime" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Groupe *</label>
+        <select formControlName="groupId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Enseignant *</label>
+        <select formControlName="teacherId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let t of (teachers$ | async)" [value]="t.id">{{ t.email }} ({{ t.role }})</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Salle *</label>
+        <select formControlName="roomId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let r of (rooms$ | async)" [value]="r._id">{{ r.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Libellé</label>
+        <input formControlName="label" />
+      </div>
+      <button type="submit" [disabled]="editSessionForm.invalid">Enregistrer</button>
+    </form>
+
+  </div>
 </div>
