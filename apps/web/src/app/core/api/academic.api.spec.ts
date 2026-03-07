@@ -109,7 +109,7 @@ describe('AcademicApi', () => {
   });
 
   it('createLevel posts payload', () => {
-    api.createLevel({ name: 'L1', programId: 'p1' }).subscribe();
+    api.createLevel({ name: 'L1' }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/levels');
     expect(req.request.method).toBe('POST');
     req.flush({ _id: 'l1' });
@@ -144,7 +144,7 @@ describe('AcademicApi', () => {
   });
 
   it('createGroup posts payload', () => {
-    api.createGroup({ name: 'G1', levelId: 'l1' }).subscribe();
+    api.createGroup({ name: 'G1', offerId: 'o1' }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/groups');
     expect(req.request.method).toBe('POST');
     req.flush({ _id: 'g1' });

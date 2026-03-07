@@ -38,7 +38,7 @@
     <div class="filter-row" *ngIf="(subjects$ | async) as subjects">
       <label>
         Filtrer par matière :
-        <select (change)="filterBySubject(($event.target as HTMLSelectElement).value)">
+        <select (change)="filterBySubject($any($event.target).value)">
           <option value="">Toutes les matières</option>
           <option *ngFor="let s of subjects" [value]="s._id">{{ s.name }}</option>
         </select>
@@ -137,14 +137,14 @@
           [max]="selectedEvaluation.maxScore"
           [step]="0.5"
           [value]="gradeEntry(student._id)?.score ?? ''"
-          (change)="updateScore(student._id, ($event.target as HTMLInputElement).value)"
+          (change)="updateScore(student._id, $any($event.target).value)"
           placeholder="—"
         />
         <input
           type="text"
           class="comment-input"
           [value]="gradeEntry(student._id)?.comment ?? ''"
-          (change)="updateComment(student._id, ($event.target as HTMLInputElement).value)"
+          (change)="updateComment(student._id, $any($event.target).value)"
           placeholder="Commentaire (optionnel)"
         />
       </div>

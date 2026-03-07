@@ -57,7 +57,12 @@ export class AttendanceService {
           sessionId: new Types.ObjectId(sessionId),
           studentId: new Types.ObjectId(e.studentId),
         },
-        update: { $set: { status: e.status, note: e.note ?? null } },
+        update: {
+          $set: {
+            status: e.status,
+            ...(e.note !== undefined ? { note: e.note } : {}),
+          },
+        },
         upsert: true,
       },
     }));

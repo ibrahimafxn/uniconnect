@@ -5,5 +5,5 @@ export class CreateGroupDto {
   name!: string;
 
   @IsMongoId()
-  levelId!: string;
+  offerId!: string;
 }

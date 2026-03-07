@@ -109,7 +109,7 @@
               type="text"
               class="note-input"
               [value]="e.note ?? ''"
-              (change)="setNote(e.studentId, ($event.target as HTMLInputElement).value)"
+              (change)="setNote(e.studentId, $any($event.target).value)"
               placeholder="Observation (optionnel)"
             />
           </div>

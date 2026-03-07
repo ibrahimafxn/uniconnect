@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { Group } from '../academic/group.schema';
+import { Program } from '../academic/program.schema';
+import { ProgramOffer } from '../academic/program-offer.schema';
 import { AcademicYear } from '../academic/academic-year.schema';
 
 export enum StudentStatus {
@@ -50,6 +52,12 @@ export class StudentProfile extends Document {
   @Prop({ required: true, type: Types.ObjectId, ref: Group.name })
   groupId!: Types.ObjectId;
 
+  @Prop({ required: true, type: Types.ObjectId, ref: ProgramOffer.name })
+  offerId!: Types.ObjectId;
+
+  @Prop({ required: true, type: Types.ObjectId, ref: Program.name })
+  programId!: Types.ObjectId;
+
   @Prop({ required: true, type: Types.ObjectId, ref: AcademicYear.name })
   academicYearId!: Types.ObjectId;
 }
@@ -57,3 +65,5 @@ export class StudentProfile extends Document {
 export const StudentProfileSchema = SchemaFactory.createForClass(StudentProfile);
 StudentProfileSchema.index({ studentNumber: 1 }, { unique: true });
 StudentProfileSchema.index({ lastName: 1, firstName: 1 });
+StudentProfileSchema.index({ programId: 1 });
+StudentProfileSchema.index({ offerId: 1 });

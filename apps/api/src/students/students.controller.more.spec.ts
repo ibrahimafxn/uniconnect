@@ -16,6 +16,8 @@ describe('StudentsController extra', () => {
       gender: 'male' as any,
       birthDate: '2004-03-15',
       groupId: '507f1f77bcf86cd799439011',
+      offerId: '507f1f77bcf86cd799439014',
+      programId: '507f1f77bcf86cd799439013',
       academicYearId: '507f1f77bcf86cd799439012',
     });
     expect(service.createStudent).toHaveBeenCalled();

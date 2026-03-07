@@ -49,7 +49,7 @@ export class PlanningService {
 
   async updateRoom(id: string, data: Partial<Room>, actor: AuditActor) {
     const room = await this.roomModel
-      .findByIdAndUpdate(id, data, { new: true })
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
       .exec();
     if (room) {
       await this.auditLog.log({
@@ -210,7 +210,7 @@ export class PlanningService {
           startMinutes,
           endMinutes,
         },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .exec();
     if (session) {
@@ -231,7 +231,7 @@ export class PlanningService {
     actor: AuditActor,
   ) {
     const session = await this.sessionModel
-      .findByIdAndUpdate(id, { $set: data }, { new: true })
+      .findByIdAndUpdate(id, { $set: data }, { returnDocument: 'after' })
       .exec();
     if (session) {
       await this.auditLog.log({

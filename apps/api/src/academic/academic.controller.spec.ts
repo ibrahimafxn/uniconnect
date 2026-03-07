@@ -73,7 +73,7 @@ describe('AcademicController', () => {
       deleteLevel: jest.fn().mockResolvedValue({}),
     } as unknown as AcademicService;
     const controller = new AcademicController(service);
-    await controller.createGroup({ name: 'G1', levelId: 'l1' });
+    await controller.createGroup({ name: 'G1', offerId: 'o1' });
     await controller.deleteLevel('l1');
     expect(service.createGroup).toHaveBeenCalled();
     expect(service.deleteLevel).toHaveBeenCalledWith('l1');

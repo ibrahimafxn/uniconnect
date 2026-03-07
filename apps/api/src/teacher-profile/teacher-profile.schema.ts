@@ -38,4 +38,3 @@ export class TeacherProfile extends Document {
 }
 
 export const TeacherProfileSchema = SchemaFactory.createForClass(TeacherProfile);
-TeacherProfileSchema.index({ userId: 1 }, { unique: true });

@@ -11,9 +11,10 @@ describe('AppController (e2e)', () => {
   let accessToken = '';
   let refreshToken = '';
   let academicYearId = '';
-  let programId = '';
   let levelId = '';
+  let programId = '';
   let groupId = '';
+  let offerId = '';
   let teacherId = '';
   let roomId = '';
   let studentId = '';
@@ -118,16 +119,25 @@ describe('AppController (e2e)', () => {
     const level = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/levels`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ name: `L1-${suffix}`, programId })
+      .send({ name: `L1-${suffix}` })
       .expect(201);
 
     levelId = level.body._id;
     expect(levelId).toBeTruthy();
 
+    const offer = await request(app.getHttpServer())
+      .post(`${baseUrl}/academic/offers`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ programId, levelId, academicYearId })
+      .expect(201);
+
+    offerId = offer.body._id;
+    expect(offerId).toBeTruthy();
+
     const group = await request(app.getHttpServer())
       .post(`${baseUrl}/academic/groups`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ name: `G1-${suffix}`, levelId })
+      .send({ name: `G1-${suffix}`, offerId })
       .expect(201);
 
     groupId = group.body._id;
@@ -257,6 +267,7 @@ describe('AppController (e2e)', () => {
         phone: '+221700000000',
         address: 'Dakar',
         groupId,
+        programId,
         academicYearId,
       })
       .expect(201);

@@ -12,7 +12,10 @@ export type Student = {
   gender: 'female' | 'male';
   birthDate: string;
   status?: 'active' | 'suspended' | 'graduated';
+  email?: string;
   groupId: string;
+  offerId: string;
+  programId: string;
   academicYearId: string;
 };
 

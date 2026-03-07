@@ -33,6 +33,19 @@ export class UsersService {
     return this.userModel.create({ email, passwordHash, role });
   }
 
+  update(
+    id: string,
+    data: { email?: string; passwordHash?: string; role?: Role },
+  ) {
+    return this.userModel
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
+      .exec();
+  }
+
+  delete(id: string) {
+    return this.userModel.findByIdAndDelete(id).exec();
+  }
+
   setRefreshTokenHash(userId: string, hash: string | null) {
     return this.userModel
       .findByIdAndUpdate(userId, { refreshTokenHash: hash })
