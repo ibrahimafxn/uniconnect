@@ -174,15 +174,11 @@ export class PaymentsService {
           ? plan.installments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
           : plan.totalAmount;
         
-        // Calculate total paid for ALL installments
+        // Calculate total paid for ALL installments (sum all payments for this plan)
         let totalPaid = 0;
         if (hasInstallments) {
-          // Add payments for all installments
-          plan.installments.forEach((inst) => {
-            totalPaid += byInst.get(String(inst._id)) ?? 0;
-          });
-          // Add unlinked payments (those with no installmentId)
-          totalPaid += byInst.get('none') ?? 0;
+          // Sum all payments for this plan, regardless of installmentId
+          totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
         } else {
           // If no installments, sum all payments for this plan
           totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
