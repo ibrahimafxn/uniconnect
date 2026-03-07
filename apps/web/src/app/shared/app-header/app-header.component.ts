@@ -3,6 +3,8 @@ import {CommonModule} from '@angular/common';
 import {Router, RouterModule} from '@angular/router';
 import {AuthService} from '../../core/auth.service';
 
+type NavItem = {label: string; path: string; icon: string};
+
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -13,30 +15,36 @@ import {AuthService} from '../../core/auth.service';
 export class AppHeaderComponent {
   isMenuOpen = false;
 
-  private readonly adminNavItems = [
-    {label: 'Dashboard', path: '/dashboard'},
-    {label: 'Administration', path: '/admin'},
-    {label: 'Planning', path: '/planning'},
-    {label: 'Messagerie', path: '/messages'},
+  private readonly adminNavItems: NavItem[] = [
+    {label: 'Dashboard', path: '/dashboard', icon: '⊞'},
+    {label: 'Administration', path: '/admin', icon: '🏛'},
+    {label: 'Planning', path: '/planning', icon: '📅'},
+    {label: 'Notes', path: '/notes', icon: '📊'},
+    {label: 'Messagerie', path: '/messages', icon: '💬'},
   ];
 
-  private readonly teacherNavItems = [
-    {label: 'Tableau de bord', path: '/teacher'},
-    {label: 'Mon Planning', path: '/teacher/planning'},
-    {label: 'Mes Notes', path: '/teacher/notes'},
-    {label: 'Présences', path: '/teacher/presence'},
-    {label: 'Statistiques', path: '/teacher/stats'},
-    {label: 'Messagerie', path: '/messages'},
-    {label: 'Mon Profil', path: '/teacher/profile'},
+  private readonly teacherNavItems: NavItem[] = [
+    {label: 'Tableau de bord', path: '/teacher', icon: '⊞'},
+    {label: 'Mon Planning', path: '/teacher/planning', icon: '📅'},
+    {label: 'Mes Notes', path: '/teacher/notes', icon: '📊'},
+    {label: 'Présences', path: '/teacher/presence', icon: '✅'},
+    {label: 'Statistiques', path: '/teacher/stats', icon: '📈'},
+    {label: 'Messagerie', path: '/messages', icon: '💬'},
+    {label: 'Mon Profil', path: '/teacher/profile', icon: '👤'},
+  ];
+
+  private readonly studentNavItems: NavItem[] = [
+    {label: 'Mon Espace', path: '/student', icon: '🎓'},
+    {label: 'Messagerie', path: '/messages', icon: '💬'},
   ];
 
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
 
-  get navItems() {
+  get navItems(): NavItem[] {
     const role = this.auth.getUserRole();
-    return (role === 'teacher' || role === 'external')
-      ? this.teacherNavItems
-      : this.adminNavItems;
+    if (role === 'teacher' || role === 'external') return this.teacherNavItems;
+    if (role === 'student') return this.studentNavItems;
+    return this.adminNavItems;
   }
 
   get userEmail(): string {
@@ -44,16 +52,19 @@ export class AppHeaderComponent {
   }
 
   get userRole(): string {
-    return this.auth.getUserRole() ?? 'Membre';
+    const map: Record<string, string> = {
+      admin: 'Administrateur', super_admin: 'Super Admin',
+      teacher: 'Enseignant', external: 'Vacataire', student: 'Étudiant',
+    };
+    return map[this.auth.getUserRole() ?? ''] ?? 'Membre';
   }
 
-  toggleMenu() {
-    this.isMenuOpen = !this.isMenuOpen;
+  get avatarLetter(): string {
+    return this.userEmail.slice(0, 1).toUpperCase();
   }
 
-  closeMenu() {
-    this.isMenuOpen = false;
-  }
+  toggleMenu() { this.isMenuOpen = !this.isMenuOpen; }
+  closeMenu() { this.isMenuOpen = false; }
 
   logout() {
     this.auth.logout().subscribe({

@@ -1,101 +1,338 @@
 <div class="page">
-  <header class="header">
+  <div class="page-header">
     <div>
-      <h1>Notes</h1>
-      <p class="subtitle">Paramétrage des matières et saisie des notes.</p>
+      <h1>Notes &amp; Évaluations</h1>
+      <p class="subtitle">Gestion des matières, évaluations et résultats académiques.</p>
     </div>
-    <button class="ghost" (click)="refresh()">Rafraîchir</button>
-  </header>
+    <button class="btn-refresh ghost" (click)="refresh()">Rafraîchir</button>
+  </div>
 
-  <section class="grid">
-    <div class="card" *ngIf="isAdmin">
-      <h2>Matières</h2>
-      <form [formGroup]="subjectForm" (ngSubmit)="createSubject()">
-        <input formControlName="name" placeholder="Nom de la matière" />
-        <input formControlName="code" placeholder="Code (optionnel)" />
-        <input type="number" formControlName="coefficient" placeholder="Coefficient" />
+  <!-- Tabs -->
+  <div class="tabs">
+    <button
+      class="tab"
+      *ngIf="isAdmin"
+      [class.active]="activeTab === 'subjects'"
+      (click)="activeTab = 'subjects'"
+    >
+      Matières
+    </button>
+    <button
+      class="tab"
+      *ngIf="isAdmin || isTeacher"
+      [class.active]="activeTab === 'evaluations'"
+      (click)="activeTab = 'evaluations'"
+    >
+      Évaluations
+    </button>
+    <button
+      class="tab"
+      *ngIf="isAdmin || isTeacher"
+      [class.active]="activeTab === 'grades'"
+      (click)="activeTab = 'grades'"
+    >
+      Saisie des notes
+    </button>
+    <button
+      class="tab"
+      [class.active]="activeTab === 'results'"
+      (click)="activeTab = 'results'"
+    >
+      Résultats
+    </button>
+  </div>
+
+  <!-- ================== MATIÈRES ================== -->
+  <ng-container *ngIf="activeTab === 'subjects' && isAdmin">
+    <ng-container *ngIf="(levels$ | async) as levelsRes">
+      <div class="tab-toolbar">
+        <span class="muted">Liste des matières enseignées par niveau.</span>
+        <button class="btn-add" (click)="openDrawer('subject', 'Nouvelle matière')">+ Ajouter</button>
+      </div>
+
+      <div class="table-wrap main-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Matière</th>
+              <th>Code</th>
+              <th>Coefficient</th>
+              <th>Niveau</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of (subjects$ | async)">
+              <td><strong>{{ s.name }}</strong></td>
+              <td>
+                <span class="code-chip" *ngIf="s.code">{{ s.code }}</span>
+                <span class="muted" *ngIf="!s.code">—</span>
+              </td>
+              <td>
+                <span class="coef-badge">× {{ s.coefficient }}</span>
+              </td>
+              <td class="muted">{{ levelName(levelsRes.items, s.levelId) }}</td>
+              <td class="actions">
+                <button class="icon-btn" (click)="selectSubjectForEdit(s)" title="Modifier">✏</button>
+                <button class="icon-btn danger" (click)="deleteSubject(s._id)" title="Supprimer">🗑</button>
+              </td>
+            </tr>
+            <tr *ngIf="(subjects$ | async)?.length === 0">
+              <td colspan="5" class="empty-row">Aucune matière enregistrée.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ================== ÉVALUATIONS ================== -->
+  <ng-container *ngIf="activeTab === 'evaluations' && (isAdmin || isTeacher)">
+    <ng-container *ngIf="(subjects$ | async) as subjectsList">
+      <ng-container *ngIf="(groups$ | async) as groupsRes">
+        <div class="tab-toolbar">
+          <span class="muted">Contrôles, examens et travaux pratiques.</span>
+          <button class="btn-add" (click)="openDrawer('evaluation', 'Nouvelle évaluation')">+ Ajouter</button>
+        </div>
+
+        <div class="table-wrap main-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Titre</th>
+                <th>Date</th>
+                <th>Matière</th>
+                <th>Groupe</th>
+                <th>Note max</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of (evaluations$ | async)">
+                <td><strong>{{ e.title }}</strong></td>
+                <td class="muted">{{ e.date | date:'dd/MM/yyyy' }}</td>
+                <td>{{ subjectName(subjectsList, e.subjectId) }}</td>
+                <td class="muted">{{ groupName(groupsRes.items, e.groupId) }}</td>
+                <td><span class="score-max">/ {{ e.maxScore }}</span></td>
+                <td class="actions">
+                  <button class="icon-btn" (click)="selectEvaluationForEdit(e)" title="Modifier">✏</button>
+                </td>
+              </tr>
+              <tr *ngIf="(evaluations$ | async)?.length === 0">
+                <td colspan="6" class="empty-row">Aucune évaluation enregistrée.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+
+  <!-- ================== SAISIE DES NOTES ================== -->
+  <ng-container *ngIf="activeTab === 'grades' && (isAdmin || isTeacher)">
+    <div class="grades-section">
+      <div class="grades-selectors">
+        <form [formGroup]="gradeForm" class="selectors-row">
+          <div class="field">
+            <label>Groupe</label>
+            <select formControlName="groupId">
+              <option value="">— Choisir un groupe —</option>
+              <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Évaluation</label>
+            <select formControlName="evaluationId">
+              <option value="">— Choisir une évaluation —</option>
+              <option *ngFor="let e of (evaluations$ | async)" [value]="e._id">{{ e.title }}</option>
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <ng-container *ngIf="(gradeEntries$ | async) as entries">
+        <div *ngIf="entries.length > 0" class="table-wrap main-table grades-table-wrap">
+          <table class="grades-table">
+            <thead>
+              <tr>
+                <th>Étudiant</th>
+                <th class="score-col">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of entries">
+                <td>
+                  <span class="student-name">{{ entry.student.lastName }} {{ entry.student.firstName }}</span>
+                </td>
+                <td class="score-col">
+                  <input
+                    class="score-input"
+                    type="number"
+                    [(ngModel)]="entry.score"
+                    min="0"
+                    step="0.5"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="grades-footer">
+            <button class="btn-save" (click)="saveGrades(entries)">Enregistrer les notes</button>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="entries.length === 0 && gradeForm.value.groupId && gradeForm.value.evaluationId">
+          <p>Aucun étudiant trouvé pour ce groupe.</p>
+        </div>
+        <div class="empty-state" *ngIf="!gradeForm.value.groupId || !gradeForm.value.evaluationId">
+          <p>Sélectionnez un groupe et une évaluation pour commencer la saisie.</p>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- ================== RÉSULTATS ================== -->
+  <ng-container *ngIf="activeTab === 'results'">
+    <div class="results-section">
+
+      <!-- Admin / Teacher: search by student -->
+      <div *ngIf="isAdmin || isTeacher" class="results-search">
+        <div class="search-bar">
+          <input
+            [(ngModel)]="studentSearchId"
+            placeholder="ID de l'étudiant…"
+            (keyup.enter)="loadSummary(studentSearchId)"
+          />
+          <button (click)="loadSummary(studentSearchId)">Charger</button>
+        </div>
+      </div>
+
+      <!-- Summary display -->
+      <ng-container *ngIf="summary$ | async as summary">
+        <ng-container *ngIf="summary">
+          <div class="summary-card">
+            <div class="summary-header">
+              <div>
+                <h2 class="summary-name">{{ summary.student.lastName }} {{ summary.student.firstName }}</h2>
+                <p class="muted">Récapitulatif académique</p>
+              </div>
+              <div class="overall-avg" [ngClass]="averageClass(summary.overallAverage)">
+                <span class="avg-label">Moy. générale</span>
+                <span class="avg-value">{{ summary.overallAverage | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Matière</th>
+                    <th>Moyenne</th>
+                    <th>Résultat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let s of summary.subjects">
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>
+                      <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
+                      <span class="muted" *ngIf="s.average === null">N/A</span>
+                    </td>
+                    <td>
+                      <span
+                        class="avg-badge"
+                        [ngClass]="averageClass(s.average)"
+                        *ngIf="s.average !== null"
+                      >
+                        {{ s.average >= 10 ? 'Validé' : 'À repasser' }}
+                      </span>
+                      <span class="muted" *ngIf="s.average === null">—</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="summary.subjects?.length === 0">
+                    <td colspan="3" class="empty-row">Aucune note disponible.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <div class="empty-state" *ngIf="!(summary$ | async) && (isAdmin || isTeacher)">
+        <p>Entrez un identifiant étudiant pour afficher son résumé.</p>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ============ OVERLAY + DRAWER ============ -->
+<div class="overlay" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<div class="drawer" *ngIf="drawerOpen">
+  <div class="drawer-header">
+    <h3>{{ drawerTitle }}</h3>
+    <button class="ghost small" (click)="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+
+    <!-- Matière -->
+    <form *ngIf="drawerMode === 'subject'" [formGroup]="subjectForm" (ngSubmit)="createSubject()">
+      <div class="field">
+        <label>Nom de la matière *</label>
+        <input formControlName="name" placeholder="Ex : Mathématiques" />
+      </div>
+      <div class="field">
+        <label>Code (optionnel)</label>
+        <input formControlName="code" placeholder="Ex : MATH101" />
+      </div>
+      <div class="field">
+        <label>Coefficient *</label>
+        <input type="number" formControlName="coefficient" placeholder="1" min="0.1" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Niveau *</label>
         <select formControlName="levelId">
-          <option value="">Choisir niveau</option>
+          <option value="">— Choisir un niveau —</option>
           <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
         </select>
-        <button type="submit">Ajouter</button>
-      </form>
-      <ul class="list">
-        <li *ngFor="let s of (subjects$ | async)">
-          {{ s.name }} (coef {{ s.coefficient }})
-        </li>
-      </ul>
-    </div>
+      </div>
+      <button type="submit" [disabled]="subjectForm.invalid">
+        {{ editingSubjectId ? 'Enregistrer' : 'Créer la matière' }}
+      </button>
+    </form>
 
-    <div class="card" *ngIf="isAdmin || isTeacher">
-      <h2>Évaluations</h2>
-      <form [formGroup]="evaluationForm" (ngSubmit)="createEvaluation()">
-        <input formControlName="title" placeholder="Libellé (DS, TP...)" />
+    <!-- Évaluation -->
+    <form *ngIf="drawerMode === 'evaluation'" [formGroup]="evaluationForm" (ngSubmit)="createEvaluation()">
+      <div class="field">
+        <label>Titre *</label>
+        <input formControlName="title" placeholder="Ex : DS1, Examen final…" />
+      </div>
+      <div class="field">
+        <label>Date *</label>
         <input type="date" formControlName="date" />
+      </div>
+      <div class="field">
+        <label>Matière *</label>
         <select formControlName="subjectId">
-          <option value="">Choisir matière</option>
+          <option value="">— Choisir une matière —</option>
           <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Groupe *</label>
         <select formControlName="groupId">
-          <option value="">Choisir groupe</option>
+          <option value="">— Choisir un groupe —</option>
           <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
         </select>
-        <input type="number" formControlName="maxScore" placeholder="Note max" />
-        <button type="submit">Créer</button>
-      </form>
-      <ul class="list">
-        <li *ngFor="let e of (evaluations$ | async)">
-          {{ e.title }} — {{ e.date | date }} (max {{ e.maxScore }})
-        </li>
-      </ul>
-    </div>
-
-    <div class="card full" *ngIf="isAdmin || isTeacher">
-      <h2>Saisie des notes</h2>
-      <form [formGroup]="gradeForm" class="row">
-        <select formControlName="groupId">
-          <option value="">Choisir groupe</option>
-          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
-        </select>
-        <select formControlName="evaluationId">
-          <option value="">Choisir évaluation</option>
-          <option *ngFor="let e of (evaluations$ | async)" [value]="e._id">{{ e.title }}</option>
-        </select>
-      </form>
-
-      <div class="table" *ngIf="(gradeEntries$ | async) as entries">
-        <div class="row header">
-          <span>Étudiant</span>
-          <span>Note</span>
-        </div>
-        <div class="row" *ngFor="let entry of entries">
-          <span>{{ entry.student.lastName }} {{ entry.student.firstName }}</span>
-          <input type="number" [(ngModel)]="entry.score" />
-        </div>
-        <button (click)="saveGrades(entries)">Enregistrer</button>
       </div>
-    </div>
+      <div class="field">
+        <label>Note maximale *</label>
+        <input type="number" formControlName="maxScore" placeholder="20" min="1" />
+      </div>
+      <button type="submit" [disabled]="evaluationForm.invalid">
+        {{ editingEvaluationId ? 'Enregistrer' : 'Créer l\'évaluation' }}
+      </button>
+    </form>
 
-    <div class="card full">
-      <h2>Résumé étudiant</h2>
-      <div *ngIf="isAdmin || isTeacher" class="row">
-        <input #studentIdInput placeholder="ID étudiant" />
-        <button (click)="loadSummary(studentIdInput.value)">Charger</button>
-      </div>
-      <div *ngIf="summary$ | async as summary">
-        <p *ngIf="!summary">Aucun résumé disponible.</p>
-        <ng-container *ngIf="summary">
-          <h3>{{ summary.student.lastName }} {{ summary.student.firstName }}</h3>
-          <p class="muted">Moyenne générale: {{ summary.overallAverage | number:'1.2-2' }}</p>
-          <ul class="list">
-            <li *ngFor="let s of summary.subjects">
-              {{ s.name }} —
-              <span *ngIf="s.average !== null">{{ s.average | number:'1.2-2' }}</span>
-              <span *ngIf="s.average === null">N/A</span>
-            </li>
-          </ul>
-        </ng-container>
-      </div>
-    </div>
-  </section>
+  </div>
 </div>

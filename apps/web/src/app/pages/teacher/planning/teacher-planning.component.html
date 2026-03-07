@@ -50,10 +50,13 @@
                   <span class="end">{{ s.endTime }}</span>
                 </div>
                 <div class="session-body">
-                  <div class="session-label">{{ s.label || 'Séance' }}</div>
+                  <div class="session-label-row">
+                    <span class="session-label">{{ s.label || 'Séance' }}</span>
+                    <span class="journal-badge" *ngIf="s.content || s.homework" title="Cahier de texte rempli">📓 Cahier de texte</span>
+                  </div>
                   <div class="session-meta">
                     <span class="tag group">{{ groupName(groups.items, s.groupId) }}</span>
-                    <span class="tag room">{{ roomName(rooms, s.roomId) }}</span>
+                    <span class="tag room" *ngIf="s.roomId">{{ roomName(rooms, s.roomId) }}</span>
                   </div>
                   <div class="journal-preview" *ngIf="s.content || s.homework">
                     <div *ngIf="s.content"><strong>Contenu :</strong> {{ s.content }}</div>
@@ -92,10 +95,11 @@
                   *ngFor="let day of buildCalendar(sessions, getWeekDays())"
                   [class.today]="day.isToday"
                 >
-                  <div class="cal-session" *ngFor="let s of getSlotSessions(day, hour)">
+                  <div class="cal-session" *ngFor="let s of getSlotSessions(day, hour)" [class.has-content]="s.content || s.homework">
                     <div class="cal-s-label">{{ s.label || 'Séance' }}</div>
                     <div class="cal-s-time">{{ s.startTime }}-{{ s.endTime }}</div>
                     <div class="cal-s-group">{{ groupName(groups.items, s.groupId) }}</div>
+                    <div class="cal-s-room" *ngIf="s.roomId">{{ roomName(rooms, s.roomId) }}</div>
                     <button class="cal-edit-btn" (click)="openContentEditor(s)">✏</button>
                   </div>
                 </div>
