@@ -168,18 +168,17 @@ export class PaymentsService {
         const byInst = paidByPlanInstallment.get(planKey) ?? new Map();
         const hasInstallments =
           plan.installments && plan.installments.length > 0;
-        const dueInstallments = hasInstallments
-          ? plan.installments.filter((inst) => new Date(inst.dueDate) <= asOf)
-          : [];
-        const dueAmount = hasInstallments
-          ? dueInstallments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
+        
+        // Calculate total due amount from ALL installments (not just due ones)
+        const totalDueAmount = hasInstallments
+          ? plan.installments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
           : plan.totalAmount;
         
-        // Calculate total paid: sum of paid for due installments + unlinked payments
+        // Calculate total paid for ALL installments
         let totalPaid = 0;
         if (hasInstallments) {
-          // Add payments linked to due installments
-          dueInstallments.forEach((inst) => {
+          // Add payments for all installments
+          plan.installments.forEach((inst) => {
             totalPaid += byInst.get(String(inst._id)) ?? 0;
           });
           // Add unlinked payments (those with no installmentId)
@@ -189,8 +188,10 @@ export class PaymentsService {
           totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
         }
         
-        const balanceDue = Math.max(0, dueAmount - totalPaid);
+        const balanceDue = Math.max(0, totalDueAmount - totalPaid);
         const student = studentsById.get(String(plan.studentId));
+        
+        // Only return if there's actually an unpaid balance
         return {
           planId: plan._id,
           studentId: plan.studentId,
@@ -199,7 +200,7 @@ export class PaymentsService {
             : 'N/A',
           studentNumber: student?.studentNumber ?? 'N/A',
           totalAmount: plan.totalAmount,
-          dueAmount,
+          dueAmount: totalDueAmount,
           totalPaid,
           balanceDue,
           currency: plan.currency,
