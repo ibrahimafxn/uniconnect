@@ -41,6 +41,8 @@ describe('StudentsApi', () => {
       birthDate: '2004-03-15',
       status: 'active',
       groupId: 'g1',
+      offerId: 'o1',
+      programId: 'p1',
       academicYearId: 'y1',
     }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/students');

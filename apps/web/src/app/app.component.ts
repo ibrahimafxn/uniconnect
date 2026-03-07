@@ -3,10 +3,11 @@ import {CommonModule} from '@angular/common';
 import {NavigationEnd, Router, RouterOutlet} from '@angular/router';
 import {filter} from 'rxjs';
 import {AppHeaderComponent} from './shared/app-header/app-header.component';
+import {ConfirmModalComponent} from './shared/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, AppHeaderComponent],
+  imports: [CommonModule, RouterOutlet, AppHeaderComponent, ConfirmModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

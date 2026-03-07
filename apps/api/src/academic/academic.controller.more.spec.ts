@@ -42,7 +42,7 @@ describe('AcademicController extra', () => {
       deleteGroup: jest.fn().mockResolvedValue({}),
     } as unknown as AcademicService;
     const controller = new AcademicController(service);
-    await controller.createLevel({ name: 'L1', programId: 'p1' });
+    await controller.createLevel({ name: 'L1' });
     await controller.deleteGroup('g1');
     expect(service.createLevel).toHaveBeenCalled();
     expect(service.deleteGroup).toHaveBeenCalledWith('g1');
@@ -99,12 +99,12 @@ describe('AcademicController extra', () => {
     expect(service.updateAcademicYear).toHaveBeenCalled();
   });
 
-  it('updateGroup with levelId', async () => {
+  it('updateGroup with offerId', async () => {
     const service = {
       updateGroup: jest.fn().mockResolvedValue({}),
     } as unknown as AcademicService;
     const controller = new AcademicController(service);
-    await controller.updateGroup('g1', { levelId: '507f1f77bcf86cd799439011' });
+    await controller.updateGroup('g1', { offerId: '507f1f77bcf86cd799439011' } as any);
     expect(service.updateGroup).toHaveBeenCalled();
   });
 });

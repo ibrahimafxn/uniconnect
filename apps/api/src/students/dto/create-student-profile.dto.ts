@@ -48,6 +48,13 @@ export class CreateStudentProfileDto {
   @IsMongoId()
   groupId!: string;
 
+  @IsOptional()
+  @IsMongoId()
+  offerId?: string;
+
+  @IsMongoId()
+  programId!: string;
+
   @IsMongoId()
   academicYearId!: string;
 }

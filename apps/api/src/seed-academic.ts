@@ -5,6 +5,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { AcademicYear } from './academic/academic-year.schema';
 import { Program } from './academic/program.schema';
 import { Level } from './academic/level.schema';
+import { ProgramOffer } from './academic/program-offer.schema';
 import { Group } from './academic/group.schema';
 
 async function seedAcademic() {
@@ -18,6 +19,7 @@ async function seedAcademic() {
     );
     const programs = app.get<Model<Program>>(getModelToken(Program.name));
     const levels = app.get<Model<Level>>(getModelToken(Level.name));
+    const offers = app.get<Model<ProgramOffer>>(getModelToken(ProgramOffer.name));
     const groups = app.get<Model<Group>>(getModelToken(Group.name));
 
     const year = await years.findOne({ name: '2025-2026' }).exec();
@@ -40,29 +42,47 @@ async function seedAcademic() {
     const groupNames = ['G1', 'G2'];
 
     for (const p of programsSeed) {
-      const prog =
-        (await programs.findOne({ name: p.name }).exec()) ??
-        (await programs.create(p));
+      await programs.findOne({ name: p.name }).exec().then(async (prog) => {
+        if (!prog) await programs.create(p);
+      });
+    }
 
-      for (const levelName of levelNames) {
-        const level =
-          (await levels
+    const programDocs = await programs.find().exec();
+    for (const levelName of levelNames) {
+      const level =
+        (await levels.findOne({ name: levelName }).exec()) ??
+        (await levels.create({ name: levelName }));
+
+      for (const prog of programDocs) {
+        const offer =
+          (await offers
             .findOne({
-              name: levelName,
               programId: new Types.ObjectId(prog._id),
+              levelId: new Types.ObjectId(level._id),
+              academicYearId: new Types.ObjectId(yearDoc._id),
             })
             .exec()) ??
-          (await levels.create({ name: levelName, programId: prog._id }));
-
+          (await offers.create({
+            programId: prog._id,
+            levelId: level._id,
+            academicYearId: yearDoc._id,
+          }));
         for (const groupName of groupNames) {
           const group = await groups
             .findOne({
               name: groupName,
               levelId: new Types.ObjectId(level._id),
+              programId: new Types.ObjectId(prog._id),
+              offerId: new Types.ObjectId(offer._id),
             })
             .exec();
           if (!group) {
-            await groups.create({ name: groupName, levelId: level._id });
+            await groups.create({
+              name: groupName,
+              offerId: offer._id,
+              levelId: level._id,
+              programId: prog._id,
+            });
           }
         }
       }

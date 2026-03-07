@@ -83,6 +83,8 @@ export class StudentsController {
     const payload = {
       ...dto,
       groupId: toObjectId(dto.groupId),
+      offerId: toObjectId(dto.offerId),
+      programId: toObjectId(dto.programId),
       academicYearId: toObjectId(dto.academicYearId),
       birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
     };

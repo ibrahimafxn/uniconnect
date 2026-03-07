@@ -7,5 +7,5 @@ export class UpdateGroupDto {
 
   @IsOptional()
   @IsMongoId()
-  levelId?: string;
+  offerId?: string;
 }

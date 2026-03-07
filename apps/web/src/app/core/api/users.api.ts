@@ -14,6 +14,11 @@ export type CreateUserPayload = {
   password: string;
   role: 'admin' | 'superadmin' | 'teacher' | 'external' | 'student';
 };
+export type UpdateUserPayload = {
+  email?: string;
+  password?: string;
+  role?: 'admin' | 'superadmin' | 'teacher' | 'external' | 'student';
+};
 
 @Injectable({providedIn: 'root'})
 export class UsersApi {
@@ -31,5 +36,13 @@ export class UsersApi {
 
   createUser(payload: CreateUserPayload): Observable<UserSummary> {
     return this.http.post<UserSummary>(this.baseUrl, payload);
+  }
+
+  updateUser(id: string, payload: UpdateUserPayload): Observable<UserSummary> {
+    return this.http.patch<UserSummary>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  deleteUser(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.baseUrl}/${id}`);
   }
 }

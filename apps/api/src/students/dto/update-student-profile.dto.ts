@@ -56,5 +56,13 @@ export class UpdateStudentProfileDto {
 
   @IsOptional()
   @IsMongoId()
+  offerId?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  programId?: string;
+
+  @IsOptional()
+  @IsMongoId()
   academicYearId?: string;
 }

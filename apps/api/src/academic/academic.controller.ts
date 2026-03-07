@@ -16,11 +16,15 @@ import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { CreateProgramDto } from './dto/create-program.dto';
+import { CreateSemesterDto } from './dto/create-semester.dto';
 import { CreateLevelDto } from './dto/create-level.dto';
+import { CreateProgramOfferDto } from './dto/create-program-offer.dto';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
+import { UpdateSemesterDto } from './dto/update-semester.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
+import { UpdateProgramOfferDto } from './dto/update-program-offer.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { parsePagination } from '../common/pagination';
 import { toObjectId } from '../common/object-id';
@@ -51,6 +55,26 @@ export class AcademicController {
     });
   }
 
+  @Get('semesters')
+  async listSemesters(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pagination = parsePagination({ page, limit });
+    const result = await this.academicService.listSemesters(pagination);
+    return { ...result, ...pagination };
+  }
+
+  @Post('semesters')
+  createSemester(@Body() dto: CreateSemesterDto) {
+    return this.academicService.createSemester({
+      name: dto.name,
+      startDate: new Date(dto.startDate),
+      endDate: new Date(dto.endDate),
+      academicYearId: dto.academicYearId,
+    });
+  }
+
   @Patch('years/:id')
   updateAcademicYear(
     @Param('id') id: string,
@@ -64,9 +88,25 @@ export class AcademicController {
     return this.academicService.updateAcademicYear(id, payload);
   }
 
+  @Patch('semesters/:id')
+  updateSemester(@Param('id') id: string, @Body() dto: UpdateSemesterDto) {
+    const payload = {
+      ...dto,
+      startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      academicYearId: toObjectId(dto.academicYearId),
+    };
+    return this.academicService.updateSemester(id, payload);
+  }
+
   @Delete('years/:id')
   deleteAcademicYear(@Param('id') id: string) {
     return this.academicService.deleteAcademicYear(id);
+  }
+
+  @Delete('semesters/:id')
+  deleteSemester(@Param('id') id: string) {
+    return this.academicService.deleteSemester(id);
   }
 
   @Get('programs')
@@ -111,22 +151,53 @@ export class AcademicController {
   createLevel(@Body() dto: CreateLevelDto) {
     return this.academicService.createLevel({
       name: dto.name,
+    });
+  }
+
+  @Get('offers')
+  async listOffers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pagination = parsePagination({ page, limit });
+    const result = await this.academicService.listOffers(pagination);
+    return { ...result, ...pagination };
+  }
+
+  @Post('offers')
+  createOffer(@Body() dto: CreateProgramOfferDto) {
+    return this.academicService.createOffer({
       programId: dto.programId,
+      levelId: dto.levelId,
+      academicYearId: dto.academicYearId,
+      capacity: dto.capacity,
     });
   }
 
   @Patch('levels/:id')
   updateLevel(@Param('id') id: string, @Body() dto: UpdateLevelDto) {
+    return this.academicService.updateLevel(id, dto);
+  }
+
+  @Patch('offers/:id')
+  updateOffer(@Param('id') id: string, @Body() dto: UpdateProgramOfferDto) {
     const payload = {
       ...dto,
       programId: toObjectId(dto.programId),
+      levelId: toObjectId(dto.levelId),
+      academicYearId: toObjectId(dto.academicYearId),
     };
-    return this.academicService.updateLevel(id, payload);
+    return this.academicService.updateOffer(id, payload);
   }
 
   @Delete('levels/:id')
   deleteLevel(@Param('id') id: string) {
     return this.academicService.deleteLevel(id);
+  }
+
+  @Delete('offers/:id')
+  deleteOffer(@Param('id') id: string) {
+    return this.academicService.deleteOffer(id);
   }
 
   @Get('groups')
@@ -143,17 +214,13 @@ export class AcademicController {
   createGroup(@Body() dto: CreateGroupDto) {
     return this.academicService.createGroup({
       name: dto.name,
-      levelId: dto.levelId,
+      offerId: dto.offerId,
     });
   }
 
   @Patch('groups/:id')
   updateGroup(@Param('id') id: string, @Body() dto: UpdateGroupDto) {
-    const payload = {
-      ...dto,
-      levelId: toObjectId(dto.levelId),
-    };
-    return this.academicService.updateGroup(id, payload);
+    return this.academicService.updateGroup(id, dto);
   }
 
   @Delete('groups/:id')

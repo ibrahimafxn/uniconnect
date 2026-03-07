@@ -58,7 +58,7 @@ describe('PlanningService', () => {
     expect(roomModel.findByIdAndUpdate).toHaveBeenCalledWith(
       oid1,
       { name: 'B1' },
-      { new: true },
+      { returnDocument: 'after' },
     );
     expect(roomModel.findByIdAndDelete).toHaveBeenCalledWith(oid1);
   });

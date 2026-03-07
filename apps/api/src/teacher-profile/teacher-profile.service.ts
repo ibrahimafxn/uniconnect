@@ -24,7 +24,7 @@ export class TeacherProfileService {
     const profile = await this.profileModel.findOneAndUpdate(
       { userId: new Types.ObjectId(userId) },
       { $set: { ...data, userId: new Types.ObjectId(userId) } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: 'after' },
     ).exec();
 
     await this.auditLog.log({

@@ -1,0 +1,15 @@
+<ng-container *ngIf="state$ | async as state">
+  <div class="confirm-overlay" (click)="onCancel()"></div>
+  <div class="confirm-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <h3>{{ state.options.title }}</h3>
+    <p>{{ state.options.message }}</p>
+    <div class="actions">
+      <button class="ghost" (click)="onCancel()">
+        {{ state.options.cancelLabel || 'Annuler' }}
+      </button>
+      <button [class.danger]="state.options.danger" (click)="onConfirm()">
+        {{ state.options.confirmLabel || 'Confirmer' }}
+      </button>
+    </div>
+  </div>
+</ng-container>

@@ -22,8 +22,10 @@
 
   <!-- ================== STRUCTURE ACADÉMIQUE ================== -->
   <ng-container *ngIf="activeTab === 'structure'">
-    <ng-container *ngIf="(programs$ | async) as programs">
-      <ng-container *ngIf="(levels$ | async) as levels">
+    <ng-container *ngIf="(years$ | async) as years">
+      <ng-container *ngIf="(semesters$ | async) as semesters">
+        <ng-container *ngIf="(programs$ | async) as programs">
+          <ng-container *ngIf="(levels$ | async) as levels">
 
         <div class="struct-grid">
           <!-- Années académiques -->
@@ -47,6 +49,32 @@
                     </td>
                   </tr>
                   <tr *ngIf="(years$ | async)?.items?.length === 0"><td colspan="5" class="empty-row">Aucune année.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Semestres -->
+          <div class="struct-card">
+            <div class="struct-head">
+              <h2>Semestres</h2>
+              <button (click)="openDrawer('semester', 'Nouveau semestre')">+ Ajouter</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Nom</th><th>Année</th><th>Début</th><th>Fin</th><th></th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let s of semesters.items">
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td class="muted">{{ yearName(years.items, s.academicYearId) }}</td>
+                    <td class="muted">{{ s.startDate | date:'dd/MM/yy' }}</td>
+                    <td class="muted">{{ s.endDate | date:'dd/MM/yy' }}</td>
+                    <td class="actions">
+                      <button class="icon-btn" (click)="selectSemesterForEdit(s)" title="Éditer">✏</button>
+                      <button class="icon-btn danger" (click)="deleteSemester(s._id)" title="Supprimer">🗑</button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="semesters.items?.length === 0"><td colspan="5" class="empty-row">Aucun semestre.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -84,17 +112,42 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Nom</th><th>Filière</th><th></th></tr></thead>
+                <thead><tr><th>Nom</th><th></th></tr></thead>
                 <tbody>
                   <tr *ngFor="let l of levels.items">
                     <td><strong>{{ l.name }}</strong></td>
-                    <td class="muted">{{ programName(programs.items, l.programId) }}</td>
                     <td class="actions">
                       <button class="icon-btn" (click)="selectLevelForEdit(l)">✏</button>
                       <button class="icon-btn danger" (click)="deleteLevel(l._id)">🗑</button>
                     </td>
                   </tr>
-                  <tr *ngIf="levels.items?.length === 0"><td colspan="3" class="empty-row">Aucun niveau.</td></tr>
+                  <tr *ngIf="levels.items?.length === 0"><td colspan="2" class="empty-row">Aucun niveau.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Offres (Filière + Niveau + Année) -->
+          <div class="struct-card">
+            <div class="struct-head">
+              <h2>Offres</h2>
+              <button (click)="openDrawer('offer', 'Nouvelle offre')">+ Ajouter</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Niveau</th><th>Filière</th><th>Année</th><th>Capacité</th><th></th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let o of (offers$ | async)?.items">
+                    <td class="muted">{{ levelName(levels.items, o.levelId) }}</td>
+                    <td class="muted">{{ programName(programs.items, o.programId) }}</td>
+                    <td class="muted">{{ yearName(years.items, o.academicYearId) }}</td>
+                    <td class="muted">{{ o.capacity }}</td>
+                    <td class="actions">
+                      <button class="icon-btn" (click)="selectOfferForEdit(o)">✏</button>
+                      <button class="icon-btn danger" (click)="deleteOffer(o._id)">🗑</button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="(offers$ | async)?.items?.length === 0"><td colspan="5" class="empty-row">Aucune offre.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -108,23 +161,26 @@
             </div>
             <div class="table-wrap">
               <table>
-                <thead><tr><th>Nom</th><th>Niveau</th><th></th></tr></thead>
+                <thead><tr><th>Nom</th><th>Niveau</th><th>Filière</th><th></th></tr></thead>
                 <tbody>
                   <tr *ngFor="let g of (groups$ | async)?.items">
                     <td><strong>{{ g.name }}</strong></td>
                     <td class="muted">{{ levelName(levels.items, g.levelId) }}</td>
+                    <td class="muted">{{ programName(programs.items, g.programId) }}</td>
                     <td class="actions">
                       <button class="icon-btn" (click)="selectGroupForEdit(g)">✏</button>
                       <button class="icon-btn danger" (click)="deleteGroup(g._id)">🗑</button>
                     </td>
                   </tr>
-                  <tr *ngIf="(groups$ | async)?.items?.length === 0"><td colspan="3" class="empty-row">Aucun groupe.</td></tr>
+                  <tr *ngIf="(groups$ | async)?.items?.length === 0"><td colspan="4" class="empty-row">Aucun groupe.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
+          </ng-container>
+        </ng-container>
       </ng-container>
     </ng-container>
   </ng-container>
@@ -150,14 +206,15 @@
         <table>
           <thead>
             <tr>
-              <th>Matricule</th><th>Nom complet</th><th>Groupe</th><th>Statut</th><th>Email</th><th></th>
+              <th>Matricule</th><th>Nom complet</th><th>Groupe</th><th>Filière</th><th>Statut</th><th>Email</th><th></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let s of res.items">
               <td><code class="matricule">{{ s.studentNumber }}</code></td>
               <td><strong>{{ s.lastName }}</strong> {{ s.firstName }}</td>
-              <td class="muted">{{ s.groupId }}</td>
+              <td class="muted">{{ groupLabel((groups$ | async)?.items ?? [], (levels$ | async)?.items ?? [], s.groupId) }}</td>
+              <td class="muted">{{ groupProgramName((groups$ | async)?.items ?? [], (programs$ | async)?.items ?? [], s.groupId) }}</td>
               <td>
                 <select class="status-select" [value]="s.status || 'active'" (change)="updateStudentStatus(s._id, $any($event.target).value)">
                   <option value="active">Actif</option>
@@ -172,7 +229,7 @@
               </td>
             </tr>
             <tr *ngIf="res.items?.length === 0">
-              <td colspan="6" class="empty-row">Aucun étudiant trouvé.</td>
+              <td colspan="7" class="empty-row">Aucun étudiant trouvé.</td>
             </tr>
           </tbody>
         </table>
@@ -296,12 +353,12 @@
   <ng-container *ngIf="activeTab === 'users'">
     <div class="tab-toolbar">
       <span class="muted">Gérez les comptes enseignants, admins et étudiants.</span>
-      <button class="btn-add" (click)="openDrawer('user', 'Créer un utilisateur')">+ Créer</button>
+      <button class="btn-add" (click)="openCreateUser()">+ Créer</button>
     </div>
 
     <div class="table-wrap main-table">
       <table>
-        <thead><tr><th>Email</th><th>Rôle</th><th>Créé le</th></tr></thead>
+        <thead><tr><th>Email</th><th>Rôle</th><th>Créé le</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let u of (users$ | async)">
             <td><strong>{{ u.email }}</strong></td>
@@ -309,9 +366,13 @@
               <span class="role-badge" [class]="'role-' + u.role">{{ roleBadge(u.role) }}</span>
             </td>
             <td class="muted">{{ u.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="actions">
+              <button class="icon-btn" (click)="selectUserForEdit(u)">✏</button>
+              <button class="icon-btn danger" (click)="deleteUser(u.id)">🗑</button>
+            </td>
           </tr>
           <tr *ngIf="(users$ | async)?.length === 0">
-            <td colspan="3" class="empty-row">Aucun utilisateur.</td>
+            <td colspan="4" class="empty-row">Aucun utilisateur.</td>
           </tr>
         </tbody>
       </table>
@@ -347,6 +408,26 @@
     <!-- Niveau -->
     <form *ngIf="drawerMode === 'level'" [formGroup]="levelForm" (ngSubmit)="createLevel()">
       <div class="field"><label>Nom *</label><input formControlName="name" placeholder="L1" /></div>
+      <button type="submit" [disabled]="levelForm.invalid">{{ editingLevelId ? 'Enregistrer' : 'Créer' }}</button>
+    </form>
+
+    <!-- Semestre -->
+    <form *ngIf="drawerMode === 'semester'" [formGroup]="semesterForm" (ngSubmit)="createSemester()">
+      <div class="field"><label>Nom *</label><input formControlName="name" placeholder="S1" /></div>
+      <div class="field"><label>Début *</label><input type="date" formControlName="startDate" /></div>
+      <div class="field"><label>Fin *</label><input type="date" formControlName="endDate" /></div>
+      <div class="field">
+        <label>Année académique *</label>
+        <select formControlName="academicYearId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">{{ y.name }}</option>
+        </select>
+      </div>
+      <button type="submit" [disabled]="semesterForm.invalid">{{ editingSemesterId ? 'Enregistrer' : 'Créer' }}</button>
+    </form>
+
+    <!-- Offre -->
+    <form *ngIf="drawerMode === 'offer'" [formGroup]="offerForm" (ngSubmit)="createOffer()">
       <div class="field">
         <label>Filière *</label>
         <select formControlName="programId">
@@ -354,17 +435,34 @@
           <option *ngFor="let p of (programs$ | async)?.items" [value]="p._id">{{ p.name }}</option>
         </select>
       </div>
-      <button type="submit" [disabled]="levelForm.invalid">{{ editingLevelId ? 'Enregistrer' : 'Créer' }}</button>
+      <div class="field">
+        <label>Niveau *</label>
+        <select formControlName="levelId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Année académique *</label>
+        <select formControlName="academicYearId">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let y of (years$ | async)?.items" [value]="y._id">{{ y.name }}</option>
+        </select>
+      </div>
+      <div class="field"><label>Capacité *</label><input type="number" min="0" formControlName="capacity" /></div>
+      <button type="submit" [disabled]="offerForm.invalid">{{ editingOfferId ? 'Enregistrer' : 'Créer' }}</button>
     </form>
 
     <!-- Groupe -->
     <form *ngIf="drawerMode === 'group'" [formGroup]="groupForm" (ngSubmit)="createGroup()">
       <div class="field"><label>Nom *</label><input formControlName="name" placeholder="G1" /></div>
       <div class="field">
-        <label>Niveau *</label>
-        <select formControlName="levelId">
+        <label>Offre (Filière + Niveau + Année) *</label>
+        <select formControlName="offerId">
           <option value="">— Choisir —</option>
-          <option *ngFor="let l of (levels$ | async)?.items" [value]="l._id">{{ l.name }}</option>
+          <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">
+            {{ offerLabel((offers$ | async)?.items ?? [], (programs$ | async)?.items ?? [], (levels$ | async)?.items ?? [], (years$ | async)?.items ?? [], o._id) }}
+          </option>
         </select>
       </div>
       <button type="submit" [disabled]="groupForm.invalid">{{ editingGroupId ? 'Enregistrer' : 'Créer' }}</button>
@@ -374,7 +472,6 @@
     <form *ngIf="drawerMode === 'student' && !editingStudentId" [formGroup]="studentForm" (ngSubmit)="createStudent()">
       <div class="field"><label>Prénom *</label><input formControlName="firstName" /></div>
       <div class="field"><label>Nom *</label><input formControlName="lastName" /></div>
-      <div class="field"><label>Matricule *</label><input formControlName="studentNumber" placeholder="ML103DJ2026" /></div>
       <div class="field"><label>Genre *</label>
         <select formControlName="gender"><option value="female">Femme</option><option value="male">Homme</option></select>
       </div>
@@ -385,10 +482,20 @@
       <div class="field"><label>Email</label><input formControlName="email" /></div>
       <div class="field"><label>Téléphone</label><input formControlName="phone" /></div>
       <div class="field"><label>Adresse</label><input formControlName="address" /></div>
+      <div class="field"><label>Offre (Filière + Niveau + Année) *</label>
+        <select formControlName="offerId" (change)="onStudentOfferChange($any($event.target).value, 'create')">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">
+            {{ offerLabel((offers$ | async)?.items ?? [], (programs$ | async)?.items ?? [], (levels$ | async)?.items ?? [], (years$ | async)?.items ?? [], o._id) }}
+          </option>
+        </select>
+      </div>
       <div class="field"><label>Groupe *</label>
         <select formControlName="groupId">
           <option value="">— Choisir —</option>
-          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+          <option *ngFor="let g of filterGroups((groups$ | async)?.items ?? [], ($any(studentForm.get('offerId'))?.value || undefined))" [value]="g._id">
+            {{ g.name }} — {{ levelName((levels$ | async)?.items ?? [], g.levelId) }}
+          </option>
         </select>
       </div>
       <div class="field"><label>Année académique *</label>
@@ -414,10 +521,20 @@
       <div class="field"><label>Email</label><input formControlName="email" /></div>
       <div class="field"><label>Téléphone</label><input formControlName="phone" /></div>
       <div class="field"><label>Adresse</label><input formControlName="address" /></div>
+      <div class="field"><label>Offre (Filière + Niveau + Année) *</label>
+        <select formControlName="offerId" (change)="onStudentOfferChange($any($event.target).value, 'edit')">
+          <option value="">— Choisir —</option>
+          <option *ngFor="let o of (offers$ | async)?.items" [value]="o._id">
+            {{ offerLabel((offers$ | async)?.items ?? [], (programs$ | async)?.items ?? [], (levels$ | async)?.items ?? [], (years$ | async)?.items ?? [], o._id) }}
+          </option>
+        </select>
+      </div>
       <div class="field"><label>Groupe *</label>
         <select formControlName="groupId">
           <option value="">— Choisir —</option>
-          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+          <option *ngFor="let g of filterGroups((groups$ | async)?.items ?? [], ($any(editStudentForm.get('offerId'))?.value || undefined))" [value]="g._id">
+            {{ g.name }} — {{ levelName((levels$ | async)?.items ?? [], g.levelId) }}
+          </option>
         </select>
       </div>
       <div class="field"><label>Année académique *</label>
@@ -490,7 +607,10 @@
     <!-- Utilisateur -->
     <form *ngIf="drawerMode === 'user'" [formGroup]="userForm" (ngSubmit)="createUser()">
       <div class="field"><label>Email *</label><input formControlName="email" type="email" placeholder="prof@ecole.ci" /></div>
-      <div class="field"><label>Mot de passe *</label><input formControlName="password" type="password" placeholder="Min. 6 caractères" /></div>
+      <div class="field">
+        <label>{{ editingUserId ? 'Mot de passe (optionnel)' : 'Mot de passe *' }}</label>
+        <input formControlName="password" type="password" placeholder="Min. 6 caractères" />
+      </div>
       <div class="field"><label>Rôle *</label>
         <select formControlName="role">
           <option value="teacher">Enseignant</option>
@@ -501,7 +621,7 @@
         </select>
       </div>
       <div class="error-msg" *ngIf="userCreateError">{{ userCreateError }}</div>
-      <button type="submit" [disabled]="userForm.invalid">Créer le compte</button>
+      <button type="submit" [disabled]="userForm.invalid">{{ editingUserId ? 'Enregistrer' : 'Créer le compte' }}</button>
     </form>
 
   </div>

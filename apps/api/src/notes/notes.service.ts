@@ -43,7 +43,9 @@ export class NotesService {
   }
 
   async updateSubject(id: string, data: Partial<Subject>, actor: AuditActor) {
-    const subject = await this.subjectModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    const subject = await this.subjectModel
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
+      .exec();
     if (subject) {
       await this.auditLog.log({
         action: 'notes.subject.update',
@@ -106,7 +108,9 @@ export class NotesService {
       }
       payload.date = date;
     }
-    const evaluation = await this.evaluationModel.findByIdAndUpdate(id, payload, { new: true }).exec();
+    const evaluation = await this.evaluationModel
+      .findByIdAndUpdate(id, payload, { returnDocument: 'after' })
+      .exec();
     if (evaluation) {
       await this.auditLog.log({
         action: 'notes.evaluation.update',

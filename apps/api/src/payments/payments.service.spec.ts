@@ -154,7 +154,7 @@ describe('PaymentsService', () => {
     expect(planModel.findByIdAndUpdate).toHaveBeenCalledWith(
       'p1',
       { label: 'Mensuel' },
-      { new: true },
+      { returnDocument: 'after' },
     );
     expect(planModel.findByIdAndDelete).toHaveBeenCalledWith('p1');
   });
@@ -179,7 +179,7 @@ describe('PaymentsService', () => {
     expect(paymentModel.findByIdAndUpdate).toHaveBeenCalledWith(
       'pay1',
       { amount: 500 },
-      { new: true },
+      { returnDocument: 'after' },
     );
     expect(paymentModel.findByIdAndDelete).toHaveBeenCalledWith('pay1');
   });

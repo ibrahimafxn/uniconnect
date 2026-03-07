@@ -66,7 +66,9 @@ export class PaymentsService {
   }
 
   updatePlan(id: string, data: Partial<PaymentPlan>) {
-    return this.planModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    return this.planModel
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
+      .exec();
   }
 
   deletePlan(id: string) {
@@ -74,7 +76,9 @@ export class PaymentsService {
   }
 
   updatePayment(id: string, data: Partial<Payment>) {
-    return this.paymentModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    return this.paymentModel
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
+      .exec();
   }
 
   deletePayment(id: string) {

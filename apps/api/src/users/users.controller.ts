@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
@@ -67,5 +68,35 @@ export class UsersController {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    const payload: {
+      email?: string;
+      passwordHash?: string;
+      role?: Role;
+    } = {};
+    if (dto.email) payload.email = dto.email.toLowerCase().trim();
+    if (dto.role) payload.role = dto.role;
+    if (dto.password) {
+      payload.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+    const user = await this.usersService.update(id, payload);
+    return user
+      ? {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        }
+      : null;
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    const user = await this.usersService.delete(id);
+    return user ? { success: true } : { success: false };
   }
 }

@@ -3,14 +3,18 @@ import {AdminComponent} from './admin.component';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {PaymentsApi} from '../../core/api/payments.api';
+import {ConfirmService} from '../../core/confirm.service';
 import {of} from 'rxjs';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+
+const confirm = { open: () => of(true) };
 
 function buildMocks() {
   const academic = {
     listYears: jasmine.createSpy('listYears').and.returnValue(of({ items: [], total: 0, page: 1, limit: 50, skip: 0 })),
     listPrograms: jasmine.createSpy('listPrograms').and.returnValue(of({ items: [], total: 0, page: 1, limit: 50, skip: 0 })),
     listLevels: jasmine.createSpy('listLevels').and.returnValue(of({ items: [], total: 0, page: 1, limit: 50, skip: 0 })),
+    listOffers: jasmine.createSpy('listOffers').and.returnValue(of({ items: [], total: 0, page: 1, limit: 50, skip: 0 })),
     listGroups: jasmine.createSpy('listGroups').and.returnValue(of({ items: [], total: 0, page: 1, limit: 50, skip: 0 })),
     createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
     updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
@@ -21,6 +25,9 @@ function buildMocks() {
     createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
     updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
     deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+    createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
+    updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
+    deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
     createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
     updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
     deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
@@ -62,6 +69,7 @@ function setupAdmin() {
       { provide: AcademicApi, useValue: academic },
       { provide: StudentsApi, useValue: students },
       { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
     ],
   });
   const comp = TestBed.runInInjectionContext(() => new AdminComponent());
@@ -74,17 +82,24 @@ describe('AdminComponent', () => {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -107,12 +122,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -132,18 +148,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -166,12 +185,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -184,18 +204,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -218,12 +241,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -231,13 +255,14 @@ describe('AdminComponent', () => {
     comp.studentForm.setValue({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: `ML103DJ${year}`,
       gender: 'male',
       birthDate: '2004-03-15',
       status: 'active',
       email: 'john@school.tld',
       phone: '+221700000000',
       address: 'Dakar',
+      offerId: 'o1',
+      programId: 'p1',
       groupId: 'g1',
       academicYearId: 'y1',
     });
@@ -249,18 +274,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -283,12 +311,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -321,7 +350,7 @@ describe('AdminComponent', () => {
   it('updates level when editing', () => {
     const { comp, academic } = setupAdmin();
     spyOn(comp, 'refresh');
-    comp.selectLevelForEdit({ _id: 'l1', name: 'L1', programId: 'p1' });
+    comp.selectLevelForEdit({ _id: 'l1', name: 'L1' });
     comp.createLevel();
     expect(academic.updateLevel).toHaveBeenCalledWith('l1', jasmine.any(Object));
     expect(comp.editingLevelId).toBeNull();
@@ -331,7 +360,7 @@ describe('AdminComponent', () => {
   it('updates group when editing', () => {
     const { comp, academic } = setupAdmin();
     spyOn(comp, 'refresh');
-    comp.selectGroupForEdit({ _id: 'g1', name: 'G1', levelId: 'l1' });
+    comp.selectGroupForEdit({ _id: 'g1', name: 'G1', offerId: 'o1' });
     comp.createGroup();
     expect(academic.updateGroup).toHaveBeenCalledWith('g1', jasmine.any(Object));
     expect(comp.editingGroupId).toBeNull();
@@ -525,18 +554,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -559,12 +591,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -577,18 +610,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -611,25 +647,27 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
     comp.studentForm.setValue({
       firstName: '',
       lastName: '',
-      studentNumber: '',
       gender: 'female',
       birthDate: '',
       status: 'active',
       email: '',
       phone: '',
       address: '',
+      offerId: '',
+      programId: '',
       groupId: '',
       academicYearId: '',
     });
@@ -641,18 +679,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -675,12 +716,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -699,18 +741,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -733,12 +778,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;
@@ -758,18 +804,21 @@ describe('AdminComponent', () => {
     const academic = {
       listYears: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       listPrograms: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listLevels: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
-      listGroups: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+      listOffers: () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
+       () => of({ items: [], total: 0, page: 1, limit: 50, skip: 0 }),
       createYear: jasmine.createSpy('createYear').and.returnValue(of({})),
       createProgram: jasmine.createSpy('createProgram').and.returnValue(of({})),
       createLevel: jasmine.createSpy('createLevel').and.returnValue(of({})),
+      createOffer: jasmine.createSpy('createOffer').and.returnValue(of({})),
       createGroup: jasmine.createSpy('createGroup').and.returnValue(of({})),
       updateYear: jasmine.createSpy('updateYear').and.returnValue(of({})),
       deleteYear: jasmine.createSpy('deleteYear').and.returnValue(of({})),
       updateProgram: jasmine.createSpy('updateProgram').and.returnValue(of({})),
       deleteProgram: jasmine.createSpy('deleteProgram').and.returnValue(of({})),
       updateLevel: jasmine.createSpy('updateLevel').and.returnValue(of({})),
+      updateOffer: jasmine.createSpy('updateOffer').and.returnValue(of({})),
       deleteLevel: jasmine.createSpy('deleteLevel').and.returnValue(of({})),
+      deleteOffer: jasmine.createSpy('deleteOffer').and.returnValue(of({})),
       updateGroup: jasmine.createSpy('updateGroup').and.returnValue(of({})),
       deleteGroup: jasmine.createSpy('deleteGroup').and.returnValue(of({})),
     };
@@ -803,12 +852,13 @@ describe('AdminComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminComponent],
-      providers: [
-        { provide: AcademicApi, useValue: academic },
-        { provide: StudentsApi, useValue: students },
-        { provide: PaymentsApi, useValue: payments },
-      ],
-    });
+    providers: [
+      { provide: AcademicApi, useValue: academic },
+      { provide: StudentsApi, useValue: students },
+      { provide: PaymentsApi, useValue: payments },
+      { provide: ConfirmService, useValue: confirm },
+    ],
+  });
 
     const fixture = TestBed.createComponent(AdminComponent);
     const comp = fixture.componentInstance;

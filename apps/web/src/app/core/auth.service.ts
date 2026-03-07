@@ -32,6 +32,10 @@ export class AuthService {
     );
   }
 
+  logoutLocal() {
+    this.clearTokens();
+  }
+
   getAccessToken(): string | null {
     return localStorage.getItem('accessToken');
   }

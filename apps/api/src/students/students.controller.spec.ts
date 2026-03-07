@@ -11,11 +11,15 @@ describe('StudentsController', () => {
     const controller = new StudentsController(service);
     await controller.updateStudent('id', {
       groupId: '507f1f77bcf86cd799439011',
+      offerId: '507f1f77bcf86cd799439014',
+      programId: '507f1f77bcf86cd799439013',
       academicYearId: '507f1f77bcf86cd799439012',
     });
 
     const payload = (service.updateStudent as jest.Mock).mock.calls[0][1];
     expect(payload.groupId).toBeInstanceOf(Types.ObjectId);
+    expect(payload.offerId).toBeInstanceOf(Types.ObjectId);
+    expect(payload.programId).toBeInstanceOf(Types.ObjectId);
     expect(payload.academicYearId).toBeInstanceOf(Types.ObjectId);
   });
 

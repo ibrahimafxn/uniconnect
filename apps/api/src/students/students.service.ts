@@ -5,6 +5,8 @@ import { StudentProfile, StudentGender } from './student-profile.schema';
 import { Enrollment, EnrollmentStatus } from './enrollment.schema';
 import { StudentStatus } from './student-profile.schema';
 import { StudentDocument } from './student-document.schema';
+import { ProgramOffer } from '../academic/program-offer.schema';
+import { Group } from '../academic/group.schema';
 import {
   buildStudentNumber,
   normalizeStudentNumber,
@@ -20,6 +22,10 @@ export class StudentsService {
     private readonly enrollmentModel: Model<Enrollment>,
     @InjectModel(StudentDocument.name)
     private readonly documentModel: Model<StudentDocument>,
+    @InjectModel(ProgramOffer.name)
+    private readonly offerModel: Model<ProgramOffer>,
+    @InjectModel(Group.name)
+    private readonly groupModel: Model<Group>,
   ) {}
 
   async listStudents(params: { skip: number; limit: number; q?: string }) {
@@ -46,7 +52,7 @@ export class StudentsService {
     return { items, total };
   }
 
-  createStudent(data: {
+  async createStudent(data: {
     firstName: string;
     lastName: string;
     studentNumber: string;
@@ -57,6 +63,75 @@ export class StudentsService {
     phone?: string;
     address?: string;
     groupId: string;
+    offerId?: string;
+    programId?: string;
+    academicYearId?: string;
+  }) {
+    if (data.offerId) {
+      // hydrate from offer to keep data consistent
+      return this.createStudentFromOffer({ ...data, offerId: data.offerId });
+    }
+    const fromGroup = await this.groupModel.findById(data.groupId).lean().exec();
+    if (fromGroup?.offerId) {
+      return this.createStudentFromOffer({
+        ...data,
+        offerId: String(fromGroup.offerId),
+      });
+    }
+    if (!data.programId || !data.academicYearId) {
+      throw new BadRequestException('Filière et année académique requises.');
+    }
+    return this.createStudentCore({
+      ...data,
+      programId: data.programId,
+      academicYearId: data.academicYearId,
+    });
+  }
+
+  private async createStudentFromOffer(data: {
+    firstName: string;
+    lastName: string;
+    studentNumber: string;
+    gender: StudentGender;
+    birthDate: string;
+    status?: StudentStatus;
+    email?: string;
+    phone?: string;
+    address?: string;
+    groupId: string;
+    offerId: string;
+    programId?: string;
+    academicYearId?: string;
+  }) {
+    const offer = await this.offerModel.findById(data.offerId).lean().exec();
+    if (!offer) {
+      throw new BadRequestException('Offre introuvable.');
+    }
+    const group = await this.groupModel.findById(data.groupId).lean().exec();
+    if (group && String(group.offerId) !== String(offer._id)) {
+      throw new BadRequestException('Le groupe ne correspond pas à l’offre.');
+    }
+    const payload = {
+      ...data,
+      programId: String(offer.programId),
+      academicYearId: String(offer.academicYearId),
+    };
+    return this.createStudentCore(payload as any);
+  }
+
+  private async createStudentCore(data: {
+    firstName: string;
+    lastName: string;
+    studentNumber: string;
+    gender: StudentGender;
+    birthDate: string;
+    status?: StudentStatus;
+    email?: string;
+    phone?: string;
+    address?: string;
+    groupId: string;
+    offerId?: string;
+    programId: string;
     academicYearId: string;
   }) {
     const birthDate = new Date(data.birthDate);
@@ -125,6 +200,28 @@ export class StudentsService {
     if (typeof (data as any).birthDate === 'string') {
       payload.birthDate = new Date((data as any).birthDate);
     }
+    if (payload.offerId || payload.groupId) {
+      const offerId = payload.offerId ?? current?.offerId;
+      if (payload.groupId && !payload.offerId) {
+        const group = await this.groupModel.findById(payload.groupId).lean().exec();
+        if (group?.offerId) {
+          payload.offerId = group.offerId as any;
+        }
+      }
+      if (offerId) {
+        const offer = await this.offerModel.findById(offerId).lean().exec();
+        if (offer) {
+          payload.programId = offer.programId as any;
+          payload.academicYearId = offer.academicYearId as any;
+        }
+      }
+      if (payload.groupId && payload.offerId) {
+        const group = await this.groupModel.findById(payload.groupId).lean().exec();
+        if (group && String(group.offerId) !== String(payload.offerId)) {
+          throw new BadRequestException('Le groupe ne correspond pas à l’offre.');
+        }
+      }
+    }
     if (current) {
       const merged = { ...current, ...payload } as StudentProfile;
       const hasAll =
@@ -143,7 +240,9 @@ export class StudentsService {
         });
       }
     }
-    return this.studentModel.findByIdAndUpdate(id, payload, { new: true }).exec();
+    return this.studentModel
+      .findByIdAndUpdate(id, payload, { returnDocument: 'after' })
+      .exec();
   }
 
   deleteStudent(id: string) {
@@ -156,7 +255,7 @@ export class StudentsService {
 
   updateEnrollment(id: string, data: Partial<Enrollment>) {
     return this.enrollmentModel
-      .findByIdAndUpdate(id, data, { new: true })
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
       .exec();
   }
 
@@ -198,7 +297,9 @@ export class StudentsService {
   }
 
   updateDocument(id: string, data: Partial<StudentDocument>) {
-    return this.documentModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    return this.documentModel
+      .findByIdAndUpdate(id, data, { returnDocument: 'after' })
+      .exec();
   }
 
   private ensureStudentNumberMatches(params: {

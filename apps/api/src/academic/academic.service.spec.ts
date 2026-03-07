@@ -25,6 +25,7 @@ describe('AcademicService', () => {
       programModel,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     const res = await service.listPrograms({ skip: 0, limit: 10 });
@@ -45,6 +46,7 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     const res = await service.listAcademicYears({ skip: 0, limit: 10 });
@@ -56,6 +58,7 @@ describe('AcademicService', () => {
     const yearModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const service = new AcademicService(
       yearModel,
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
@@ -87,6 +90,7 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       levelModel,
+      {} as any,
       groupModel,
     );
 
@@ -120,14 +124,15 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       levelModel,
+      { findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue({ _id: 'o1', programId: 'p1', levelId: 'l1' }) }) }) } as any,
       groupModel,
     );
 
-    await service.createLevel({ name: 'L1', programId: 'p1' });
+    await service.createLevel({ name: 'L1' });
     await service.updateLevel('id', { name: 'L2' } as any);
     await service.deleteLevel('id');
 
-    await service.createGroup({ name: 'G1', levelId: 'l1' });
+    await service.createGroup({ name: 'G1', offerId: 'o1' });
     await service.updateGroup('id', { name: 'G2' } as any);
     await service.deleteGroup('id');
 

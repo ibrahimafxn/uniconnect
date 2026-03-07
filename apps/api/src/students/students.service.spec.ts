@@ -12,6 +12,13 @@ function makeQuery(result: any) {
 }
 
 describe('StudentsService', () => {
+  const offerModel = {
+    findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
+  } as any;
+  const groupModel = {
+    findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
+  } as any;
+
   it('listStudents uses search filter', async () => {
     const studentModel = {
       find: jest.fn().mockReturnValue(makeQuery([])),
@@ -20,7 +27,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
     await service.listStudents({ skip: 0, limit: 10, q: 'john' });
 
     expect(studentModel.find).toHaveBeenCalledWith({
@@ -40,7 +47,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, offerModel, groupModel);
     await service.listStudents({ skip: 0, limit: 10 });
     expect(studentModel.find).toHaveBeenCalledWith({});
   });
@@ -52,7 +59,7 @@ describe('StudentsService', () => {
         .fn()
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, offerModel, groupModel);
     const res = await service.listEnrollments({ skip: 0, limit: 10 });
     expect(res.total).toBe(0);
   });
