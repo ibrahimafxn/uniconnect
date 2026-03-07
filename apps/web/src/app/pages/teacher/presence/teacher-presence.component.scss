@@ -52,12 +52,19 @@ h1 { font-family: 'Unbounded', sans-serif; font-size: 28px; margin: 0 0 4px; }
   cursor: pointer; transition: all 160ms; background: #fcfaf5;
   &:hover { background: #fff6f0; border-color: rgba(239,111,58,.3); }
   &.active { background: #fff6f0; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(239,111,58,.15); }
+  &.done { border-left: 3px solid #22c55e; }
 }
 
 .s-date { font-weight: 700; font-size: 13px; min-width: 36px; }
 .s-info { display: flex; flex-direction: column; gap: 2px;
   strong { font-size: 13px; }
   span { font-size: 12px; color: var(--muted); }
+}
+.s-info-top { display: flex; align-items: center; gap: 6px; }
+.done-badge {
+  font-size: 11px; font-weight: 700; color: #15803d;
+  background: #dcfce7; border: 1px solid rgba(34,197,94,.4);
+  border-radius: 999px; padding: 1px 6px; line-height: 1.4;
 }
 .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 999px;
   background: rgba(43,122,120,.12); color: #1a5754; border: 1px solid rgba(43,122,120,.3); }
