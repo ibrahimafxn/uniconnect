@@ -688,10 +688,34 @@ export class AdminComponent implements OnInit {
     this.plansView$ = this.buildPlansView(this.plans$, this.payments$);
     this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
     // Refresh KPIs with new payment data
-    this.kpis$ = combineLatest([this.payments$, this.unpaid$]).pipe(
-      map(([payments, unpaid]) => {
+    this.kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
+      map(([plans, payments]) => {
+        // Calculate total paid for each plan/installment
+        const paidByPlanInst = new Map<string, Map<string, number>>();
+        payments.forEach((payment) => {
+          if (!payment.planId || !payment.installmentId) return;
+          if (!paidByPlanInst.has(payment.planId)) {
+            paidByPlanInst.set(payment.planId, new Map());
+          }
+          const byInst = paidByPlanInst.get(payment.planId)!;
+          byInst.set(
+            payment.installmentId,
+            (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
+          );
+        });
+
+        // Calculate totals from plans
+        let totalDue = 0;
+        plans.forEach((plan) => {
+          const byInst = paidByPlanInst.get(plan._id) ?? new Map();
+          (plan.installments ?? []).forEach((inst) => {
+            const paid = byInst.get(inst._id ?? '') ?? 0;
+            const remaining = Math.max(0, (inst.amount ?? 0) - paid);
+            totalDue += remaining;
+          });
+        });
+
         const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const totalDue = unpaid.reduce((sum, u) => sum + (u.balanceDue || 0), 0);
         const grandTotal = totalCollected + totalDue;
         const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
         
@@ -832,17 +856,41 @@ export class AdminComponent implements OnInit {
   paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
 
   // KPI Observables - Synchronized with real data
-  kpis$ = combineLatest([this.payments$, this.unpaid$]).pipe(
-    map(([payments, unpaid]) => {
+  kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
+    map(([plans, payments]) => {
+      // Calculate total paid for each plan/installment
+      const paidByPlanInst = new Map<string, Map<string, number>>();
+      payments.forEach((payment) => {
+        if (!payment.planId || !payment.installmentId) return;
+        if (!paidByPlanInst.has(payment.planId)) {
+          paidByPlanInst.set(payment.planId, new Map());
+        }
+        const byInst = paidByPlanInst.get(payment.planId)!;
+        byInst.set(
+          payment.installmentId,
+          (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
+        );
+      });
+
+      // Calculate totals from plans
+      let totalDue = 0;
+      plans.forEach((plan) => {
+        const byInst = paidByPlanInst.get(plan._id) ?? new Map();
+        (plan.installments ?? []).forEach((inst) => {
+          const paid = byInst.get(inst._id ?? '') ?? 0;
+          const remaining = Math.max(0, (inst.amount ?? 0) - paid);
+          totalDue += remaining;
+        });
+      });
+
       const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      const totalDue = unpaid.reduce((sum, u) => sum + (u.balanceDue || 0), 0);
       const grandTotal = totalCollected + totalDue;
       const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
       
       return {
         totalCollected,
         totalDue,
-        paymentRate: Math.round(paymentRate * 10) / 10, // Round to 1 decimal
+        paymentRate: Math.round(paymentRate * 10) / 10,
       };
     }),
   );
