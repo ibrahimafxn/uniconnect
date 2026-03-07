@@ -816,6 +816,22 @@ export class AdminComponent implements OnInit {
   plansView$ = this.buildPlansView(this.plans$, this.payments$);
   paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
 
+  // KPI Observables - Synchronized with real data
+  kpis$ = combineLatest([this.payments$, this.unpaid$]).pipe(
+    map(([payments, unpaid]) => {
+      const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const totalDue = unpaid.reduce((sum, u) => sum + (u.balanceDue || 0), 0);
+      const grandTotal = totalCollected + totalDue;
+      const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
+      
+      return {
+        totalCollected,
+        totalDue,
+        paymentRate: Math.round(paymentRate * 10) / 10, // Round to 1 decimal
+      };
+    }),
+  );
+
   getPlanInstallments(plans: PaymentPlan[] | null | undefined, planId: string | null | undefined) {
     if (!plans || !planId) return [];
     return plans.find((p) => p._id === planId)?.installments ?? [];
