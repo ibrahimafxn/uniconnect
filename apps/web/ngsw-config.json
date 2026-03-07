@@ -1,0 +1,80 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.ico",
+          "/index.csr.html",
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-authentication",
+      "urls": [
+        "/api/auth/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "1h",
+        "maxSize": 100
+      }
+    },
+    {
+      "name": "api-user-data",
+      "urls": [
+        "/api/users/**",
+        "/api/students/**",
+        "/api/teachers/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "24h",
+        "maxSize": 500
+      }
+    },
+    {
+      "name": "api-courses",
+      "urls": [
+        "/api/courses/**",
+        "/api/planning/**"
+      ],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxAge": "7d",
+        "maxSize": 1000
+      }
+    },
+    {
+      "name": "api-documents",
+      "urls": [
+        "/api/documents/**",
+        "/api/grades/**"
+      ],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxAge": "30d",
+        "maxSize": 2000
+      }
+    }
+  ]
+}
