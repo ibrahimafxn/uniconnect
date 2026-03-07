@@ -127,30 +127,34 @@ export class PaymentsService {
     const plans = await this.planModel.find().lean().exec();
     if (plans.length === 0) return [];
 
-    const planIds = plans.map((plan) => plan._id);
-    const paymentsAgg = await this.paymentModel
-      .aggregate([
-        { $match: { planId: { $in: planIds } } },
-        {
-          $group: {
-            _id: { planId: '$planId', installmentId: '$installmentId' },
-            totalPaid: { $sum: '$amount' },
-          },
-        },
-      ])
-      .exec();
+    // Get all payments (even those without planId, we'll link by studentId)
+    const payments = await this.paymentModel.find().lean().exec();
 
+    // Map payments to plans by studentId
+    // payments can either have planId (direct link) or be linked by studentId
     const paidByPlanInstallment = new Map<string, Map<string, number>>();
-    paymentsAgg.forEach((row) => {
-      const planId = String(row._id?.planId);
-      const instId = row._id?.installmentId
-        ? String(row._id.installmentId)
-        : 'none';
-      if (!paidByPlanInstallment.has(planId)) {
-        paidByPlanInstallment.set(planId, new Map());
+    
+    payments.forEach((payment) => {
+      // Find the plan this payment belongs to
+      let planId = payment.planId ? String(payment.planId) : null;
+      
+      if (!planId) {
+        // Try to find plan by studentId
+        const plan = plans.find((p) => String(p.studentId) === String(payment.studentId));
+        planId = plan ? String(plan._id) : null;
       }
-      const byInst = paidByPlanInstallment.get(planId)!;
-      byInst.set(instId, (byInst.get(instId) ?? 0) + (row.totalPaid ?? 0));
+      
+      if (planId && plans.some((p) => String(p._id) === planId)) {
+        // Only process if plan exists
+        if (!paidByPlanInstallment.has(planId)) {
+          paidByPlanInstallment.set(planId, new Map());
+        }
+        const instId = payment.installmentId
+          ? String(payment.installmentId)
+          : 'none';
+        const byInst = paidByPlanInstallment.get(planId)!;
+        byInst.set(instId, (byInst.get(instId) ?? 0) + (payment.amount ?? 0));
+      }
     });
 
     const studentIds = plans.map((plan) => plan.studentId);
