@@ -27,6 +27,7 @@ export class TeacherPresenceComponent {
   saving = false;
   saveSuccess = false;
   saveError: string | null = null;
+  completedSessionIds = new Set<string>();
 
   filterForm = this.fb.group({
     dateFrom: [''],
@@ -59,12 +60,31 @@ export class TeacherPresenceComponent {
           ...e,
           status: e.status ?? 'present',
         }));
+        // If attendance entries already exist, mark session as completed
+        if (entries.some((e) => e.status !== null)) {
+          this.completedSessionIds.add(session._id);
+        }
         this.loading = false;
       },
       error: () => {
         this.loading = false;
       },
     });
+  }
+
+  sortedSessions(sessions: Session[]): Session[] {
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = sessions
+      .filter((s) => new Date(s.date).toISOString().slice(0, 10) >= today)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const past = sessions
+      .filter((s) => new Date(s.date).toISOString().slice(0, 10) < today)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return [...upcoming, ...past];
+  }
+
+  isCompleted(sessionId: string): boolean {
+    return this.completedSessionIds.has(sessionId);
   }
 
   setStatus(studentId: string, status: AttendanceStatus) {
@@ -97,6 +117,7 @@ export class TeacherPresenceComponent {
       next: () => {
         this.saving = false;
         this.saveSuccess = true;
+        this.completedSessionIds.add(this.selectedSession!._id);
         setTimeout(() => (this.saveSuccess = false), 3000);
       },
       error: () => {

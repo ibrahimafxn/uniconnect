@@ -9,6 +9,8 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  Request,
   Res,
   UploadedFile,
   UseGuards,
@@ -71,6 +73,16 @@ export class StudentsController {
   @Post()
   createStudent(@Body() dto: CreateStudentProfileDto) {
     return this.studentsService.createStudent(dto);
+  }
+
+  @Get('me')
+  @Roles(Role.Student)
+  async getMe(@Req() req: any) {
+    const student = await this.studentsService.findByEmail(req.user.email);
+    if (!student) {
+      throw new HttpException('Profil étudiant introuvable', HttpStatus.NOT_FOUND);
+    }
+    return student;
   }
 
   @Get(':id')

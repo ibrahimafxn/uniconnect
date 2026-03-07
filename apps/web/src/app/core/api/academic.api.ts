@@ -19,8 +19,11 @@ export type Semester = {
   academicYearId: string;
 };
 
-export type Program = { _id: string; name: string; code?: string };
-export type Level = { _id: string; name: string };
+export type ProgramType = 'universitaire' | 'bts' | 'but' | 'cpge';
+export type LevelCycle = 'L' | 'M' | 'D' | 'BTS' | 'BUT' | 'CPGE';
+
+export type Program = { _id: string; name: string; code?: string; domaine?: string; type: ProgramType };
+export type Level = { _id: string; name: string; cycle: LevelCycle; ects?: number; order: number };
 export type Offer = { _id: string; programId: string; levelId: string; academicYearId: string; capacity: number };
 export type Group = { _id: string; name: string; offerId: string; programId: string; levelId: string };
 export type CreateGroupPayload = { name: string; offerId: string };

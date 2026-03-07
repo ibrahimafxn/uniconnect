@@ -28,6 +28,11 @@ export class PlanningComponent {
   editingSessionId: string | null = null;
   readonly isAdmin = ['admin', 'super_admin'].includes(this.auth.getUserRole() ?? '');
 
+  activeTab: 'sessions' | 'rooms' = 'sessions';
+  drawerOpen = false;
+  drawerTitle = '';
+  drawerMode: 'room' | 'session' | null = null;
+
   roomForm = this.fb.group({
     name: ['', Validators.required],
     capacity: [30, [Validators.required, Validators.min(1)]],
@@ -68,6 +73,20 @@ export class PlanningComponent {
     roomId: [''],
   });
 
+  openDrawer(mode: 'room' | 'session', title: string) {
+    this.drawerMode = mode;
+    this.drawerTitle = title;
+    this.drawerOpen = true;
+  }
+
+  closeDrawer() {
+    this.drawerOpen = false;
+    this.drawerMode = null;
+    this.drawerTitle = '';
+    this.cancelEditRoom();
+    this.cancelEditSession();
+  }
+
   refresh() {
     this.rooms$ = this.planning.listRooms();
     this.sessions$ = this.planning.listSessions();
@@ -80,6 +99,7 @@ export class PlanningComponent {
     this.planning.createRoom(this.roomForm.value as any).subscribe(() => {
       this.roomForm.reset({ capacity: 30 });
       this.refresh();
+      this.closeDrawer();
     });
   }
 
@@ -90,6 +110,7 @@ export class PlanningComponent {
       capacity: room.capacity ?? 30,
       location: room.location ?? '',
     });
+    this.openDrawer('room', 'Modifier la salle');
   }
 
   cancelEditRoom() {
@@ -102,8 +123,8 @@ export class PlanningComponent {
     this.planning
       .updateRoom(this.editingRoomId, this.editRoomForm.value as any)
       .subscribe(() => {
-        this.cancelEditRoom();
         this.refresh();
+        this.closeDrawer();
       });
   }
 
@@ -112,6 +133,7 @@ export class PlanningComponent {
     this.planning.createSession(this.sessionForm.value as any).subscribe(() => {
       this.sessionForm.reset();
       this.refresh();
+      this.closeDrawer();
     });
   }
 
@@ -134,6 +156,7 @@ export class PlanningComponent {
       roomId: session.roomId ?? '',
       label: session.label ?? '',
     });
+    this.openDrawer('session', 'Modifier la séance');
   }
 
   cancelEditSession() {
@@ -146,8 +169,8 @@ export class PlanningComponent {
     this.planning
       .updateSession(this.editingSessionId, this.editSessionForm.value as any)
       .subscribe(() => {
-        this.cancelEditSession();
         this.refresh();
+        this.closeDrawer();
       });
   }
 

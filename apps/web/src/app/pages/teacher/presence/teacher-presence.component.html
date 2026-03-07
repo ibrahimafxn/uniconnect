@@ -24,13 +24,17 @@
             <li *ngIf="sessions.length === 0" class="empty">Aucune séance.</li>
             <li
               class="session-item"
-              *ngFor="let s of sessions"
+              *ngFor="let s of sortedSessions(sessions)"
               [class.active]="selectedSession?._id === s._id"
+              [class.done]="isCompleted(s._id)"
               (click)="selectSession(s)"
             >
               <div class="s-date">{{ s.date | date:'dd/MM' }}</div>
               <div class="s-info">
-                <strong>{{ s.label || 'Séance' }}</strong>
+                <div class="s-info-top">
+                  <strong>{{ s.label || 'Séance' }}</strong>
+                  <span class="done-badge" *ngIf="isCompleted(s._id)">✓</span>
+                </div>
                 <span class="muted">{{ s.startTime }}–{{ s.endTime }}</span>
                 <span class="tag">{{ groupName(groups.items, s.groupId) }}</span>
               </div>
