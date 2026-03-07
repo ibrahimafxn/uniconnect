@@ -242,18 +242,20 @@
     <div class="payments-grid">
 
       <!-- Statistiques rapides -->
-      <div class="pay-card stat">
-        <div class="stat-label">Total collecté</div>
-        <div class="stat-value">250,000 FC</div>
-      </div>
-      <div class="pay-card stat">
-        <div class="stat-label">Montant dû</div>
-        <div class="stat-value" style="color: #dc2626;">125,000 FC</div>
-      </div>
-      <div class="pay-card stat">
-        <div class="stat-label">Taux de paiement</div>
-        <div class="stat-value" style="color: #16a34a;">66.7%</div>
-      </div>
+      <ng-container *ngIf="(kpis$ | async) as kpis">
+        <div class="pay-card stat">
+          <div class="stat-label">Total collecté</div>
+          <div class="stat-value">{{ kpis.totalCollected | number:'.0-0' }} FC</div>
+        </div>
+        <div class="pay-card stat">
+          <div class="stat-label">Montant dû</div>
+          <div class="stat-value" style="color: #dc2626;">{{ kpis.totalDue | number:'.0-0' }} FC</div>
+        </div>
+        <div class="pay-card stat">
+          <div class="stat-label">Taux de paiement</div>
+          <div class="stat-value" style="color: #16a34a;">{{ kpis.paymentRate | number:'1.1-1' }}%</div>
+        </div>
+      </ng-container>
 
       <!-- Impayés -->
       <div class="pay-card alert wide">
