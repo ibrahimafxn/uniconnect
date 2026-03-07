@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { PaymentPlan, PaymentInstallment } from './payment-plan.schema';
 import { Payment } from './payment.schema';
 import { StudentProfile } from '../students/student-profile.schema';
@@ -46,7 +50,7 @@ export class PaymentsService {
     return this.paymentModel.find().sort({ paidAt: -1 }).exec();
   }
 
-  createPayment(data: {
+  async createPayment(data: {
     studentId: string;
     planId?: string;
     installmentId?: string;
@@ -55,14 +59,48 @@ export class PaymentsService {
     paidAt: Date;
     reference?: string;
   }) {
-    return this.paymentModel.create(data).then((payment) => {
-      this.sendPaymentConfirmationIfPossible(
-        data.studentId,
-        data.amount,
-        data.currency,
-      ).catch(() => undefined);
-      return payment;
-    });
+    if (data.planId) {
+      if (!data.installmentId) {
+        throw new BadRequestException('installmentId required for plan payment');
+      }
+      const plan = await this.planModel.findById(data.planId).lean().exec();
+      if (!plan) {
+        throw new NotFoundException('Payment plan not found');
+      }
+      const installment = plan.installments?.find(
+        (inst) => String(inst._id) === data.installmentId,
+      );
+      if (!installment) {
+        throw new BadRequestException('Installment not found in plan');
+      }
+
+      const paidAgg = await this.paymentModel
+        .aggregate([
+          {
+            $match: {
+              planId: new Types.ObjectId(data.planId),
+              installmentId: new Types.ObjectId(data.installmentId),
+            },
+          },
+          { $group: { _id: null, totalPaid: { $sum: '$amount' } } },
+        ])
+        .exec();
+      const alreadyPaid = paidAgg[0]?.totalPaid ?? 0;
+      const remaining = Math.max(0, (installment.amount ?? 0) - alreadyPaid);
+      if (data.amount > remaining) {
+        throw new BadRequestException(
+          'Payment exceeds remaining amount for installment',
+        );
+      }
+    }
+
+    const payment = await this.paymentModel.create(data);
+    this.sendPaymentConfirmationIfPossible(
+      data.studentId,
+      data.amount,
+      data.currency,
+    ).catch(() => undefined);
+    return payment;
   }
 
   updatePlan(id: string, data: Partial<PaymentPlan>) {
@@ -93,13 +131,26 @@ export class PaymentsService {
     const paymentsAgg = await this.paymentModel
       .aggregate([
         { $match: { planId: { $in: planIds } } },
-        { $group: { _id: '$planId', totalPaid: { $sum: '$amount' } } },
+        {
+          $group: {
+            _id: { planId: '$planId', installmentId: '$installmentId' },
+            totalPaid: { $sum: '$amount' },
+          },
+        },
       ])
       .exec();
 
-    const paidByPlan = new Map<string, number>();
+    const paidByPlanInstallment = new Map<string, Map<string, number>>();
     paymentsAgg.forEach((row) => {
-      paidByPlan.set(String(row._id), row.totalPaid ?? 0);
+      const planId = String(row._id?.planId);
+      const instId = row._id?.installmentId
+        ? String(row._id.installmentId)
+        : 'none';
+      if (!paidByPlanInstallment.has(planId)) {
+        paidByPlanInstallment.set(planId, new Map());
+      }
+      const byInst = paidByPlanInstallment.get(planId)!;
+      byInst.set(instId, (byInst.get(instId) ?? 0) + (row.totalPaid ?? 0));
     });
 
     const studentIds = plans.map((plan) => plan.studentId);
@@ -113,13 +164,31 @@ export class PaymentsService {
 
     return plans
       .map((plan) => {
-        const totalPaid = paidByPlan.get(String(plan._id)) ?? 0;
-        const dueAmount =
-          plan.installments && plan.installments.length > 0
-            ? plan.installments
-                .filter((inst) => new Date(inst.dueDate) <= asOf)
-                .reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
-            : plan.totalAmount;
+        const planKey = String(plan._id);
+        const byInst = paidByPlanInstallment.get(planKey) ?? new Map();
+        const hasInstallments =
+          plan.installments && plan.installments.length > 0;
+        const dueInstallments = hasInstallments
+          ? plan.installments.filter((inst) => new Date(inst.dueDate) <= asOf)
+          : [];
+        const dueAmount = hasInstallments
+          ? dueInstallments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
+          : plan.totalAmount;
+        
+        // Calculate total paid: sum of paid for due installments + unlinked payments
+        let totalPaid = 0;
+        if (hasInstallments) {
+          // Add payments linked to due installments
+          dueInstallments.forEach((inst) => {
+            totalPaid += byInst.get(String(inst._id)) ?? 0;
+          });
+          // Add unlinked payments (those with no installmentId)
+          totalPaid += byInst.get('none') ?? 0;
+        } else {
+          // If no installments, sum all payments for this plan
+          totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
+        }
+        
         const balanceDue = Math.max(0, dueAmount - totalPaid);
         const student = studentsById.get(String(plan.studentId));
         return {
