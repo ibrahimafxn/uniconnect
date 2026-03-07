@@ -14,6 +14,10 @@ Sprint 2 (Admin MVP) — Cloture
 - Seed academique complet.
 - Tests e2e API minimal: `npm run -w apps/api test:e2e`.
 
+## 2026-03-07
+Note (Backlog)
+- Admin: ajouter un filtre "semestre" global pour retrouver notes, paiements, inscriptions, planning, messages, documents, presence.
+
 ## 2026-03-03
 Maintenance dependances (API)
 - `npm audit fix` execute dans `apps/api` (suppression/maj mineures, sans `--force`).

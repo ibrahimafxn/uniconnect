@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {
   FormArray, FormBuilder, ReactiveFormsModule, Validators, FormsModule,
 } from '@angular/forms';
-import {Observable, of, tap, take, combineLatest, map} from 'rxjs';
+import {Observable, of, tap, take, combineLatest, map, distinctUntilChanged, switchMap, startWith} from 'rxjs';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
@@ -594,6 +594,28 @@ export class AdminComponent implements OnInit {
     paidAt: ['', Validators.required], reference: [''],
     paymentMethod: ['espece', Validators.required],
   });
+
+  // === Auto-display payment plan when student is selected ===
+  studentPlans$ = this.paymentForm.get('studentId')!.valueChanges.pipe(
+    startWith(this.paymentForm.get('studentId')!.value),
+    distinctUntilChanged(),
+    switchMap(studentId => {
+      if (!studentId) return of(null);
+      return this.plans$.pipe(
+        map(plans => plans.filter(p => p.studentId === studentId))
+      );
+    })
+  );
+
+  // Auto-select plan if exactly one exists, and prepare installments display
+  selectedPlan$ = this.studentPlans$.pipe(
+    tap(plans => {
+      if (plans && plans.length === 1) {
+        this.paymentForm.patchValue({ planId: plans[0]._id }, { emitEvent: false });
+      }
+    }),
+    map(plans => plans && plans.length > 0 ? plans[0] : null)
+  );
 
   get installments() { return this.planForm.get('installments') as FormArray; }
 
