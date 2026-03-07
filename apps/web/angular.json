@@ -41,21 +41,37 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "450kB",
+                  "maximumError": "500kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "main",
+                  "maximumWarning": "400kB",
+                  "maximumError": "450kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "teacher",
+                  "maximumWarning": "150kB",
+                  "maximumError": "200kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "general",
+                  "maximumWarning": "150kB",
+                  "maximumError": "200kB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "12kB"
+                  "maximumWarning": "20kB",
+                  "maximumError": "30kB"
                 }
               ],
-              "optimization": {
-                "fonts": {
-                  "inline": false
-                }
-              },
+              "optimization": true,
               "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
               "serviceWorker": "ngsw-config.json"
             },
             "development": {
