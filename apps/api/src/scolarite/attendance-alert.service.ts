@@ -239,7 +239,7 @@ export class AttendanceAlertService {
       .lean()
       .exec();
 
-    const report = [];
+    const report: { student: { id: unknown; name: string; studentNumber: string }; absenceRate: number; alertStatus: string | null; risk: string }[] = [];
     for (const student of students) {
       const absenceRate = await this.calculateAbsenceRate(String(student._id), offerId);
       const alert = await this.alertModel

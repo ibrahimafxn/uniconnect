@@ -206,7 +206,7 @@ export class DeliberationService {
       throw new BadRequestException('Impossible de modifier un PV signé.');
     }
 
-    const results = [];
+    const results: unknown[] = [];
     for (const d of decisions) {
       const result = await this.decisionModel
         .findOneAndUpdate(
