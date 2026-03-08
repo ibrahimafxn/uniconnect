@@ -9,6 +9,9 @@ import {
   Query,
   Res,
   UseGuards,
+  Request,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import PDFDocument from 'pdfkit';
@@ -21,6 +24,7 @@ import { CreatePaymentPlanDto } from './dto/create-payment-plan.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentPlanDto } from './dto/update-payment-plan.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { CreateStudentPaymentDto } from './dto/create-student-payment.dto';
 
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -197,10 +201,21 @@ export class PaymentsController {
   }
 
   @Get(':id/receipt')
-  async getReceipt(@Param('id') id: string, @Res() res: Response) {
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Student)
+  async getReceipt(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @Request() req: { user: { role: Role; email?: string } },
+  ) {
     const { payment, student, plan } = await this.paymentsService.buildReceipt(
       id,
     );
+    if (req.user.role === Role.Student) {
+      const me = await this.paymentsService.findStudentByEmail(req.user.email ?? '');
+      if (!me || String(payment.studentId) !== String(me._id)) {
+        throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+      }
+    }
 
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const chunks: Buffer[] = [];
@@ -243,6 +258,27 @@ export class PaymentsController {
       ...dto,
       paidAt: new Date(dto.paidAt),
     });
+  }
+
+  @Get('me')
+  @Roles(Role.Student)
+  listMyPayments(@Request() req: { user: { email?: string } }) {
+    return this.paymentsService.listMyPayments(req.user.email ?? '');
+  }
+
+  @Get('me/plan')
+  @Roles(Role.Student)
+  getMyPlan(@Request() req: { user: { email?: string } }) {
+    return this.paymentsService.getMyPlan(req.user.email ?? '');
+  }
+
+  @Post('me')
+  @Roles(Role.Student)
+  createMyPayment(
+    @Body() dto: CreateStudentPaymentDto,
+    @Request() req: { user: { email?: string } },
+  ) {
+    return this.paymentsService.createStudentPayment(req.user.email ?? '', dto);
   }
 
   @Patch(':id')

@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {PlanningApi, Session} from '../../../core/api/planning.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {AttendanceApi, AttendanceEntry, AttendanceStatus} from '../../../core/api/attendance.api';
@@ -8,7 +8,7 @@ import {AttendanceApi, AttendanceEntry, AttendanceStatus} from '../../../core/ap
 @Component({
   selector: 'app-teacher-presence',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './teacher-presence.component.html',
   styleUrls: ['./teacher-presence.component.scss'],
 })
@@ -28,6 +28,8 @@ export class TeacherPresenceComponent {
   saveSuccess = false;
   saveError: string | null = null;
   completedSessionIds = new Set<string>();
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
 
   filterForm = this.fb.group({
     dateFrom: [''],
@@ -148,5 +150,54 @@ export class TeacherPresenceComponent {
     const total = this.attendanceEntries.length;
     if (!total) return '—';
     return Math.round((this.countByStatus('present') / total) * 100) + '%';
+  }
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
   }
 }

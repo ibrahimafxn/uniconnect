@@ -1,0 +1,74 @@
+.apply-page {
+  padding: 30px clamp(16px, 4vw, 48px) 60px;
+}
+
+.apply-hero h1 {
+  margin: 0 0 8px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.apply-grid {
+  margin-top: 20px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 12px 26px rgba(10, 30, 36, 0.08);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.field-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+input, select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #dbe5ec;
+  font-family: inherit;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  border: none;
+  background: #1fa989;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pill.ghost {
+  background: #e9f1f6;
+  color: var(--ink-700);
+}
+
+.success, .result {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #f0faf7;
+}
+
+.upload {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+}

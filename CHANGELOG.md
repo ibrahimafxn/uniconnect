@@ -1,5 +1,14 @@
 # Changelog (Interne)
 
+## 2026-03-08
+Sprint 7 (Module Étudiant V1)
+- API: dossiers d'inscription publics + upload pièces.
+- API: ressources pédagogiques, travaux & rendus, justificatifs d'absence.
+- API: demandes de documents + annonces / vie universitaire.
+- API: endpoints étudiant (profil, documents, paiements Mobile Money, export planning).
+- Web: nouvel espace étudiant (dashboard, planning, ressources, travaux, notes, présence, finances, documents, vie univ.).
+- Web: page publique d'inscription + suivi dossier.
+
 ## 2026-02-25
 Sprint 2 (Admin MVP)
 - Statuts etudiants: actif / suspendu / diplome.

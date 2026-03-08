@@ -60,6 +60,16 @@ export class StudentProfile extends Document {
 
   @Prop({ required: true, type: Types.ObjectId, ref: AcademicYear.name })
   academicYearId!: Types.ObjectId;
+
+  @Prop({
+    type: {
+      email: { type: Boolean, default: true },
+      sms: { type: Boolean, default: true },
+      push: { type: Boolean, default: true },
+    },
+    default: { email: true, sms: true, push: true },
+  })
+  notificationPrefs?: { email: boolean; sms: boolean; push: boolean };
 }
 
 export const StudentProfileSchema = SchemaFactory.createForClass(StudentProfile);

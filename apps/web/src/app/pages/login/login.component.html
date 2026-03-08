@@ -18,6 +18,8 @@
         {{ loading ? 'Connexion...' : 'Se connecter' }}
       </button>
 
+      <a class="apply-link" routerLink="/apply">Déposer un dossier d'inscription</a>
+
       <p class="error" *ngIf="error">{{ error }}</p>
     </form>
   </div>

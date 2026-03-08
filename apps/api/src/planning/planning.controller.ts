@@ -9,7 +9,10 @@ import {
   Query,
   Request,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import PDFDocument from 'pdfkit';
 import { PlanningService } from './planning.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
@@ -122,6 +125,72 @@ export class PlanningController {
       roomId,
       user: req.user,
     });
+  }
+
+  @Get('sessions/export')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @ApiOperation({ summary: 'Exporter le planning (PDF ou iCalendar)' })
+  @ApiQuery({ name: 'format', required: true, enum: ['pdf', 'ics'] })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  async exportSessions(
+    @Request() req: { user: { userId: string; email: string; role: Role } },
+    @Query('format') format: 'pdf' | 'ics',
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Res() res: Response,
+  ) {
+    const sessions = await this.planningService.listSessions({
+      dateFrom,
+      dateTo,
+      user: req.user,
+    });
+
+    if (format === 'ics') {
+      const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Uniconnect//ENT//FR',
+      ];
+      sessions.forEach((s: any) => {
+        const date = new Date(s.date);
+        const [sh, sm] = (s.startTime || '00:00').split(':').map(Number);
+        const [eh, em] = (s.endTime || '00:00').split(':').map(Number);
+        const start = new Date(date); start.setHours(sh, sm, 0, 0);
+        const end = new Date(date); end.setHours(eh, em, 0, 0);
+        const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        lines.push('BEGIN:VEVENT');
+        lines.push(`UID:${s._id}@uniconnect`);
+        lines.push(`DTSTAMP:${fmt(new Date())}`);
+        lines.push(`DTSTART:${fmt(start)}`);
+        lines.push(`DTEND:${fmt(end)}`);
+        lines.push(`SUMMARY:${(s.label || 'Séance').replace(/\\n/g, ' ')}`);
+        lines.push('END:VEVENT');
+      });
+      lines.push('END:VCALENDAR');
+      res.setHeader('Content-Type', 'text/calendar');
+      res.setHeader('Content-Disposition', 'attachment; filename=\"planning.ics\"');
+      res.send(lines.join('\\r\\n'));
+      return;
+    }
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=\"planning.pdf\"');
+      res.send(buffer);
+    });
+    doc.fontSize(18).text('Planning', { align: 'center' });
+    doc.moveDown();
+    sessions.forEach((s: any) => {
+      doc.fontSize(12).text(`${new Date(s.date).toLocaleDateString('fr-FR')} — ${s.startTime}–${s.endTime}`);
+      doc.fontSize(10).text(`Séance: ${s.label || '—'}`);
+      doc.moveDown(0.5);
+    });
+    doc.end();
   }
 
   @Post('sessions')

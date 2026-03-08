@@ -1,9 +1,17 @@
-<div class="page">
+<div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
   <div class="header">
     <div>
       <h1>Mes Notes</h1>
       <p class="subtitle">Créez des évaluations et saisissez les notes de vos étudiants.</p>
     </div>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
+      Mode compact
+    </label>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
+      Ultra-compact
+    </label>
   </div>
 
   <!-- Étape 1 : Choisir un groupe -->

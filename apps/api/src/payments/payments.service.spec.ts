@@ -108,8 +108,24 @@ describe('PaymentsService', () => {
   });
 
   it('createPayment calls model.create', async () => {
-    const planModel = { find: jest.fn(), create: jest.fn() } as any;
-    const paymentModel = { create: jest.fn().mockResolvedValue({}) } as any;
+    const planId = '507f1f77bcf86cd799439011';
+    const installmentId = '507f1f77bcf86cd799439012';
+    const planModel = {
+      find: jest.fn(),
+      create: jest.fn(),
+      findById: jest.fn().mockReturnValue(
+        makeLeanQuery({
+          _id: planId,
+          installments: [{ _id: installmentId, amount: 1000 }],
+        }),
+      ),
+    } as any;
+    const paymentModel = {
+      create: jest.fn().mockResolvedValue({}),
+      aggregate: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([{ _id: null, totalPaid: 0 }]),
+      }),
+    } as any;
     const studentModel = {
       findById: jest.fn().mockReturnValue(
         makeLeanQuery({ id: 's1', email: undefined }),
@@ -125,7 +141,8 @@ describe('PaymentsService', () => {
     );
     await service.createPayment({
       studentId: 's1',
-      planId: 'p1',
+      planId,
+      installmentId,
       amount: 1000,
       currency: 'XOF',
       paidAt: new Date(),
@@ -195,18 +212,21 @@ describe('PaymentsService', () => {
             totalAmount: 1000,
             currency: 'XOF',
             installments: [
-              { amount: 200, dueDate: new Date('2026-02-01') },
-              { amount: 300, dueDate: new Date('2026-02-15') },
-              { amount: 500, dueDate: new Date('2026-04-01') },
+              { _id: 'i1', amount: 200, dueDate: new Date('2026-02-01') },
+              { _id: 'i2', amount: 300, dueDate: new Date('2026-02-15') },
+              { _id: 'i3', amount: 500, dueDate: new Date('2026-04-01') },
             ],
           },
         ]),
       ),
     } as any;
     const paymentModel = {
-      aggregate: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 300 }]),
-      }),
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          { planId: 'p1', installmentId: 'i1', amount: 100 },
+          { planId: 'p1', installmentId: 'i2', amount: 200 },
+        ]),
+      ),
     } as any;
     const studentModel = {
       find: jest.fn().mockReturnValue(
@@ -239,7 +259,7 @@ describe('PaymentsService', () => {
     const planModel = {
       find: jest.fn().mockReturnValue(makeLeanQuery([])),
     } as any;
-    const paymentModel = { aggregate: jest.fn() } as any;
+    const paymentModel = { find: jest.fn() } as any;
     const studentModel = { find: jest.fn() } as any;
     const emailService = { sendMail: jest.fn() } as any;
 
@@ -269,9 +289,9 @@ describe('PaymentsService', () => {
       ),
     } as any;
     const paymentModel = {
-      aggregate: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 200 }]),
-      }),
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([{ planId: 'p1', amount: 200 }]),
+      ),
     } as any;
     const studentModel = {
       find: jest.fn().mockReturnValue(
@@ -315,12 +335,12 @@ describe('PaymentsService', () => {
       ),
     } as any;
     const paymentModel = {
-      aggregate: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue([
-          { _id: 'p1', totalPaid: 400 },
-          { _id: 'p2', totalPaid: 200 },
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([
+          { planId: 'p1', amount: 400 },
+          { planId: 'p2', amount: 200 },
         ]),
-      }),
+      ),
     } as any;
     const studentModel = {
       find: jest.fn().mockReturnValue(
@@ -359,9 +379,9 @@ describe('PaymentsService', () => {
       ),
     } as any;
     const paymentModel = {
-      aggregate: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue([{ _id: 'p1', totalPaid: 1000 }]),
-      }),
+      find: jest.fn().mockReturnValue(
+        makeLeanQuery([{ planId: 'p1', amount: 1000 }]),
+      ),
     } as any;
     const studentModel = {
       find: jest.fn().mockReturnValue(makeLeanQuery([])),
@@ -521,5 +541,41 @@ describe('PaymentsService', () => {
 
     await new Promise((resolve) => setImmediate(resolve));
     expect(emailService.sendMail).toHaveBeenCalled();
+  });
+
+  it('listMyPayments returns empty when student missing', async () => {
+    const planModel = {} as any;
+    const paymentModel = { find: jest.fn() } as any;
+    const studentModel = { findOne: jest.fn().mockReturnValue(makeLeanQuery(null)) } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+    const service = new PaymentsService(planModel, paymentModel, studentModel, emailService);
+    const res = await service.listMyPayments('missing@u.c');
+    expect(res).toEqual([]);
+  });
+
+  it('getMyPlan returns plan and stats', async () => {
+    const planModel = {
+      findOne: jest.fn().mockReturnValue(
+        makeLeanQuery({
+          _id: 'p1',
+          studentId: 's1',
+          label: 'Mensuel',
+          totalAmount: 1000,
+          currency: 'XOF',
+          installments: [{ _id: 'i1', amount: 500 }],
+        }),
+      ),
+    } as any;
+    const paymentModel = {
+      find: jest.fn().mockReturnValue(makeLeanQuery([{ planId: 'p1', installmentId: 'i1', amount: 200 }])),
+    } as any;
+    const studentModel = {
+      findOne: jest.fn().mockReturnValue(makeLeanQuery({ _id: 's1', firstName: 'A', lastName: 'B', studentNumber: 'S1' })),
+    } as any;
+    const emailService = { sendMail: jest.fn() } as any;
+    const service = new PaymentsService(planModel, paymentModel, studentModel, emailService);
+    const res = await service.getMyPlan('s@u.c');
+    expect(res?.plan?._id).toBe('p1');
+    expect(res?.installmentStats['i1'].paid).toBe(200);
   });
 });

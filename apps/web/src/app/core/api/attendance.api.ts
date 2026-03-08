@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 
 export type AttendanceStatus = 'present' | 'absent' | 'excused';
@@ -25,6 +25,18 @@ export type AttendanceSummary = {
   rate: number | null;
 };
 
+export type AbsenceJustification = {
+  _id: string;
+  studentId: string;
+  sessionId?: string;
+  absenceDate: string;
+  reason: string;
+  status: 'submitted' | 'accepted' | 'rejected';
+  decisionNote?: string;
+  originalName?: string;
+  createdAt?: string;
+};
+
 @Injectable({providedIn: 'root'})
 export class AttendanceApi {
   private readonly baseUrl = 'http://localhost:3000/api/attendance';
@@ -48,5 +60,29 @@ export class AttendanceApi {
 
   getStudentSummary(studentId: string) {
     return this.http.get<any>(`${this.baseUrl}/students/${studentId}/summary`);
+  }
+
+  listMyJustifications() {
+    return this.http.get<AbsenceJustification[]>(`${this.baseUrl}/justifications/me`);
+  }
+
+  listJustifications(status?: string, groupId?: string) {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (groupId) params = params.set('groupId', groupId);
+    return this.http.get<AbsenceJustification[]>(`${this.baseUrl}/justifications`, { params });
+  }
+
+  createJustification(payload: { absenceDate: string; reason: string; sessionId?: string }, file?: File) {
+    const fd = new FormData();
+    fd.append('absenceDate', payload.absenceDate);
+    fd.append('reason', payload.reason);
+    if (payload.sessionId) fd.append('sessionId', payload.sessionId);
+    if (file) fd.append('file', file);
+    return this.http.post<AbsenceJustification>(`${this.baseUrl}/justifications`, fd);
+  }
+
+  downloadJustificationUrl(id: string) {
+    return `${this.baseUrl}/justifications/${id}/download`;
   }
 }

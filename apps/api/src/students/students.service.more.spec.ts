@@ -5,6 +5,13 @@ const mockModel = () => ({
   findByIdAndUpdate: jest
     .fn()
     .mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
+  findOne: jest.fn().mockReturnValue({
+    select: () => ({
+      lean: () => ({
+        exec: jest.fn().mockResolvedValue(null),
+      }),
+    }),
+  }),
   findById: jest.fn().mockReturnValue({
     exec: jest.fn().mockResolvedValue({}),
     lean: () => ({ exec: jest.fn().mockResolvedValue({}) }),
@@ -64,7 +71,7 @@ describe('StudentsService extra', () => {
   it('createStudent and getStudent call model', async () => {
     const studentModel = { ...mockModel() } as any;
     const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
-    const year = new Date().getFullYear();
+    const year = 2025;
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
@@ -141,7 +148,7 @@ describe('StudentsService extra', () => {
   it('createStudent rejects invalid birthDate', async () => {
     const studentModel = { ...mockModel() } as any;
     const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
-    expect(() =>
+    await expect(
       service.createStudent({
         firstName: 'John',
         lastName: 'Doe',
@@ -152,13 +159,13 @@ describe('StudentsService extra', () => {
         programId: 'p1',
         academicYearId: 'y1',
       }),
-    ).toThrow('Date de naissance invalide');
+    ).rejects.toThrow('Date de naissance invalide');
   });
 
   it('createStudent rejects invalid matricule', async () => {
     const studentModel = { ...mockModel() } as any;
     const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
-    expect(() =>
+    await expect(
       service.createStudent({
         firstName: 'John',
         lastName: 'Doe',
@@ -169,7 +176,7 @@ describe('StudentsService extra', () => {
         programId: 'p1',
         academicYearId: 'y1',
       }),
-    ).toThrow('Matricule invalide');
+    ).rejects.toThrow('Matricule invalide');
   });
 
   it('deleteStudent and deleteEnrollment call model', async () => {
@@ -200,7 +207,7 @@ describe('StudentsService extra', () => {
       find: jest.fn().mockReturnValue({
         select: () => ({
           lean: () => ({
-            exec: jest.fn().mockResolvedValue([{ studentNumber: 'ML103DJ2026' }]),
+            exec: jest.fn().mockResolvedValue([{ studentNumber: 'ML103DJ2025' }]),
           }),
         }),
       }),
@@ -209,7 +216,7 @@ describe('StudentsService extra', () => {
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: 'ML103DJ2026',
+      studentNumber: 'ML103DJ2025',
       gender: 'male' as any,
       birthDate: '2004-03-15',
       groupId: 'g1',
@@ -217,7 +224,7 @@ describe('StudentsService extra', () => {
       academicYearId: 'y1',
     });
     expect(create).toHaveBeenCalledTimes(2);
-    expect(create.mock.calls[1][0].studentNumber).toBe('ML103DJ20261');
+    expect(create.mock.calls[1][0].studentNumber).toBe('ML103DJ20251');
   });
 
   it('createStudent accepts matricule suffix', async () => {
@@ -227,7 +234,7 @@ describe('StudentsService extra', () => {
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
-      studentNumber: 'ML103DJ20262',
+      studentNumber: 'ML103DJ20252',
       gender: 'male' as any,
       birthDate: '2004-03-15',
       groupId: 'g1',
@@ -235,7 +242,7 @@ describe('StudentsService extra', () => {
       academicYearId: 'y1',
     });
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ studentNumber: 'ML103DJ20262' }),
+      expect.objectContaining({ studentNumber: 'ML103DJ20252' }),
     );
   });
 

@@ -28,6 +28,8 @@ export type Payment = {
   paidAt: string;
   reference?: string;
   paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
+  status?: 'pending' | 'confirmed' | 'failed';
+  provider?: string;
 };
 
 export type UnpaidItem = {
@@ -40,6 +42,12 @@ export type UnpaidItem = {
   totalPaid: number;
   balanceDue: number;
   currency: string;
+};
+
+export type PlanStats = {
+  plan: PaymentPlan;
+  installmentStats: Record<string, { paid: number; status: 'paid' | 'partial' | 'unpaid' }>;
+  student: { _id: string; firstName: string; lastName: string; studentNumber: string };
 };
 
 @Injectable({ providedIn: 'root' })
@@ -71,6 +79,18 @@ export class PaymentsApi {
 
   listPayments(): Observable<Payment[]> {
     return this.http.get<Payment[]>(`${this.baseUrl}`);
+  }
+
+  listMyPayments(): Observable<Payment[]> {
+    return this.http.get<Payment[]>(`${this.baseUrl}/me`);
+  }
+
+  getMyPlan(): Observable<PlanStats | null> {
+    return this.http.get<PlanStats | null>(`${this.baseUrl}/me/plan`);
+  }
+
+  createMyPayment(payload: { planId?: string; installmentId?: string; amount: number; currency: string; reference?: string; provider?: string }) {
+    return this.http.post<Payment>(`${this.baseUrl}/me`, payload);
   }
 
   createPayment(payload: Omit<Payment, '_id'>) {

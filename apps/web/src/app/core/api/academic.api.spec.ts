@@ -32,10 +32,10 @@ describe('AcademicApi', () => {
   });
 
   it('createProgram posts payload', () => {
-    api.createProgram({ name: 'Info', code: 'INFO' }).subscribe();
+    api.createProgram({ name: 'Info', code: 'INFO', type: 'universitaire' }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/programs');
     expect(req.request.method).toBe('POST');
-    req.flush({ _id: '1', name: 'Info', code: 'INFO' });
+    req.flush({ _id: '1', name: 'Info', code: 'INFO', type: 'universitaire' });
   });
 
   it('updateProgram patches payload', () => {
@@ -109,7 +109,7 @@ describe('AcademicApi', () => {
   });
 
   it('createLevel posts payload', () => {
-    api.createLevel({ name: 'L1' }).subscribe();
+    api.createLevel({ name: 'L1', cycle: 'L', order: 1 }).subscribe();
     const req = httpMock.expectOne('http://localhost:3000/api/academic/levels');
     expect(req.request.method).toBe('POST');
     req.flush({ _id: 'l1' });

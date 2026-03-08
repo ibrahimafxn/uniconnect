@@ -23,7 +23,7 @@ describe('refreshInterceptor', () => {
             getRefreshToken: () => 'r',
             refresh: () => of({ accessToken: 'a', refreshToken: 'r' }),
             getAccessToken: () => 'a',
-            logout: () => of({ success: true }),
+            logoutLocal: () => {},
           },
         },
       ],
@@ -32,7 +32,7 @@ describe('refreshInterceptor', () => {
     http = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
     authService = TestBed.inject(AuthService);
-    logoutSpy = spyOn(authService, 'logout').and.returnValue(of({ success: true }));
+    logoutSpy = spyOn(authService, 'logoutLocal').and.callThrough();
   });
 
   afterEach(() => httpMock.verify());

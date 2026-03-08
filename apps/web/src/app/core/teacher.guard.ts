@@ -11,5 +11,6 @@ export const teacherGuard: CanActivateFn = () => {
   const role = auth.getUserRole();
   if (role === 'teacher' || role === 'external') return true;
 
+  if (role === 'student') return router.parseUrl('/student');
   return router.parseUrl('/dashboard');
 };

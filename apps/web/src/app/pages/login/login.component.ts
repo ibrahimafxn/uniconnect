@@ -1,13 +1,13 @@
 import {Component, inject} from '@angular/core';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Router} from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {AuthService} from '../../core/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -37,7 +37,10 @@ export class LoginComponent {
       next: () => {
         this.loading = false;
         const role = this.authService.getUserRole();
-        const target = (role === 'teacher' || role === 'external') ? '/teacher' : '/dashboard';
+        const target =
+          role === 'student' ? '/student' :
+          (role === 'teacher' || role === 'external') ? '/teacher' :
+          '/dashboard';
         this.router.navigateByUrl(target);
       },
       error: () => {

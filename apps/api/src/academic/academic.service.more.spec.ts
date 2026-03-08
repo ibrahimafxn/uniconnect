@@ -19,6 +19,7 @@ describe('AcademicService extra', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
     await service.createProgram({ name: 'INFO' });
     expect(programModel.create).toHaveBeenCalled();
@@ -27,6 +28,7 @@ describe('AcademicService extra', () => {
   it('updateGroup calls model', async () => {
     const groupModel = { ...mockModel() } as any;
     const service = new AcademicService(
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
@@ -43,6 +45,7 @@ describe('AcademicService extra', () => {
     const service = new AcademicService(
       yearModel,
       programModel,
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
