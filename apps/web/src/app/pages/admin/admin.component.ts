@@ -17,6 +17,7 @@ type PaymentView = Payment & {
   installmentDueDate?: string;
   installmentLabel?: string;
   isEarly?: boolean;
+  studentName?: string;
 };
 
 type InstallmentStatus = {
@@ -30,6 +31,7 @@ type InstallmentStatus = {
 
 type PaymentPlanView = PaymentPlan & {
   installmentStatus?: InstallmentStatus[];
+  studentName?: string;
 };
 
 @Component({
@@ -578,6 +580,7 @@ export class AdminComponent implements OnInit {
   plans$ = this.payments.listPlans();
   payments$ = this.payments.listPayments();
   unpaid$ = this.payments.listUnpaid();
+  allStudents$ = this.students.listStudents('', 1, 9999).pipe(map((r) => r.items));
   editingPlanId: string | null = null;
   editingPaymentId: string | null = null;
 
@@ -708,8 +711,8 @@ export class AdminComponent implements OnInit {
     this.plans$ = this.payments.listPlans();
     this.payments$ = this.payments.listPayments();
     this.unpaid$ = this.payments.listUnpaid();
-    this.plansView$ = this.buildPlansView(this.plans$, this.payments$);
-    this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
+    this.plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
+    this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$, this.allStudents$);
     // Refresh KPIs with new payment data
     this.kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
       map(([plans, payments]) => {
@@ -875,8 +878,8 @@ export class AdminComponent implements OnInit {
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
   }
 
-  plansView$ = this.buildPlansView(this.plans$, this.payments$);
-  paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$);
+  plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
+  paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$, this.allStudents$);
 
   // KPI Observables - Synchronized with real data
   kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
@@ -926,21 +929,26 @@ export class AdminComponent implements OnInit {
   private buildPaymentsView(
     plans$: Observable<PaymentPlan[]>,
     payments$: Observable<Payment[]>,
+    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
   ): Observable<PaymentView[]> {
-    return combineLatest([plans$, payments$]).pipe(
-      map(([plans, payments]) => {
+    return combineLatest([plans$, payments$, students$]).pipe(
+      map(([plans, payments, students]) => {
         const planById = new Map(plans.map((p) => [p._id, p]));
+        const studentById = new Map(students.map((s) => [s._id, s]));
         return payments.map((payment) => {
-          if (!payment.planId || !payment.installmentId) return payment;
+          const student = studentById.get(payment.studentId);
+          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
+          if (!payment.planId || !payment.installmentId) return { ...payment, studentName };
           const plan = planById.get(payment.planId);
           const installment = plan?.installments?.find(
             (inst) => inst._id === payment.installmentId,
           );
-          if (!installment) return payment;
+          if (!installment) return { ...payment, studentName };
           const paidAt = new Date(payment.paidAt);
           const dueDate = new Date(installment.dueDate);
           return {
             ...payment,
+            studentName,
             installmentDueDate: installment.dueDate,
             installmentLabel: installment.label,
             isEarly: paidAt.getTime() < dueDate.getTime(),
@@ -953,9 +961,11 @@ export class AdminComponent implements OnInit {
   private buildPlansView(
     plans$: Observable<PaymentPlan[]>,
     payments$: Observable<Payment[]>,
+    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
   ): Observable<PaymentPlanView[]> {
-    return combineLatest([plans$, payments$]).pipe(
-      map(([plans, payments]) => {
+    return combineLatest([plans$, payments$, students$]).pipe(
+      map(([plans, payments, students]) => {
+        const studentById = new Map(students.map((s) => [s._id, s]));
         const paidByPlanInst = new Map<string, Map<string, number>>();
         payments.forEach((payment) => {
           if (!payment.planId || !payment.installmentId) return;
@@ -970,6 +980,8 @@ export class AdminComponent implements OnInit {
         });
 
         return plans.map((plan) => {
+          const student = studentById.get(plan.studentId);
+          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
           const byInst = paidByPlanInst.get(plan._id) ?? new Map();
           const installmentStatus = (plan.installments ?? []).map((inst) => {
             const paid = byInst.get(inst._id ?? '') ?? 0;
@@ -983,7 +995,7 @@ export class AdminComponent implements OnInit {
               remaining,
             };
           });
-          return { ...plan, installmentStatus };
+          return { ...plan, studentName, installmentStatus };
         });
       }),
     );

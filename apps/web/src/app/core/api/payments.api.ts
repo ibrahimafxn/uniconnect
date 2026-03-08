@@ -27,6 +27,7 @@ export type Payment = {
   currency: string;
   paidAt: string;
   reference?: string;
+  paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
 };
 
 export type UnpaidItem = {
