@@ -1,9 +1,17 @@
-<div class="page">
+<div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
   <div class="header">
     <div>
       <h1>Mon Profil</h1>
       <p class="subtitle">Renseignez vos informations professionnelles.</p>
     </div>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
+      Mode compact
+    </label>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
+      Ultra-compact
+    </label>
     <div class="email-chip">{{ email }}</div>
   </div>
 

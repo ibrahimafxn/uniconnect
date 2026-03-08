@@ -33,6 +33,7 @@ import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
+import { UpdateStudentSelfDto } from './dto/update-student-self.dto';
 import { parsePagination } from '../common/pagination';
 import { toObjectId } from '../common/object-id';
 
@@ -83,6 +84,12 @@ export class StudentsController {
       throw new HttpException('Profil étudiant introuvable', HttpStatus.NOT_FOUND);
     }
     return student;
+  }
+
+  @Patch('me')
+  @Roles(Role.Student)
+  updateMe(@Req() req: any, @Body() dto: UpdateStudentSelfDto) {
+    return this.studentsService.updateStudentSelfByEmail(req.user.email, dto as any);
   }
 
   @Get(':id')
@@ -136,6 +143,18 @@ export class StudentsController {
   @Delete('enrollments/:id')
   deleteEnrollment(@Param('id') id: string) {
     return this.studentsService.deleteEnrollment(id);
+  }
+
+  @Get('me/documents')
+  @Roles(Role.Student)
+  async listMyDocuments(
+    @Req() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pagination = parsePagination({ page, limit });
+    const result = await this.studentsService.listMyDocuments(req.user.email, pagination);
+    return { ...result, ...pagination };
   }
 
   @Get(':id/documents')
@@ -208,6 +227,28 @@ export class StudentsController {
     const doc = await this.studentsService.getDocument(docId);
     if (!doc) {
       throw new HttpException('Document not found', HttpStatus.NOT_FOUND);
+    }
+    res.set({
+      'Content-Type': doc.mimeType,
+      'Content-Disposition': `attachment; filename="${doc.originalName}"`,
+    });
+    return new StreamableFile(createReadStream(doc.path));
+  }
+
+  @Get('me/documents/:docId/download')
+  @Roles(Role.Student)
+  async downloadMyDocument(
+    @Param('docId') docId: string,
+    @Req() req: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const doc = await this.studentsService.getDocument(docId);
+    if (!doc) {
+      throw new HttpException('Document not found', HttpStatus.NOT_FOUND);
+    }
+    const student = await this.studentsService.findByEmail(req.user.email);
+    if (!student || String(doc.studentId) !== String((student as any)._id)) {
+      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
     }
     res.set({
       'Content-Type': doc.mimeType,

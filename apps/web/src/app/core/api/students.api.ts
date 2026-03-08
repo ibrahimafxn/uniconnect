@@ -13,6 +13,9 @@ export type Student = {
   birthDate: string;
   status?: 'active' | 'suspended' | 'graduated';
   email?: string;
+  phone?: string;
+  address?: string;
+  notificationPrefs?: { email: boolean; sms: boolean; push: boolean };
   groupId: string;
   offerId: string;
   programId: string;
@@ -58,6 +61,14 @@ export class StudentsApi {
     return this.http.patch<Student>(`${this.baseUrl}/${id}`, payload);
   }
 
+  getMe() {
+    return this.http.get<Student>(`${this.baseUrl}/me`);
+  }
+
+  updateMe(payload: Partial<Pick<Student, 'email' | 'phone' | 'address' | 'notificationPrefs'>>) {
+    return this.http.patch<Student>(`${this.baseUrl}/me`, payload);
+  }
+
   deleteStudent(id: string) {
     return this.http.delete<Student>(`${this.baseUrl}/${id}`);
   }
@@ -79,6 +90,14 @@ export class StudentsApi {
     );
   }
 
+  listMyDocuments(page = 1, limit = 20) {
+    const params = new HttpParams().set('page', page).set('limit', limit);
+    return this.http.get<Paginated<StudentDocument>>(
+      `${this.baseUrl}/me/documents`,
+      { params },
+    );
+  }
+
   uploadStudentDocument(studentId: string, file: File, label?: string) {
     const payload = new FormData();
     payload.append('file', file);
@@ -88,6 +107,10 @@ export class StudentsApi {
 
   downloadStudentDocument(docId: string) {
     return `${this.baseUrl}/documents/${docId}/download`;
+  }
+
+  downloadMyDocument(docId: string) {
+    return `${this.baseUrl}/me/documents/${docId}/download`;
   }
 
   deleteStudentDocument(docId: string) {

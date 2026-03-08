@@ -1,0 +1,100 @@
+<div class="apply-page">
+  <div class="apply-hero">
+    <h1>Inscription en ligne</h1>
+    <p>Déposez votre dossier et suivez son traitement. Un code de suivi vous sera fourni.</p>
+  </div>
+
+  <div class="apply-grid">
+    <div class="card">
+      <h2>Déposer un dossier</h2>
+      <form [formGroup]="form">
+        <div class="field-row">
+          <div class="field">
+            <label>Prénom *</label>
+            <input formControlName="firstName" />
+          </div>
+          <div class="field">
+            <label>Nom *</label>
+            <input formControlName="lastName" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Genre *</label>
+            <select formControlName="gender">
+              <option value="female">Féminin</option>
+              <option value="male">Masculin</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Date de naissance *</label>
+            <input type="date" formControlName="birthDate" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" formControlName="email" />
+        </div>
+        <div class="field">
+          <label>Téléphone</label>
+          <input formControlName="phone" />
+        </div>
+        <div class="field">
+          <label>Adresse</label>
+          <input formControlName="address" />
+        </div>
+
+        <div class="field">
+          <label>Offre / Niveau *</label>
+          <select formControlName="offerId" (change)="onOfferChange($any($event.target).value)">
+            <option value="">— Sélectionner —</option>
+            <option *ngFor="let o of (offerOptions$ | async)" [value]="o.id">
+              {{ o.label }}
+            </option>
+          </select>
+        </div>
+        <input type="hidden" formControlName="programId" />
+        <input type="hidden" formControlName="academicYearId" />
+
+        <div class="actions">
+          <button type="button" class="pill ghost" (click)="saveDraft()">Enregistrer le brouillon</button>
+          <button type="button" class="pill" (click)="submit()">Soumettre le dossier</button>
+        </div>
+      </form>
+
+      <div class="success" *ngIf="created">
+        <strong>Dossier créé</strong>
+        <div>Code de suivi : <code>{{ created.trackingCode }}</code></div>
+        <div>Statut : {{ created.status }}</div>
+      </div>
+
+      <div class="upload" *ngIf="created">
+        <h3>Pièces justificatives</h3>
+        <input #docFile type="file" />
+        <input #docLabel type="text" placeholder="Libellé (ex: Bac, CNI)" />
+        <button class="pill" (click)="uploadDocument(docFile.files?.[0], docLabel.value)">Téléverser</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Suivre un dossier</h2>
+      <form [formGroup]="lookupForm" (ngSubmit)="lookup()">
+        <div class="field">
+          <label>Code de suivi *</label>
+          <input formControlName="trackingCode" />
+        </div>
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" formControlName="email" />
+        </div>
+        <button class="pill" type="submit">Consulter</button>
+      </form>
+
+      <div class="result" *ngIf="lookupResult">
+        <div><strong>{{ lookupResult.lastName }} {{ lookupResult.firstName }}</strong></div>
+        <div>Statut : {{ lookupResult.status }}</div>
+        <div *ngIf="lookupResult.decisionNote">Note : {{ lookupResult.decisionNote }}</div>
+      </div>
+    </div>
+  </div>
+</div>

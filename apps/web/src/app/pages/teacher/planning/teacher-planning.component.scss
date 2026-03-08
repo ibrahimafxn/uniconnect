@@ -22,6 +22,32 @@
   min-height: calc(100vh - 80px);
 }
 
+.page.compact {
+  padding: 18px;
+}
+
+.page.compact .list,
+.page.compact .calendar,
+.page.compact .filter-bar { margin-bottom: 12px; }
+
+.page.compact .sessions { gap: 8px; }
+.page.compact .session-card { padding: 12px; }
+.page.compact .filter-bar { padding: 10px; }
+.page.compact .calendar { padding: 12px; }
+
+.page.ultra-compact {
+  padding: 14px;
+}
+
+.page.ultra-compact .list,
+.page.ultra-compact .calendar,
+.page.ultra-compact .filter-bar { margin-bottom: 8px; }
+
+.page.ultra-compact .sessions { gap: 6px; }
+.page.ultra-compact .session-card,
+.page.ultra-compact .calendar { padding: 10px; }
+.page.ultra-compact .filter-bar { padding: 8px; }
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -29,6 +55,16 @@
   gap: 16px;
   margin-bottom: 20px;
 }
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.toggle input { width: 18px; height: 18px; }
 
 h1 {
   font-family: 'Unbounded', sans-serif;

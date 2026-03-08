@@ -15,10 +15,40 @@
   min-height: calc(100vh - 80px);
 }
 
+.page.compact {
+  padding: 18px;
+}
+
+.page.ultra-compact {
+  padding: 14px;
+}
+
+.page.ultra-compact .tabs { margin-bottom: 10px; }
+.page.ultra-compact .struct-card,
+.page.ultra-compact .card,
+.page.ultra-compact .panel { padding: 12px; }
+.page.ultra-compact .table-wrap { max-height: 420px; }
+
 .page-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
 }
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.toggle input { width: 18px; height: 18px; }
 h1 { font-family: 'Unbounded', sans-serif; font-size: 28px; margin: 0 0 4px; }
 .subtitle { color: var(--muted); margin: 0; }
 

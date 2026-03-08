@@ -58,6 +58,9 @@ export class PaymentsService {
     currency: string;
     paidAt: Date;
     reference?: string;
+    paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
+    provider?: string;
+    status?: 'pending' | 'confirmed' | 'failed';
   }) {
     if (data.planId) {
       if (!data.installmentId) {
@@ -172,22 +175,25 @@ export class PaymentsService {
         const byInst = paidByPlanInstallment.get(planKey) ?? new Map();
         const hasInstallments =
           plan.installments && plan.installments.length > 0;
-        
-        // Calculate total due amount from ALL installments (not just due ones)
+
+        const dueInstallments = hasInstallments
+          ? plan.installments.filter((inst) => {
+              const due = new Date(inst.dueDate);
+              return !Number.isNaN(due.getTime()) && due <= asOf;
+            })
+          : [];
+
         const totalDueAmount = hasInstallments
-          ? plan.installments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
+          ? dueInstallments.reduce((sum, inst) => sum + (inst.amount ?? 0), 0)
           : plan.totalAmount;
-        
-        // Calculate total paid for ALL installments (sum all payments for this plan)
-        let totalPaid = 0;
-        if (hasInstallments) {
-          // Sum all payments for this plan, regardless of installmentId
-          totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
-        } else {
-          // If no installments, sum all payments for this plan
-          totalPaid = Array.from(byInst.values()).reduce((a, b) => a + b, 0);
-        }
-        
+
+        const totalPaid = hasInstallments
+          ? dueInstallments.reduce((sum, inst) => {
+              const key = String(inst._id ?? '');
+              return sum + (byInst.get(key) ?? 0);
+            }, 0)
+          : Array.from(byInst.values()).reduce((a, b) => a + b, 0);
+
         const balanceDue = Math.max(0, totalDueAmount - totalPaid);
         const student = studentsById.get(String(plan.studentId));
         
@@ -257,6 +263,76 @@ export class PaymentsService {
     });
     
     return { plan, student, installmentStats };
+  }
+
+  async listMyPayments(email: string) {
+    const student = await this.studentModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) return [];
+    return this.paymentModel.find({ studentId: student._id }).sort({ paidAt: -1 }).exec();
+  }
+
+  findStudentByEmail(email: string) {
+    return this.studentModel.findOne({ email: email.toLowerCase().trim() }).lean().exec();
+  }
+
+  async getMyPlan(email: string) {
+    const student = await this.studentModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) return null;
+    const plan = await this.planModel.findOne({ studentId: student._id }).lean().exec();
+    if (!plan) return null;
+    const payments = await this.paymentModel.find({ planId: plan._id }).lean().exec();
+    const installmentStats: Record<string, { paid: number; status: 'paid' | 'partial' | 'unpaid' }> = {};
+    (plan.installments ?? []).forEach((inst: any) => {
+      const paidForInst = payments
+        .filter((p) => String(p.installmentId) === String(inst._id))
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      const dueAmount = inst.amount || 0;
+      let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
+      if (paidForInst >= dueAmount) status = 'paid';
+      else if (paidForInst > 0) status = 'partial';
+      installmentStats[String(inst._id)] = { paid: paidForInst, status };
+    });
+    return { plan, installmentStats, student }; 
+  }
+
+  async createStudentPayment(email: string, data: {
+    planId?: string;
+    installmentId?: string;
+    amount: number;
+    currency: string;
+    reference?: string;
+    provider?: string;
+  }) {
+    const student = await this.studentModel
+      .findOne({ email: email.toLowerCase().trim() })
+      .lean()
+      .exec();
+    if (!student) throw new NotFoundException('Profil étudiant introuvable');
+    if (data.planId) {
+      const plan = await this.planModel.findById(data.planId).lean().exec();
+      if (!plan) throw new NotFoundException('Plan de paiement introuvable');
+      if (String(plan.studentId) !== String(student._id)) {
+        throw new BadRequestException('Plan non autorisé');
+      }
+    }
+    return this.createPayment({
+      studentId: String(student._id),
+      planId: data.planId,
+      installmentId: data.installmentId,
+      amount: data.amount,
+      currency: data.currency,
+      paidAt: new Date(),
+      reference: data.reference,
+      paymentMethod: 'mobile_money',
+      provider: data.provider,
+      status: 'confirmed',
+    });
   }
 
   private async sendPaymentConfirmationIfPossible(

@@ -291,6 +291,27 @@ export class StudentsService {
     return this.studentModel.findOne({ email: normalized }).lean().exec();
   }
 
+  async updateStudentSelfByEmail(email: string, data: { email?: string; phone?: string; address?: string; notificationPrefs?: any }) {
+    const normalized = this.normalizeEmail(email);
+    if (!normalized) throw new BadRequestException('Email requis.');
+    const student = await this.studentModel.findOne({ email: normalized }).lean().exec();
+    if (!student) throw new BadRequestException('Profil étudiant introuvable.');
+    const payload: any = {};
+    if (typeof data.email === 'string') {
+      const next = this.normalizeEmail(data.email);
+      if (next) {
+        await this.ensureEmailUnique(next, String(student._id));
+        payload.email = next;
+      }
+    }
+    if (typeof data.phone === 'string') payload.phone = data.phone;
+    if (typeof data.address === 'string') payload.address = data.address;
+    if (data.notificationPrefs && typeof data.notificationPrefs === 'object') {
+      payload.notificationPrefs = data.notificationPrefs;
+    }
+    return this.studentModel.findByIdAndUpdate(student._id, payload, { returnDocument: 'after' }).exec();
+  }
+
   updateEnrollment(id: string, data: Partial<Enrollment>) {
     return this.enrollmentModel
       .findByIdAndUpdate(id, data, { returnDocument: 'after' })
@@ -312,6 +333,14 @@ export class StudentsService {
       this.documentModel.countDocuments({ studentId }).exec(),
     ]);
     return { items, total };
+  }
+
+  async listMyDocuments(email: string, params: { skip: number; limit: number }) {
+    const normalized = this.normalizeEmail(email);
+    if (!normalized) return { items: [], total: 0 };
+    const student = await this.studentModel.findOne({ email: normalized }).lean().exec();
+    if (!student) return { items: [], total: 0 };
+    return this.listDocuments(String(student._id), params);
   }
 
   createDocument(data: {

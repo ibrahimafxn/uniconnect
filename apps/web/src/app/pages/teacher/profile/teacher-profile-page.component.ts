@@ -1,13 +1,13 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {TeacherProfileApi} from '../../../core/api/teacher-profile.api';
 import {AuthService} from '../../../core/auth.service';
 
 @Component({
   selector: 'app-teacher-profile-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './teacher-profile-page.component.html',
   styleUrls: ['./teacher-profile-page.component.scss'],
 })
@@ -23,6 +23,8 @@ export class TeacherProfilePageComponent implements OnInit {
   saved = false;
   error: string | null = null;
   loaded = false;
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
 
   readonly gradeOptions = [
     {value: 'assistant', label: 'Assistant'},
@@ -31,6 +33,55 @@ export class TeacherProfilePageComponent implements OnInit {
     {value: 'vacataire', label: 'Vacataire / Chargé de cours'},
     {value: 'autre', label: 'Autre'},
   ];
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
 
   form = this.fb.group({
     firstName: ['', Validators.required],

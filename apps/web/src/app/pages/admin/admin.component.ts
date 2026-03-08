@@ -49,6 +49,9 @@ export class AdminComponent implements OnInit {
   private readonly usersApi = inject(UsersApi);
   private readonly confirm = inject(ConfirmService);
 
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
+
   // === TABS ===
   activeTab: AdminTab = 'structure';
   tabs: Array<{id: AdminTab; label: string; icon: string}> = [
@@ -80,6 +83,37 @@ export class AdminComponent implements OnInit {
     this.drawerOpen = false;
     this.drawerMode = null;
     this.cancelAll();
+  }
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
   }
 
   cancelAll() {
@@ -1055,5 +1089,23 @@ export class AdminComponent implements OnInit {
         });
       }),
     );
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
   }
 }

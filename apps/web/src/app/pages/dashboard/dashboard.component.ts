@@ -1,6 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
+import {FormsModule} from '@angular/forms';
 import {forkJoin} from 'rxjs';
 import {StudentsApi} from '../../core/api/students.api';
 import {UsersApi} from '../../core/api/users.api';
@@ -12,7 +13,7 @@ import {AuthService} from '../../core/auth.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
 })
@@ -41,8 +42,42 @@ export class DashboardComponent {
     {label: 'Notes', desc: 'Évaluations et moyennes', path: '/notes', color: 'purple'},
   ];
 
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
+
   constructor() {
     this.loadKpis();
+  }
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
   }
 
   private loadKpis() {
@@ -72,5 +107,23 @@ export class DashboardComponent {
 
   formatDate(date: string | Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'});
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
   }
 }

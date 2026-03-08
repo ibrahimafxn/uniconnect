@@ -15,6 +15,11 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
 import { ScolariteModule } from './scolarite/scolarite.module';
 import { AdminModule } from './admin/admin.module';
+import { ApplicationsModule } from './applications/applications.module';
+import { ResourcesModule } from './resources/resources.module';
+import { AssignmentsModule } from './assignments/assignments.module';
+import { DocumentRequestsModule } from './document-requests/document-requests.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -35,6 +40,11 @@ import { AdminModule } from './admin/admin.module';
     TeacherProfileModule,
     ScolariteModule,
     AdminModule,
+    ApplicationsModule,
+    ResourcesModule,
+    AssignmentsModule,
+    DocumentRequestsModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [],

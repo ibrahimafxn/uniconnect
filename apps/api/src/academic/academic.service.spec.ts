@@ -26,6 +26,7 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     const res = await service.listPrograms({ skip: 0, limit: 10 });
@@ -47,6 +48,7 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     const res = await service.listAcademicYears({ skip: 0, limit: 10 });
@@ -58,6 +60,7 @@ describe('AcademicService', () => {
     const yearModel = { create: jest.fn().mockResolvedValue({}) } as any;
     const service = new AcademicService(
       yearModel,
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
@@ -90,6 +93,7 @@ describe('AcademicService', () => {
       {} as any,
       {} as any,
       levelModel,
+      {} as any,
       {} as any,
       groupModel,
     );
@@ -125,6 +129,7 @@ describe('AcademicService', () => {
       {} as any,
       levelModel,
       { findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue({ _id: 'o1', programId: 'p1', levelId: 'l1' }) }) }) } as any,
+      {} as any,
       groupModel,
     );
 

@@ -31,6 +31,12 @@ export class Payment extends Document {
     default: 'espece'
   })
   paymentMethod?: 'carte_bancaire' | 'espece' | 'mobile_money';
+
+  @Prop({ enum: ['pending', 'confirmed', 'failed'], default: 'confirmed' })
+  status?: 'pending' | 'confirmed' | 'failed';
+
+  @Prop({ trim: true })
+  provider?: string; // ex: Orange Money, MTN MoMo, Moov Money
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

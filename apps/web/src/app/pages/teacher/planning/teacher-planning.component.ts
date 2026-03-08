@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {PlanningApi, Session} from '../../../core/api/planning.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {HttpClient} from '@angular/common/http';
@@ -11,7 +11,7 @@ type CalendarDay = {date: string; label: string; isToday: boolean; slots: Map<nu
 @Component({
   selector: 'app-teacher-planning',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './teacher-planning.component.html',
   styleUrls: ['./teacher-planning.component.scss'],
 })
@@ -26,6 +26,8 @@ export class TeacherPlanningComponent {
   rooms$ = this.planning.listRooms();
 
   viewMode: 'list' | 'calendar' = 'list';
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
 
   // Cahier de texte
   editingSessionId: string | null = null;
@@ -38,6 +40,55 @@ export class TeacherPlanningComponent {
   // Calendar state : semaine courante
   currentWeekStart = this.getMonday(new Date());
   readonly hours = Array.from({length: 12}, (_, i) => i + 7); // 7h–18h
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
 
   applyFilters() {
     const {dateFrom, dateTo} = this.filterForm.value;

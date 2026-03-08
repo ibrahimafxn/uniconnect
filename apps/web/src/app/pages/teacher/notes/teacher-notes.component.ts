@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
+import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NotesApi, Evaluation, Subject} from '../../../core/api/notes.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 
@@ -10,7 +10,7 @@ type GradeEntry = {studentId: string; score: number | null; comment: string};
 @Component({
   selector: 'app-teacher-notes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './teacher-notes.component.html',
   styleUrls: ['./teacher-notes.component.scss'],
 })
@@ -36,12 +36,64 @@ export class TeacherNotesComponent {
   showEvalForm = false;
   loadingGrades = false;
 
+  compactMode = this.loadCompactMode();
+  ultraCompactMode = this.loadUltraCompactMode();
+
   evalForm = this.fb.group({
     title: ['', Validators.required],
     date: ['', Validators.required],
     subjectId: ['', Validators.required],
     maxScore: [20, [Validators.required, Validators.min(1)]],
   });
+
+  saveCompactMode() {
+    if (!this.compactMode) {
+      this.ultraCompactMode = false;
+      this.saveUltraCompactMode(false);
+    }
+    try {
+      localStorage.setItem('ui.compactMode', String(!!this.compactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  saveUltraCompactMode(forceValue?: boolean) {
+    if (typeof forceValue === 'boolean') {
+      this.ultraCompactMode = forceValue;
+    }
+    if (this.ultraCompactMode) {
+      this.compactMode = true;
+      try {
+        localStorage.setItem('ui.compactMode', 'true');
+      } catch {
+        // ignore storage errors
+      }
+    }
+    try {
+      localStorage.setItem('ui.ultraCompactMode', String(!!this.ultraCompactMode));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private loadUltraCompactMode(): boolean {
+    try {
+      const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
+      return raw === 'true';
+    } catch {
+      return false;
+    }
+  }
 
   selectGroup(groupId: string) {
     this.selectedGroupId = groupId;

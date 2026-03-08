@@ -18,6 +18,8 @@ export type Session = {
   teacherId: string;
   roomId: string;
   label?: string;
+  content?: string;
+  homework?: string;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -58,6 +60,13 @@ export class PlanningApi {
     return this.http.get<Session[]>(`${this.baseUrl}/sessions`, {
       params: httpParams,
     });
+  }
+
+  exportSessionsUrl(format: 'pdf' | 'ics', params?: { dateFrom?: string; dateTo?: string }) {
+    let httpParams = new HttpParams().set('format', format);
+    if (params?.dateFrom) httpParams = httpParams.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) httpParams = httpParams.set('dateTo', params.dateTo);
+    return `${this.baseUrl}/sessions/export?${httpParams.toString()}`;
   }
 
   createSession(payload: Omit<Session, '_id'>) {
