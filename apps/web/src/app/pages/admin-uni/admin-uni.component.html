@@ -603,14 +603,12 @@
             <h4>Semestres</h4>
             <button type="button" class="ghost small" (click)="addSemester()">+ Ajouter</button>
           </div>
-          <ng-container [formArray]="semesters">
-            <div class="semester-row" *ngFor="let sem of semesters.controls; let i = index" [formGroupIndex]="i">
-              <ng-container [formGroup]="$any(sem)">
-                <input formControlName="name" placeholder="S1" style="width:60px" />
-                <input type="date" formControlName="startDate" />
-                <input type="date" formControlName="endDate" />
-                <button type="button" class="icon-btn danger" (click)="removeSemester(i)">✕</button>
-              </ng-container>
+          <ng-container formArrayName="semesters">
+            <div class="semester-row" *ngFor="let sem of semesters.controls; let i = index" [formGroupName]="i">
+              <input formControlName="name" placeholder="S1" style="width:60px" />
+              <input type="date" formControlName="startDate" />
+              <input type="date" formControlName="endDate" />
+              <button type="button" class="icon-btn danger" (click)="removeSemester(i)">✕</button>
             </div>
           </ng-container>
         </div>
@@ -621,20 +619,18 @@
             <h4>Offres de formation</h4>
             <button type="button" class="ghost small" (click)="addOfferLine()">+ Ajouter</button>
           </div>
-          <ng-container [formArray]="offerLines">
-            <div class="offer-row" *ngFor="let ol of offerLines.controls; let i = index" [formGroupIndex]="i">
-              <ng-container [formGroup]="$any(ol)">
-                <select formControlName="programId">
-                  <option value="">Filière</option>
-                  <option *ngFor="let p of programs" [value]="p._id">{{ p.name }}</option>
-                </select>
-                <select formControlName="levelId">
-                  <option value="">Niveau</option>
-                  <option *ngFor="let l of levels" [value]="l._id">{{ l.name }}</option>
-                </select>
-                <input type="number" formControlName="capacity" placeholder="Cap." style="width:80px" />
-                <button type="button" class="icon-btn danger" (click)="removeOfferLine(i)">✕</button>
-              </ng-container>
+          <ng-container formArrayName="offerLines">
+            <div class="offer-row" *ngFor="let ol of offerLines.controls; let i = index" [formGroupName]="i">
+              <select formControlName="programId">
+                <option value="">Filière</option>
+                <option *ngFor="let p of programs" [value]="p._id">{{ p.name }}</option>
+              </select>
+              <select formControlName="levelId">
+                <option value="">Niveau</option>
+                <option *ngFor="let l of levels" [value]="l._id">{{ l.name }}</option>
+              </select>
+              <input type="number" formControlName="capacity" placeholder="Cap." style="width:80px" />
+              <button type="button" class="icon-btn danger" (click)="removeOfferLine(i)">✕</button>
             </div>
           </ng-container>
         </div>
@@ -718,14 +714,12 @@
             <h4>Tranches <span class="hint">(total : {{ formatNumber(installmentTotal) }} XOF)</span></h4>
             <button type="button" class="ghost small" (click)="addInstallmentLine()">+ Tranche</button>
           </div>
-          <ng-container [formArray]="feeInstallments">
-            <div class="installment-row" *ngFor="let inst of feeInstallments.controls; let i = index" [formGroupIndex]="i">
-              <ng-container [formGroup]="$any(inst)">
-                <input formControlName="label" placeholder="Tranche 1" />
-                <input type="number" formControlName="amount" placeholder="Montant" />
-                <input type="date" formControlName="dueDate" />
-                <button type="button" class="icon-btn danger" (click)="removeInstallmentLine(i)">✕</button>
-              </ng-container>
+          <ng-container formArrayName="feeInstallments">
+            <div class="installment-row" *ngFor="let inst of feeInstallments.controls; let i = index" [formGroupName]="i">
+              <input formControlName="label" placeholder="Tranche 1" />
+              <input type="number" formControlName="amount" placeholder="Montant" />
+              <input type="date" formControlName="dueDate" />
+              <button type="button" class="icon-btn danger" (click)="removeInstallmentLine(i)">✕</button>
             </div>
           </ng-container>
         </div>

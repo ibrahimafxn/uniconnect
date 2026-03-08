@@ -88,8 +88,8 @@ export class ApplyComponent {
     });
   }
 
-  uploadDocument(file: File, label?: string) {
-    if (!this.created?.trackingCode || !this.created?.email) return;
+  uploadDocument(file?: File, label?: string) {
+    if (!file || !this.created?.trackingCode || !this.created?.email) return;
     this.applications.uploadPublicDocument(this.created.trackingCode, this.created.email, file, label).subscribe();
   }
 

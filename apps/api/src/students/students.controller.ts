@@ -36,6 +36,7 @@ import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
 import { UpdateStudentSelfDto } from './dto/update-student-self.dto';
 import { parsePagination } from '../common/pagination';
 import { toObjectId } from '../common/object-id';
+import { CalendarEventType } from '../admin/schemas/academic-calendar-event.schema';
 
 const uploadRoot = join(process.cwd(), 'uploads', 'students');
 
@@ -84,6 +85,24 @@ export class StudentsController {
       throw new HttpException('Profil étudiant introuvable', HttpStatus.NOT_FOUND);
     }
     return student;
+  }
+
+  @Get('me/calendar-events')
+  @Roles(Role.Student)
+  async listMyCalendarEvents(
+    @Req() req: any,
+    @Query('type') type?: CalendarEventType,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitValue = limit ? Number(limit) : undefined;
+    return this.studentsService.listMyCalendarEvents(req.user.email, {
+      type,
+      dateFrom,
+      dateTo,
+      limit: Number.isFinite(limitValue) ? limitValue : undefined,
+    });
   }
 
   @Patch('me')
