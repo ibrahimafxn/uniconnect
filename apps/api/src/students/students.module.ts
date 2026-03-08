@@ -6,6 +6,7 @@ import { StudentDocument, StudentDocumentSchema } from './student-document.schem
 import { AcademicYear, AcademicYearSchema } from '../academic/academic-year.schema';
 import { ProgramOffer, ProgramOfferSchema } from '../academic/program-offer.schema';
 import { Group, GroupSchema } from '../academic/group.schema';
+import { AcademicCalendarEvent, AcademicCalendarEventSchema } from '../admin/schemas/academic-calendar-event.schema';
 import { StudentsService } from './students.service';
 import { StudentsController } from './students.controller';
 
@@ -18,6 +19,7 @@ import { StudentsController } from './students.controller';
       { name: AcademicYear.name, schema: AcademicYearSchema },
       { name: ProgramOffer.name, schema: ProgramOfferSchema },
       { name: Group.name, schema: GroupSchema },
+      { name: AcademicCalendarEvent.name, schema: AcademicCalendarEventSchema },
     ]),
   ],
   providers: [StudentsService],

@@ -37,7 +37,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any);
     await service.listStudents({ skip: 0, limit: 10, q: 'john' });
 
     expect(studentModel.find).toHaveBeenCalledWith({
@@ -57,7 +57,7 @@ describe('StudentsService', () => {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any);
     await service.listStudents({ skip: 0, limit: 10 });
     expect(studentModel.find).toHaveBeenCalledWith({});
   });
@@ -69,7 +69,7 @@ describe('StudentsService', () => {
         .fn()
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(0) }),
     } as any;
-    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel);
+    const service = new StudentsService({} as any, enrollmentModel, {} as any, academicYearModel, offerModel, groupModel, {} as any);
     const res = await service.listEnrollments({ skip: 0, limit: 10 });
     expect(res.total).toBe(0);
   });

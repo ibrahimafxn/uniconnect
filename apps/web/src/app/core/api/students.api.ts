@@ -41,6 +41,18 @@ export type StudentDocument = {
   createdAt?: string;
 };
 
+export type AcademicCalendarEvent = {
+  _id: string;
+  academicYearId: string;
+  type: 'rentree' | 'vacances' | 'examens' | 'deliberations' | 'rattrapage' | 'autre';
+  label: string;
+  startDate: string;
+  endDate: string;
+  offerId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class StudentsApi {
   private readonly baseUrl = 'http://localhost:3000/api/students';
@@ -96,6 +108,15 @@ export class StudentsApi {
       `${this.baseUrl}/me/documents`,
       { params },
     );
+  }
+
+  listMyCalendarEvents(params?: { type?: AcademicCalendarEvent['type']; dateFrom?: string; dateTo?: string; limit?: number }) {
+    let httpParams = new HttpParams();
+    if (params?.type) httpParams = httpParams.set('type', params.type);
+    if (params?.dateFrom) httpParams = httpParams.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) httpParams = httpParams.set('dateTo', params.dateTo);
+    if (typeof params?.limit === 'number') httpParams = httpParams.set('limit', params.limit);
+    return this.http.get<AcademicCalendarEvent[]>(`${this.baseUrl}/me/calendar-events`, { params: httpParams });
   }
 
   uploadStudentDocument(studentId: string, file: File, label?: string) {

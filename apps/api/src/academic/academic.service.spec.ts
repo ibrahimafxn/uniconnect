@@ -144,4 +144,37 @@ describe('AcademicService', () => {
     expect(levelModel.create).toHaveBeenCalled();
     expect(groupModel.create).toHaveBeenCalled();
   });
+
+  it('createGroup rejects when offer missing', async () => {
+    const offerModel = {
+      findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
+    } as any;
+    const service = new AcademicService(
+      {} as any,
+      {} as any,
+      {} as any,
+      offerModel,
+      {} as any,
+      {} as any,
+    );
+    await expect(service.createGroup({ name: 'G1', offerId: 'o1' })).rejects.toThrow('Offre introuvable');
+  });
+
+  it('updateGroup rejects when offer missing', async () => {
+    const offerModel = {
+      findById: jest.fn().mockReturnValue({ lean: () => ({ exec: jest.fn().mockResolvedValue(null) }) }),
+    } as any;
+    const groupModel = {
+      findByIdAndUpdate: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({}) }),
+    } as any;
+    const service = new AcademicService(
+      {} as any,
+      {} as any,
+      {} as any,
+      offerModel,
+      {} as any,
+      groupModel,
+    );
+    await expect(service.updateGroup('g1', { offerId: 'o1' })).rejects.toThrow('Offre introuvable');
+  });
 });

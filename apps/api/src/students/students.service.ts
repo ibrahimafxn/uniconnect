@@ -8,6 +8,7 @@ import { StudentDocument } from './student-document.schema';
 import { ProgramOffer } from '../academic/program-offer.schema';
 import { Group } from '../academic/group.schema';
 import { AcademicYear } from '../academic/academic-year.schema';
+import { AcademicCalendarEvent, CalendarEventType } from '../admin/schemas/academic-calendar-event.schema';
 import {
   buildStudentNumber,
   normalizeStudentNumber,
@@ -29,6 +30,8 @@ export class StudentsService {
     private readonly offerModel: Model<ProgramOffer>,
     @InjectModel(Group.name)
     private readonly groupModel: Model<Group>,
+    @InjectModel(AcademicCalendarEvent.name)
+    private readonly calendarEventModel: Model<AcademicCalendarEvent>,
   ) {}
 
   async listStudents(params: { skip: number; limit: number; q?: string }) {
@@ -341,6 +344,45 @@ export class StudentsService {
     const student = await this.studentModel.findOne({ email: normalized }).lean().exec();
     if (!student) return { items: [], total: 0 };
     return this.listDocuments(String(student._id), params);
+  }
+
+  async listMyCalendarEvents(email: string, params: {
+    type?: CalendarEventType;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  }) {
+    const normalized = this.normalizeEmail(email);
+    if (!normalized) return [];
+    const student = await this.studentModel.findOne({ email: normalized }).lean().exec();
+    if (!student) return [];
+
+    const filter: Record<string, any> = {
+      academicYearId: student.academicYearId,
+      $or: [
+        { offerId: student.offerId },
+        { offerId: { $exists: false } },
+        { offerId: null },
+      ],
+    };
+    if (params.type) filter.type = params.type;
+
+    const from = params.dateFrom ? new Date(params.dateFrom) : null;
+    const to = params.dateTo ? new Date(params.dateTo) : null;
+    if (from && !Number.isNaN(from.getTime())) {
+      filter.endDate = { ...(filter.endDate || {}), $gte: from };
+    }
+    if (to && !Number.isNaN(to.getTime())) {
+      filter.startDate = { ...(filter.startDate || {}), $lte: to };
+    }
+
+    const limit = Math.min(Math.max(params.limit ?? 12, 1), 50);
+    return this.calendarEventModel
+      .find(filter)
+      .sort({ startDate: 1 })
+      .limit(limit)
+      .lean()
+      .exec();
   }
 
   createDocument(data: {

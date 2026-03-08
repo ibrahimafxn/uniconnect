@@ -176,6 +176,54 @@ describe('AdminFinanceService', () => {
     });
   });
 
+  describe('updateFeeTemplate', () => {
+    it('should throw when template missing', async () => {
+      feeTemplateModel.findById = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+      await expect(service.updateFeeTemplate(makeId(), { label: 'X' }, actor))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should update template and log audit', async () => {
+      const id = makeId();
+      feeTemplateModel.findById = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: id }) });
+      feeTemplateModel.findByIdAndUpdate = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: id }) });
+      const res = await service.updateFeeTemplate(id, {
+        label: 'Nouveau',
+        totalAmount: 1000,
+        installments: [{ label: 'T1', amount: 1000, dueDate: '2026-01-01' }],
+        acceptedMethods: ['espece'],
+        isActive: false,
+      }, actor);
+      expect(res?._id).toBe(id);
+      expect(auditLogService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'UPDATE_FEE_TEMPLATE' }),
+      );
+    });
+  });
+
+  describe('listExemptions / deleteExemption', () => {
+    it('listExemptions returns items', async () => {
+      feeExemptionModel.find = jest.fn().mockReturnValue({ sort: () => ({ skip: () => ({ limit: () => ({ exec: jest.fn().mockResolvedValue([{ _id: makeId() }]) }) }) }) });
+      feeExemptionModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
+      const res = await service.listExemptions({ academicYearId: makeId(), skip: 0, limit: 10 });
+      expect(res.total).toBe(1);
+    });
+
+    it('deleteExemption throws when missing', async () => {
+      feeExemptionModel.findByIdAndDelete = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+      await expect(service.deleteExemption(makeId(), actor)).rejects.toThrow(NotFoundException);
+    });
+
+    it('deleteExemption logs audit on success', async () => {
+      feeExemptionModel.findByIdAndDelete = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: makeId() }) });
+      const res = await service.deleteExemption(makeId(), actor);
+      expect(res.success).toBe(true);
+      expect(auditLogService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'DELETE_FEE_EXEMPTION' }),
+      );
+    });
+  });
+
   describe('createExemption', () => {
     it('should throw for invalid percentage', async () => {
       await expect(

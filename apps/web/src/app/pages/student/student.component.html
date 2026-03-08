@@ -1,13 +1,18 @@
 <div class="student-page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
   <div class="toast" *ngIf="toastMessage">{{ toastMessage }}</div>
-  <div class="hero">
-    <div class="hero-copy">
-      <h1>Mon Espace Étudiant</h1>
-      <p class="hero-sub">Suivi des cours, démarches et paiements, pensé d’abord pour mobile.</p>
-      <div class="hero-actions">
-        <a class="pill" routerLink="/planning">Voir l’emploi du temps</a>
+
+  <header class="portal-header">
+    <div class="branding">
+      <span class="brand-pill">ENT</span>
+      <h1>Espace Numérique Étudiant</h1>
+      <p class="hero-sub">
+        Interface par pôles académiques, inspirée des universités françaises (scolarité, pédagogie, services).
+      </p>
+      <div class="quick-links">
+        <button class="pill" [class.ghost]="activeTab !== 'scolarite'" type="button" (click)="setActiveTab('scolarite')">Scolarité</button>
+        <button class="pill" [class.ghost]="activeTab !== 'pedagogie'" type="button" (click)="setActiveTab('pedagogie')">Pédagogie</button>
+        <button class="pill" [class.ghost]="activeTab !== 'finance'" type="button" (click)="setActiveTab('finance')">Paiements</button>
         <a class="pill ghost" routerLink="/messages">Messagerie</a>
-        <a class="pill ghost" routerLink="/notes">Résultats</a>
       </div>
     </div>
     <div class="hero-card" *ngIf="(me$ | async) as me">
@@ -16,12 +21,16 @@
         <div class="name">{{ me.lastName }} {{ me.firstName }}</div>
         <div class="muted">{{ me.studentNumber }}</div>
         <div class="tags">
-          <span class="tag">Étudiant</span>
-          <span class="tag">{{ me.email || 'email non défini' }}</span>
+          <span class="tag">Etudiant</span>
+          <span class="tag">{{ me.email || 'email non defini' }}</span>
+        </div>
+        <div class="hero-links">
+          <a class="pill ghost small" routerLink="/planning">Planning</a>
+          <a class="pill ghost small" routerLink="/notes">Notes</a>
         </div>
       </div>
     </div>
-  </div>
+  </header>
 
   <div class="controls">
     <label class="toggle">
@@ -35,472 +44,660 @@
     <span class="compact-badge" *ngIf="compactMode">Compact</span>
   </div>
 
-  <div class="tabs">
-    <button class="tab" [class.active]="activeTab==='dashboard'" (click)="activeTab='dashboard'">Accueil</button>
-    <button class="tab" [class.active]="activeTab==='planning'" (click)="activeTab='planning'">Emploi du temps</button>
-    <button class="tab" [class.active]="activeTab==='resources'" (click)="activeTab='resources'">Supports de cours</button>
-    <button class="tab" [class.active]="activeTab==='assignments'" (click)="activeTab='assignments'">Travaux à rendre</button>
-    <button class="tab" [class.active]="activeTab==='notes'" (click)="activeTab='notes'">Résultats</button>
-    <button class="tab" [class.active]="activeTab==='attendance'" (click)="activeTab='attendance'">Présences</button>
-    <button class="tab" [class.active]="activeTab==='finance'" (click)="activeTab='finance'">Paiements</button>
-    <button class="tab" [class.active]="activeTab==='documents'" (click)="activeTab='documents'">Mes documents</button>
-    <button class="tab" [class.active]="activeTab==='campus'" (click)="activeTab='campus'">Vie étudiante</button>
-    <button class="tab" [class.active]="activeTab==='profile'" (click)="activeTab='profile'">Mon profil</button>
-  </div>
+  <div class="portal-layout">
+    <nav class="pole-nav" aria-label="Navigation des poles">
+      <button class="pole-btn" type="button" [class.active]="activeTab==='dashboard'" (click)="setActiveTab('dashboard')">
+        Accueil
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='scolarite'" (click)="setActiveTab('scolarite')">
+        Scolarité
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='pedagogie'" (click)="setActiveTab('pedagogie')">
+        Pédagogie
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='finance'" (click)="setActiveTab('finance')">
+        Finance
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='services'" (click)="setActiveTab('services')">
+        Services
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='vie'" (click)="setActiveTab('vie')">
+        Vie étudiante
+      </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='profile'" (click)="setActiveTab('profile')">
+        Profil
+      </button>
+    </nav>
 
-  <section *ngIf="activeTab==='dashboard'" class="grid">
-    <div class="card">
-      <h3>Aujourd’hui — Cours du jour</h3>
-      <ng-container *ngIf="(todaySessions$ | async) as sessions">
-        <div class="list" *ngIf="sessions.length; else emptyToday">
-          <div class="list-item" *ngFor="let s of sessions; trackBy: trackById">
-            <div class="list-title">{{ s.label || 'Séance' }}</div>
-            <div class="list-meta">{{ s.startTime }} – {{ s.endTime }}</div>
+    <main class="portal-main">
+      <section *ngIf="activeTab==='dashboard'" class="dashboard">
+        <div class="dash-head">
+          <div>
+            <h2>Tableau de bord</h2>
+            <p class="muted">Vue synthèse par pôle (scolarité, pédagogie, finance, services).</p>
           </div>
-        </div>
-        <ng-template #emptyToday>
-          <div class="empty">Aucune séance prévue aujourd'hui.</div>
-        </ng-template>
-      </ng-container>
-    </div>
-
-    <div class="card">
-      <h3>Prochain cours</h3>
-      <ng-container *ngIf="(nextSession$ | async) as next">
-        <div class="list" *ngIf="next; else noNext">
-          <div class="list-item">
-            <div class="list-title">{{ next.label || 'Séance' }}</div>
-            <div class="list-meta">{{ next.date | date:'dd/MM/yyyy' }} — {{ next.startTime }}–{{ next.endTime }}</div>
-            <div class="pill small">{{ timeToSession(next.date, next.startTime) }}</div>
-          </div>
-        </div>
-        <ng-template #noNext>
-          <div class="empty">Aucune séance planifiée.</div>
-        </ng-template>
-      </ng-container>
-    </div>
-
-    <div class="card">
-      <h3>Moyenne Générale</h3>
-      <ng-container *ngIf="(notesSummary$ | async) as summary">
-        <div class="kpi">{{ summary?.overallAverage ? (summary.overallAverage | number:'1.1-2') : '—' }}</div>
-        <div class="muted">Sur 20</div>
-      </ng-container>
-    </div>
-
-    <div class="card">
-      <h3>Assiduité</h3>
-      <ng-container *ngIf="(attendanceSummary$ | async) as att">
-        <div class="kpi">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
-        <div class="muted">Présence globale</div>
-      </ng-container>
-    </div>
-
-    <div class="card">
-      <h3>À régler</h3>
-      <ng-container *ngIf="(plan$ | async) as plan">
-        <div class="muted" *ngIf="!plan?.plan">Aucun plan défini.</div>
-          <div class="list" *ngIf="plan?.plan">
-            <div class="list-item" *ngFor="let inst of (plan.plan.installments || [])">
-            <div class="list-title">{{ inst.label || 'Échéance' }} — {{ inst.amount }} {{ plan.plan.currency }}</div>
-            <div class="list-meta">{{ inst.dueDate | date:'dd/MM/yyyy' }}</div>
-          </div>
-        </div>
-      </ng-container>
-    </div>
-
-    <div class="card span-2">
-      <h3>Annonces & Actualités</h3>
-      <ng-container *ngIf="(announcements$ | async) as news">
-        <div class="list" *ngIf="news.length; else emptyNews">
-          <div class="list-item" *ngFor="let a of news.slice(0,6)">
-            <div class="list-title">{{ a.title }}</div>
-            <div class="list-meta">{{ a.createdAt | date:'dd/MM/yyyy' }} — {{ a.category }}</div>
-            <div class="list-body">{{ a.body }}</div>
-          </div>
-        </div>
-        <ng-template #emptyNews>
-          <div class="empty">Aucune annonce pour le moment.</div>
-        </ng-template>
-      </ng-container>
-    </div>
-  </section>
-
-  <section *ngIf="activeTab==='planning'" class="panel">
-    <div class="panel-head">
-      <h2>Emploi du temps à venir</h2>
-      <div class="actions">
-        <a class="pill" routerLink="/planning">Voir la semaine</a>
-        <a class="pill ghost small" [href]="planningExportUrl('pdf')">Exporter PDF</a>
-        <a class="pill ghost small" [href]="planningExportUrl('ics')">Exporter iCal</a>
-        <button class="pill ghost small" type="button" (click)="copyPlanningLink()">Partager iCal</button>
-      </div>
-    </div>
-    <div class="planning-filters">
-      <input type="text" placeholder="Rechercher un cours" [formControl]="planningFilterForm.controls.query" />
-      <input type="date" [formControl]="planningFilterForm.controls.dateFrom" />
-      <input type="date" [formControl]="planningFilterForm.controls.dateTo" />
-      <select [formControl]="planningFilterForm.controls.groupId">
-        <option value="">Tous les groupes</option>
-        <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
-      </select>
-      <button class="pill small" type="button" (click)="planningFilterForm.reset({query: '', dateFrom: '', dateTo: '', groupId: ''})">Réinitialiser</button>
-    </div>
-
-    <div class="week-grid">
-      <div class="week-day" *ngFor="let day of (weekSessions$ | async)">
-        <div class="week-date">{{ day.date | date:'EEE dd/MM' }}</div>
-        <div class="week-list" *ngIf="day.sessions.length; else emptyWeekDay">
-          <div class="week-item" *ngFor="let s of day.sessions">
-            <div class="week-title">{{ s.label || 'Séance' }}</div>
-            <div class="week-meta">{{ s.startTime }}–{{ s.endTime }}</div>
-          </div>
-        </div>
-        <ng-template #emptyWeekDay>
-          <div class="week-empty">—</div>
-        </ng-template>
-      </div>
-    </div>
-    <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
-      <div class="list" *ngIf="sessions.length; else emptyPlan">
-        <div class="list-item"
-             *ngFor="let s of sessions; trackBy: trackById"
-             (click)="openSessionDetails(s)"
-             (keydown.enter)="openSessionDetails(s)"
-             (keydown.space)="openSessionDetails(s)"
-             tabindex="0"
-             role="button"
-             aria-label="Voir les détails de la séance">
-          <div class="list-title">{{ s.label || 'Séance' }}</div>
-          <div class="list-meta">{{ s.date | date:'dd/MM/yyyy' }} — {{ s.startTime }}–{{ s.endTime }}</div>
-          <div class="list-body" *ngIf="s.content">Cahier de texte : {{ s.content }}</div>
-          <div class="list-body" *ngIf="s.homework">Devoirs : {{ s.homework }}</div>
-        </div>
-      </div>
-      <ng-template #emptyPlan>
-        <div class="empty">Aucune séance dans les 2 prochaines semaines.</div>
-      </ng-template>
-    </ng-container>
-  </section>
-
-  <div class="modal-backdrop" *ngIf="selectedSession" (click)="closeSessionDetails()" (keydown.escape)="closeSessionDetails()" tabindex="0"></div>
-  <div class="modal" *ngIf="selectedSession" (keydown)="onModalKeydown($event)" tabindex="0" role="dialog" aria-modal="true" aria-labelledby="session-modal-title">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="session-modal-title">{{ selectedSession.label || 'Séance' }}</h3>
-        <button class="pill ghost small" type="button" (click)="closeSessionDetails()">Fermer</button>
-      </div>
-      <div class="modal-body">
-        <div class="meta-row">
-          <span>Date</span>
-          <strong>{{ selectedSession.date | date:'dd/MM/yyyy' }}</strong>
-        </div>
-        <div class="meta-row">
-          <span>Horaire</span>
-          <strong>{{ selectedSession.startTime }}–{{ selectedSession.endTime }}</strong>
-        </div>
-        <div class="meta-row" *ngIf="(groups$ | async) as groups">
-          <span>Groupe</span>
-          <strong>{{ groupLabel(groups.items, selectedSession.groupId) }}</strong>
-        </div>
-        <div class="divider"></div>
-        <div class="modal-section" *ngIf="selectedSession.content">
-          <h4>Cahier de texte</h4>
-          <p>{{ selectedSession.content }}</p>
-        </div>
-        <div class="modal-section" *ngIf="selectedSession.homework">
-          <h4>Devoirs</h4>
-          <p>{{ selectedSession.homework }}</p>
-        </div>
-        <div class="modal-section" *ngIf="!selectedSession.content && !selectedSession.homework">
-          <p class="muted">Aucun détail pour cette séance.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <section *ngIf="activeTab==='resources'" class="panel">
-    <div class="panel-head">
-      <h2>Supports de cours</h2>
-      <span class="muted">Téléchargez vos documents de cours.</span>
-      <div class="actions">
-        <a class="pill" href="#student-resources-list">Voir les supports</a>
-      </div>
-    </div>
-    <ng-container *ngIf="(resources$ | async) as resources">
-      <div id="student-resources-list" class="list" *ngIf="resources.length; else emptyRes">
-        <div class="list-item" *ngFor="let r of resources; trackBy: trackById">
-          <div class="list-title">{{ r.title }}</div>
-          <div class="list-meta">{{ r.createdAt | date:'dd/MM/yyyy' }}</div>
-          <a class="pill small" [href]="downloadResourceUrl(r._id)">Télécharger</a>
-        </div>
-      </div>
-      <ng-template #emptyRes>
-        <div class="empty">Aucune ressource disponible.</div>
-      </ng-template>
-    </ng-container>
-  </section>
-
-  <section *ngIf="activeTab==='assignments'" class="panel">
-    <div class="panel-head">
-      <h2>Travaux à rendre</h2>
-      <span class="muted">Déposez vos fichiers avant la date limite.</span>
-      <div class="actions">
-        <a class="pill" href="#student-assignments-list">Déposer un travail</a>
-      </div>
-    </div>
-    <ng-container *ngIf="(assignments$ | async) as assignments">
-      <div id="student-assignments-list" class="list" *ngIf="assignments.length; else emptyAssign">
-        <div class="list-item" *ngFor="let a of assignments; trackBy: trackById">
-          <div class="list-title">{{ a.title }}</div>
-          <div class="list-meta">Échéance : {{ a.dueDate | date:'dd/MM/yyyy' }} ({{ daysLeft(a.dueDate) }} j)</div>
-          <div class="list-body">{{ a.description || '—' }}</div>
-          <a class="pill small" *ngIf="a.originalName" [href]="downloadAssignmentUrl(a._id)">Télécharger</a>
           <div class="actions">
-            <input type="file" (change)="onAssignmentFile(a._id, $any($event.target).files?.[0])" />
-            <input type="text" placeholder="Commentaire (optionnel)" (input)="setAssignmentComment(a._id, $any($event.target).value)" />
-            <button class="pill" (click)="submitAssignment(a._id)">Déposer le fichier</button>
+            <a class="pill ghost" routerLink="/planning">Semaine en cours</a>
+            <a class="pill ghost" routerLink="/messages">Messagerie</a>
           </div>
         </div>
-      </div>
-      <ng-template #emptyAssign>
-        <div class="empty">Aucun travail à rendre.</div>
-      </ng-template>
-    </ng-container>
-  </section>
 
-  <section *ngIf="activeTab==='notes'" class="panel">
-    <div class="panel-head">
-      <h2>Résultats</h2>
-      <a class="pill" routerLink="/notes">Consulter en détail</a>
-    </div>
-    <ng-container *ngIf="(notesSummary$ | async) as summary">
-      <div class="kpi-row">
-        <div class="kpi-box">
-          <div class="kpi">{{ summary?.overallAverage ? (summary.overallAverage | number:'1.1-2') : '—' }}</div>
-          <div class="muted">Moyenne générale</div>
+        <div class="dash-grid">
+          <div class="card pole-card">
+            <div class="pole-title">Scolarité</div>
+            <div class="pole-meta">Emploi du temps, assiduite, justificatifs.</div>
+            <ng-container *ngIf="(todaySessions$ | async) as sessions">
+              <div class="mini">Aujourd’hui : {{ sessions.length }} séance(s)</div>
+            </ng-container>
+            <button class="pill small" type="button" (click)="setActiveTab('scolarite')">Ouvrir</button>
+          </div>
+          <div class="card pole-card">
+            <div class="pole-title">Pédagogie</div>
+            <div class="pole-meta">Supports, devoirs, notes.</div>
+            <ng-container *ngIf="(assignments$ | async) as assignments">
+              <div class="mini">{{ assignments.length }} travaux à rendre</div>
+            </ng-container>
+            <button class="pill small" type="button" (click)="setActiveTab('pedagogie')">Ouvrir</button>
+          </div>
+          <div class="card pole-card">
+            <div class="pole-title">Finance</div>
+            <div class="pole-meta">Plan de paiement, historique, recu.</div>
+            <ng-container *ngIf="(plan$ | async) as plan">
+              <div class="mini">{{ plan?.plan?.installments?.length || 0 }} échéances</div>
+            </ng-container>
+            <button class="pill small" type="button" (click)="setActiveTab('finance')">Ouvrir</button>
+          </div>
+          <div class="card pole-card">
+            <div class="pole-title">Services</div>
+            <div class="pole-meta">Documents, demarches, demandes.</div>
+            <ng-container *ngIf="(docRequests$ | async) as reqs">
+              <div class="mini">{{ reqs.length }} demande(s) en cours</div>
+            </ng-container>
+            <button class="pill small" type="button" (click)="setActiveTab('services')">Ouvrir</button>
+          </div>
         </div>
-        <div class="kpi-box" *ngIf="summary?.subjects?.length">
-          <div class="kpi">{{ summary.subjects.length }}</div>
-          <div class="muted">UE suivies</div>
-        </div>
-      </div>
-      <div class="list" *ngIf="summary?.subjects?.length">
-        <div class="list-item" *ngFor="let s of summary.subjects">
-          <div class="list-title">{{ s.name }}</div>
-          <div class="list-meta">Coeff. {{ s.coefficient }}</div>
-          <div class="pill small">{{ s.average !== null ? (s.average | number:'1.1-2') : '—' }}</div>
-        </div>
-      </div>
-    </ng-container>
-  </section>
 
-  <section *ngIf="activeTab==='attendance'" class="panel">
-    <div class="panel-head">
-      <h2>Présences</h2>
-      <div class="actions">
-        <a class="pill" href="#student-justif-form">Déposer un justificatif</a>
-      </div>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <h3>Résumé</h3>
-        <ng-container *ngIf="(attendanceSummary$ | async) as att">
-          <div class="kpi">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
-          <div class="muted">Présence globale</div>
-          <div class="mini">Présent : {{ att?.present || 0 }} | Absences : {{ att?.absent || 0 }}</div>
-        </ng-container>
-      </div>
-      <div class="card" id="student-justif-form">
-        <h3>Déposer un justificatif</h3>
-        <form [formGroup]="justificationForm" (ngSubmit)="submitJustification(fileInput.files?.[0])">
-          <input type="date" formControlName="absenceDate" />
-          <input type="text" formControlName="sessionId" placeholder="ID séance (optionnel)" />
-          <textarea formControlName="reason" rows="3" placeholder="Motif"></textarea>
-          <input #fileInput type="file" />
-          <button class="pill" type="submit">Envoyer</button>
-        </form>
-      </div>
-    </div>
-    <div class="list" *ngIf="(justifications$ | async) as justifs">
-      <div class="list-item" *ngFor="let j of justifs">
-        <div class="list-title">{{ j.absenceDate | date:'dd/MM/yyyy' }} — {{ j.status }}</div>
-        <div class="list-body">{{ j.reason }}</div>
-        <a class="pill small" *ngIf="j.originalName" [href]="downloadJustificationUrl(j._id)">Télécharger</a>
-      </div>
-    </div>
-  </section>
+        <div class="grid">
+          <div class="card">
+            <h3>Aujourd'hui — Cours du jour</h3>
+            <ng-container *ngIf="(todaySessions$ | async) as sessions">
+              <div class="list" *ngIf="sessions.length; else emptyToday">
+                <div class="list-item" *ngFor="let s of sessions; trackBy: trackById">
+                  <div class="list-title">{{ s.label || 'Séance' }}</div>
+                  <div class="list-meta">{{ s.startTime }} — {{ s.endTime }}</div>
+                </div>
+              </div>
+              <ng-template #emptyToday>
+                <div class="empty">Aucune séance prévue aujourd'hui.</div>
+              </ng-template>
+            </ng-container>
+          </div>
 
-  <section *ngIf="activeTab==='finance'" class="panel">
-    <div class="panel-head">
-      <h2>Paiements</h2>
-      <div class="actions">
-        <a class="pill" href="#student-payment-form">Payer</a>
-      </div>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <h3>Plan de paiement</h3>
-        <ng-container *ngIf="(plan$ | async) as plan">
-          <div *ngIf="plan?.plan; else noPlan">
-            <div class="list">
-              <div class="list-item" *ngFor="let inst of (plan.plan.installments || [])">
-                <div class="list-title">{{ inst.label || 'Échéance' }}</div>
-                <div class="list-meta">{{ inst.amount }} {{ plan.plan.currency }} — {{ inst.dueDate | date:'dd/MM/yyyy' }}</div>
-                <div class="pill small">
-                  {{ plan.installmentStats[inst._id || '']?.status || 'unpaid' }}
+          <div class="card">
+            <h3>Prochain cours</h3>
+            <ng-container *ngIf="(nextSession$ | async) as next">
+              <div class="list" *ngIf="next; else noNext">
+                <div class="list-item">
+                  <div class="list-title">{{ next.label || 'Séance' }}</div>
+                  <div class="list-meta">{{ next.date | date:'dd/MM/yyyy' }} — {{ next.startTime }}–{{ next.endTime }}</div>
+                  <div class="pill small">{{ timeToSession(next.date, next.startTime) }}</div>
+                </div>
+              </div>
+              <ng-template #noNext>
+                <div class="empty">Aucune séance planifiée.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+
+          <div class="card">
+            <h3>Moyenne générale</h3>
+            <ng-container *ngIf="(notesSummary$ | async) as summary">
+              <div class="kpi">{{ summary?.overallAverage ? (summary.overallAverage | number:'1.1-2') : '—' }}</div>
+              <div class="muted">Sur 20</div>
+            </ng-container>
+          </div>
+
+          <div class="card">
+            <h3>Assiduité</h3>
+            <ng-container *ngIf="(attendanceSummary$ | async) as att">
+              <div class="kpi">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
+              <div class="muted">Présence globale</div>
+            </ng-container>
+          </div>
+
+          <div class="card">
+            <h3>À régler</h3>
+            <ng-container *ngIf="(plan$ | async) as plan">
+              <div class="muted" *ngIf="!plan?.plan">Aucun plan défini.</div>
+              <div class="list" *ngIf="plan?.plan">
+                <div class="list-item" *ngFor="let inst of (plan.plan.installments || [])">
+                  <div class="list-title">{{ inst.label || 'Échéance' }} — {{ inst.amount }} {{ plan.plan.currency }}</div>
+                  <div class="list-meta">{{ inst.dueDate | date:'dd/MM/yyyy' }}</div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="card span-2">
+            <h3>Annonces & Actualités</h3>
+            <ng-container *ngIf="(announcements$ | async) as news">
+              <div class="list" *ngIf="news.length; else emptyNews">
+                <div class="list-item" *ngFor="let a of news.slice(0,6)">
+                  <div class="list-title">{{ a.title }}</div>
+                  <div class="list-meta">{{ a.createdAt | date:'dd/MM/yyyy' }} — {{ a.category }}</div>
+                  <div class="list-body">{{ a.body }}</div>
+                </div>
+              </div>
+              <ng-template #emptyNews>
+                <div class="empty">Aucune annonce pour le moment.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='scolarite'" class="pole-section">
+        <div class="scolarite-overview">
+          <div class="card stat-card">
+            <div class="stat-label">Prochaine séance</div>
+            <ng-container *ngIf="(nextSession$ | async) as next">
+              <div class="stat-value">{{ next?.label || 'Séance à venir' }}</div>
+              <div class="muted" *ngIf="next">{{ next.date | date:'dd/MM/yyyy' }} — {{ next.startTime }}–{{ next.endTime }}</div>
+              <div class="pill small" *ngIf="next">{{ timeToSession(next.date, next.startTime) }}</div>
+              <div class="empty" *ngIf="!next">Aucune séance planifiée.</div>
+            </ng-container>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Assiduité</div>
+            <ng-container *ngIf="(attendanceSummary$ | async) as att">
+              <div class="stat-value">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
+              <div class="muted">Présent : {{ att?.present || 0 }} | Absences : {{ att?.absent || 0 }}</div>
+              <a class="pill ghost small" href="#student-justif-form">Justifier une absence</a>
+            </ng-container>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Justificatifs</div>
+            <ng-container *ngIf="(justifications$ | async) as justifs">
+              <div class="stat-value">{{ justifs.length }}</div>
+              <div class="muted">Demandes envoyées</div>
+              <a class="pill ghost small" href="#scolarite-attendance">Voir le suivi</a>
+            </ng-container>
+          </div>
+        </div>
+
+        <div class="today-strip" *ngIf="(todaySessions$ | async) as sessions">
+          <div class="today-head">
+            <strong>Aujourd’hui</strong>
+            <span class="muted">{{ sessions.length }} séance(s)</span>
+          </div>
+          <div class="today-chips" *ngIf="sessions.length; else noTodayStrip">
+            <div class="today-chip" *ngFor="let s of sessions.slice(0, 3)">
+              <span class="chip-title">{{ s.label || 'Séance' }}</span>
+              <span class="chip-time">{{ s.startTime }}–{{ s.endTime }}</span>
+            </div>
+          </div>
+          <ng-template #noTodayStrip>
+            <div class="empty">Aucune séance aujourd’hui.</div>
+          </ng-template>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Emploi du temps</h2>
+            <div class="actions">
+              <a class="pill" routerLink="/planning">Voir la semaine</a>
+              <a class="pill ghost small" [href]="planningExportUrl('pdf')">Exporter PDF</a>
+              <a class="pill ghost small" [href]="planningExportUrl('ics')">Exporter iCal</a>
+              <button class="pill ghost small" type="button" (click)="copyPlanningLink()">Partager iCal</button>
+            </div>
+          </div>
+          <div class="planning-filters">
+            <input type="text" placeholder="Rechercher un cours" [formControl]="planningFilterForm.controls.query" />
+            <input type="date" [formControl]="planningFilterForm.controls.dateFrom" />
+            <input type="date" [formControl]="planningFilterForm.controls.dateTo" />
+            <select [formControl]="planningFilterForm.controls.groupId">
+              <option value="">Tous les groupes</option>
+              <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+            </select>
+            <button class="pill small" type="button" (click)="planningFilterForm.reset({query: '', dateFrom: '', dateTo: '', groupId: ''})">Réinitialiser</button>
+          </div>
+
+          <div class="week-grid">
+            <div class="week-day" *ngFor="let day of (weekSessions$ | async)">
+              <div class="week-date">{{ day.date | date:'EEE dd/MM' }}</div>
+              <div class="week-list" *ngIf="day.sessions.length; else emptyWeekDay">
+                <div class="week-item" *ngFor="let s of day.sessions">
+                  <div class="week-title">{{ s.label || 'Séance' }}</div>
+                  <div class="week-meta">{{ s.startTime }}–{{ s.endTime }}</div>
+                </div>
+              </div>
+              <ng-template #emptyWeekDay>
+                <div class="week-empty">—</div>
+              </ng-template>
+            </div>
+          </div>
+          <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
+            <div class="list" *ngIf="sessions.length; else emptyPlan">
+              <div class="list-item"
+                   *ngFor="let s of sessions; trackBy: trackById"
+                   (click)="openSessionDetails(s)"
+                   (keydown.enter)="openSessionDetails(s)"
+                   (keydown.space)="openSessionDetails(s)"
+                   tabindex="0"
+                   role="button"
+                   aria-label="Voir les détails de la séance">
+                <div class="list-title">{{ s.label || 'Séance' }}</div>
+                <div class="list-meta">{{ s.date | date:'dd/MM/yyyy' }} — {{ s.startTime }}–{{ s.endTime }}</div>
+                <div class="list-body" *ngIf="s.content">Cahier de texte : {{ s.content }}</div>
+                <div class="list-body" *ngIf="s.homework">Devoirs : {{ s.homework }}</div>
+              </div>
+            </div>
+            <ng-template #emptyPlan>
+              <div class="empty">Aucune séance dans les 2 prochaines semaines.</div>
+            </ng-template>
+          </ng-container>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Calendrier universitaire</h2>
+            <span class="muted">Rentrée, examens, périodes clés.</span>
+          </div>
+          <div class="calendar-filters">
+            <label class="muted">Type d'événement</label>
+            <select [formControl]="calendarFilterForm.controls.type">
+              <option value="">Tous</option>
+              <option value="rentree">Rentrée</option>
+              <option value="vacances">Vacances</option>
+              <option value="examens">Examens</option>
+              <option value="deliberations">Délibérations</option>
+              <option value="rattrapage">Rattrapage</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <ng-container *ngIf="(filteredCalendarEvents$ | async) as events">
+            <div class="list" *ngIf="events.length; else emptyCal">
+              <div class="list-item" *ngFor="let e of events">
+                <div class="list-title">{{ e.label }}</div>
+                <div class="list-meta">
+                  {{ e.startDate | date:'dd/MM/yyyy' }}
+                  <span *ngIf="e.endDate && e.endDate !== e.startDate"> — {{ e.endDate | date:'dd/MM/yyyy' }}</span>
+                  — {{ calendarTypeLabel(e.type) }}
                 </div>
               </div>
             </div>
-          </div>
-          <ng-template #noPlan>
-            <div class="empty">Aucun plan de paiement défini.</div>
-          </ng-template>
-        </ng-container>
-      </div>
-
-      <div class="card" id="student-payment-form">
-        <h3>Régler une échéance</h3>
-        <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
-          <ng-container *ngIf="(plan$ | async) as plan">
-            <select formControlName="installmentId" *ngIf="plan?.plan?.installments?.length">
-              <option value="">— Choisir une échéance —</option>
-              <option *ngFor="let inst of (plan.plan.installments || [])" [value]="inst._id">
-                {{ inst.label || 'Échéance' }} — {{ inst.amount }} {{ plan.plan.currency }}
-              </option>
-            </select>
+            <ng-template #emptyCal>
+              <div class="empty">Aucun événement académique communiqué.</div>
+            </ng-template>
           </ng-container>
-          <input formControlName="amount" type="number" placeholder="Montant" />
-          <select formControlName="provider">
-            <option>Orange Money</option>
-            <option>MTN MoMo</option>
-            <option>Moov Money</option>
-          </select>
-          <input formControlName="reference" placeholder="Référence (optionnel)" />
-          <button class="pill" type="submit">Payer</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Historique des paiements</h3>
-      <ng-container *ngIf="(payments$ | async) as payments">
-        <div class="list" *ngIf="payments.length; else emptyPay">
-          <div class="list-item" *ngFor="let p of payments">
-            <div class="list-title">{{ p.amount }} {{ p.currency }} — {{ p.provider || p.paymentMethod }}</div>
-            <div class="list-meta">{{ p.paidAt | date:'dd/MM/yyyy' }}</div>
-            <a class="pill small" [href]="downloadReceiptUrl(p._id)">Télécharger reçu</a>
-          </div>
         </div>
-        <ng-template #emptyPay>
-          <div class="empty">Aucun paiement enregistré.</div>
-        </ng-template>
-      </ng-container>
-    </div>
-  </section>
 
-  <section *ngIf="activeTab==='documents'" class="panel">
-    <div class="panel-head">
-      <h2>Mes documents</h2>
-      <div class="actions">
-        <a class="pill" href="#student-doc-request">Faire une demande</a>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="card" id="student-doc-request">
-        <h3>Demande de document</h3>
-        <form [formGroup]="docRequestForm" (ngSubmit)="submitDocumentRequest()">
-          <select formControlName="type">
-            <option value="releve_notes">Relevé de notes</option>
-            <option value="attestation_scolarite">Attestation de scolarité</option>
-            <option value="certificat_reussite">Certificat de réussite</option>
-            <option value="carte_etudiante">Carte étudiante</option>
-            <option value="autre">Autre</option>
-          </select>
-          <textarea formControlName="note" rows="2" placeholder="Précisions (optionnel)"></textarea>
-          <button class="pill" type="submit">Envoyer la demande</button>
-        </form>
-      </div>
-      <div class="card">
-        <h3>Mes demandes</h3>
-        <ng-container *ngIf="(docRequests$ | async) as requests">
-          <div class="list" *ngIf="requests.length; else emptyReq">
-            <div class="list-item" *ngFor="let r of requests">
-              <div class="list-title">{{ r.type }} — {{ r.status }}</div>
-              <div class="list-meta">{{ r.createdAt | date:'dd/MM/yyyy' }}</div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Démarches scolarité</h2>
+            <span class="muted">Accès rapide aux demandes administratives courantes.</span>
+            <div class="actions">
+              <button class="pill ghost" type="button" (click)="setActiveTab('services')">Voir toutes les démarches</button>
             </div>
           </div>
-          <ng-template #emptyReq>
-            <div class="empty">Aucune demande pour le moment.</div>
-          </ng-template>
-        </ng-container>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Documents disponibles</h3>
-      <ng-container *ngIf="(documents$ | async) as docs">
-        <div class="list" *ngIf="docs.items.length; else emptyDocs">
-          <div class="list-item" *ngFor="let d of docs.items">
-            <div class="list-title">{{ d.label || d.originalName }}</div>
-            <div class="list-meta">{{ d.createdAt | date:'dd/MM/yyyy' }}</div>
-            <a class="pill small" [href]="downloadDocUrl(d._id)">Télécharger</a>
+          <div class="procedure-grid">
+            <div class="card">
+              <h3>Attestation de scolarité</h3>
+              <p class="muted">Demande officielle pour les organismes externes.</p>
+              <button class="pill small" type="button" (click)="openDocumentRequest('attestation_scolarite')">Demander</button>
+            </div>
+            <div class="card">
+              <h3>Relevé de notes</h3>
+              <p class="muted">Accès aux notes validées par la scolarité.</p>
+              <button class="pill small" type="button" (click)="openDocumentRequest('releve_notes')">Demander</button>
+            </div>
+            <div class="card">
+              <h3>Carte étudiante</h3>
+              <p class="muted">Première demande ou duplicata.</p>
+              <button class="pill small" type="button" (click)="openDocumentRequest('carte_etudiante')">Demander</button>
+            </div>
+            <div class="card">
+              <h3>Coordonnées administratives</h3>
+              <p class="muted">Mettre à jour email, téléphone et adresse.</p>
+              <button class="pill small" type="button" (click)="setActiveTab('profile')">Mettre à jour</button>
+            </div>
+            <div class="card">
+              <h3>Contact scolarité</h3>
+              <p class="muted">Questions sur inscription, calendrier ou groupe.</p>
+              <a class="pill small" routerLink="/messages">Écrire un message</a>
+            </div>
           </div>
         </div>
-        <ng-template #emptyDocs>
-          <div class="empty">Aucun document disponible.</div>
-        </ng-template>
-      </ng-container>
-    </div>
-  </section>
 
-  <section *ngIf="activeTab==='campus'" class="panel">
-    <div class="panel-head">
-      <h2>Vie étudiante</h2>
-      <span class="muted">Événements, services, opportunités.</span>
-      <div class="actions">
-        <a class="pill" href="#student-campus-news">Voir les actualités</a>
-      </div>
-    </div>
-    <ng-container *ngIf="(announcements$ | async) as news">
-      <div id="student-campus-news" class="list" *ngIf="news.length; else emptyCampus">
-        <div class="list-item" *ngFor="let a of news">
-          <div class="list-title">{{ a.title }}</div>
-          <div class="list-meta">{{ a.category }} — {{ a.createdAt | date:'dd/MM/yyyy' }}</div>
-          <div class="list-body">{{ a.body }}</div>
+        <div class="panel" id="scolarite-attendance">
+          <div class="panel-head">
+            <h2>Assiduité & Justificatifs</h2>
+            <div class="actions">
+              <a class="pill" href="#student-justif-form">Déposer un justificatif</a>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <h3>Résumé</h3>
+              <ng-container *ngIf="(attendanceSummary$ | async) as att">
+                <div class="kpi">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
+                <div class="muted">Présence globale</div>
+                <div class="mini">Présent : {{ att?.present || 0 }} | Absences : {{ att?.absent || 0 }}</div>
+              </ng-container>
+            </div>
+            <div class="card" id="student-justif-form">
+              <h3>Déposer un justificatif</h3>
+              <form [formGroup]="justificationForm" (ngSubmit)="submitJustification(fileInput.files?.[0])">
+                <input type="date" formControlName="absenceDate" />
+                <input type="text" formControlName="sessionId" placeholder="ID séance (optionnel)" />
+                <textarea formControlName="reason" rows="3" placeholder="Motif"></textarea>
+                <input #fileInput type="file" />
+                <button class="pill" type="submit">Envoyer</button>
+              </form>
+            </div>
+          </div>
+          <div class="list" *ngIf="(justifications$ | async) as justifs">
+            <div class="list-item" *ngFor="let j of justifs">
+              <div class="list-title">{{ j.absenceDate | date:'dd/MM/yyyy' }} — {{ j.status }}</div>
+              <div class="list-body">{{ j.reason }}</div>
+              <a class="pill small" *ngIf="j.originalName" [href]="downloadJustificationUrl(j._id)">Télécharger</a>
+            </div>
+          </div>
         </div>
-      </div>
-      <ng-template #emptyCampus>
-        <div class="empty">Aucune actualité pour le moment.</div>
-      </ng-template>
-    </ng-container>
-  </section>
+      </section>
 
-  <section *ngIf="activeTab==='profile'" class="panel">
-    <div class="panel-head">
-      <h2>Mon profil</h2>
-      <span class="muted">Mettre à jour mes coordonnées et préférences.</span>
+      <section *ngIf="activeTab==='pedagogie'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Supports de cours</h2>
+            <span class="muted">Téléchargez vos documents de cours.</span>
+            <div class="actions">
+              <a class="pill" href="#student-resources-list">Voir les supports</a>
+            </div>
+          </div>
+          <ng-container *ngIf="(resources$ | async) as resources">
+            <div id="student-resources-list" class="list" *ngIf="resources.length; else emptyRes">
+              <div class="list-item" *ngFor="let r of resources; trackBy: trackById">
+                <div class="list-title">{{ r.title }}</div>
+                <div class="list-meta">{{ r.createdAt | date:'dd/MM/yyyy' }}</div>
+                <a class="pill small" [href]="downloadResourceUrl(r._id)">Télécharger</a>
+              </div>
+            </div>
+            <ng-template #emptyRes>
+              <div class="empty">Aucune ressource disponible.</div>
+            </ng-template>
+          </ng-container>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Travaux à rendre</h2>
+            <span class="muted">Déposez vos fichiers avant la date limite.</span>
+            <div class="actions">
+              <a class="pill" href="#student-assignments-list">Déposer un travail</a>
+            </div>
+          </div>
+          <ng-container *ngIf="(assignments$ | async) as assignments">
+            <div id="student-assignments-list" class="list" *ngIf="assignments.length; else emptyAssign">
+              <div class="list-item" *ngFor="let a of assignments; trackBy: trackById">
+                <div class="list-title">{{ a.title }}</div>
+                <div class="list-meta">Échéance : {{ a.dueDate | date:'dd/MM/yyyy' }} ({{ daysLeft(a.dueDate) }} j)</div>
+                <div class="list-body">{{ a.description || '—' }}</div>
+                <a class="pill small" *ngIf="a.originalName" [href]="downloadAssignmentUrl(a._id)">Télécharger</a>
+                <div class="actions">
+                  <input type="file" (change)="onAssignmentFile(a._id, $any($event.target).files?.[0])" />
+                  <input type="text" placeholder="Commentaire (optionnel)" (input)="setAssignmentComment(a._id, $any($event.target).value)" />
+                  <button class="pill" (click)="submitAssignment(a._id)">Déposer le fichier</button>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptyAssign>
+              <div class="empty">Aucun travail à rendre.</div>
+            </ng-template>
+          </ng-container>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Résultats</h2>
+            <a class="pill" routerLink="/notes">Consulter en détail</a>
+          </div>
+          <ng-container *ngIf="(notesSummary$ | async) as summary">
+            <div class="kpi-row">
+              <div class="kpi-box">
+                <div class="kpi">{{ summary?.overallAverage ? (summary.overallAverage | number:'1.1-2') : '—' }}</div>
+                <div class="muted">Moyenne générale</div>
+              </div>
+              <div class="kpi-box" *ngIf="summary?.subjects?.length">
+                <div class="kpi">{{ summary.subjects.length }}</div>
+                <div class="muted">UE suivies</div>
+              </div>
+            </div>
+            <div class="list" *ngIf="summary?.subjects?.length">
+              <div class="list-item" *ngFor="let s of summary.subjects">
+                <div class="list-title">{{ s.name }}</div>
+                <div class="list-meta">Coeff. {{ s.coefficient }}</div>
+                <div class="pill small">{{ s.average !== null ? (s.average | number:'1.1-2') : '—' }}</div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='finance'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Paiements</h2>
+            <div class="actions">
+              <a class="pill" href="#student-payment-form">Payer</a>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <h3>Plan de paiement</h3>
+              <ng-container *ngIf="(plan$ | async) as plan">
+                <div *ngIf="plan?.plan; else noPlan">
+                  <div class="list">
+                    <div class="list-item" *ngFor="let inst of (plan.plan.installments || [])">
+                      <div class="list-title">{{ inst.label || 'Échéance' }}</div>
+                      <div class="list-meta">{{ inst.amount }} {{ plan.plan.currency }} — {{ inst.dueDate | date:'dd/MM/yyyy' }}</div>
+                      <div class="pill small">{{ plan.installmentStats[inst._id || ''].status || 'unpaid' }}</div>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noPlan>
+                  <div class="empty">Aucun plan de paiement défini.</div>
+                </ng-template>
+              </ng-container>
+            </div>
+
+            <div class="card" id="student-payment-form">
+              <h3>Régler une échéance</h3>
+              <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+                <ng-container *ngIf="(plan$ | async) as plan">
+                  <select formControlName="installmentId" *ngIf="plan?.plan?.installments?.length">
+                    <option value="">— Choisir une échéance —</option>
+                    <option *ngFor="let inst of (plan.plan.installments || [])" [value]="inst._id">
+                      {{ inst.label || 'Échéance' }} — {{ inst.amount }} {{ plan.plan.currency }}
+                    </option>
+                  </select>
+                </ng-container>
+                <input formControlName="amount" type="number" placeholder="Montant" />
+                <select formControlName="provider">
+                  <option>Orange Money</option>
+                  <option>MTN MoMo</option>
+                  <option>Moov Money</option>
+                </select>
+                <input formControlName="reference" placeholder="Référence (optionnel)" />
+                <button class="pill" type="submit">Payer</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Historique des paiements</h3>
+            <ng-container *ngIf="(payments$ | async) as payments">
+              <div class="list" *ngIf="payments.length; else emptyPay">
+                <div class="list-item" *ngFor="let p of payments">
+                  <div class="list-title">{{ p.amount }} {{ p.currency }} — {{ p.provider || p.paymentMethod }}</div>
+                  <div class="list-meta">{{ p.paidAt | date:'dd/MM/yyyy' }}</div>
+                  <a class="pill small" [href]="downloadReceiptUrl(p._id)">Télécharger recu</a>
+                </div>
+              </div>
+              <ng-template #emptyPay>
+                <div class="empty">Aucun paiement enregistré.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='services'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Démarches & Documents</h2>
+            <div class="actions">
+              <a class="pill" href="#student-doc-request">Faire une demande</a>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card" id="student-doc-request">
+              <h3>Demande de document</h3>
+              <form [formGroup]="docRequestForm" (ngSubmit)="submitDocumentRequest()">
+                <select formControlName="type">
+                  <option value="releve_notes">Relevé de notes</option>
+                  <option value="attestation_scolarite">Attestation de scolarité</option>
+                  <option value="certificat_reussite">Certificat de réussite</option>
+                  <option value="carte_etudiante">Carte étudiante</option>
+                  <option value="autre">Autre</option>
+                </select>
+                <textarea formControlName="note" rows="2" placeholder="Précisions (optionnel)"></textarea>
+                <button class="pill" type="submit">Envoyer la demande</button>
+              </form>
+            </div>
+            <div class="card">
+              <h3>Mes demandes</h3>
+              <ng-container *ngIf="(docRequests$ | async) as requests">
+                <div class="list" *ngIf="requests.length; else emptyReq">
+                  <div class="list-item" *ngFor="let r of requests">
+                    <div class="list-title">{{ r.type }} — {{ r.status }}</div>
+                    <div class="list-meta">{{ r.createdAt | date:'dd/MM/yyyy' }}</div>
+                  </div>
+                </div>
+                <ng-template #emptyReq>
+                  <div class="empty">Aucune demande pour le moment.</div>
+                </ng-template>
+              </ng-container>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Documents disponibles</h3>
+            <ng-container *ngIf="(documents$ | async) as docs">
+              <div class="list" *ngIf="docs.items.length; else emptyDocs">
+                <div class="list-item" *ngFor="let d of docs.items">
+                  <div class="list-title">{{ d.label || d.originalName }}</div>
+                  <div class="list-meta">{{ d.createdAt | date:'dd/MM/yyyy' }}</div>
+                  <a class="pill small" [href]="downloadDocUrl(d._id)">Télécharger</a>
+                </div>
+              </div>
+              <ng-template #emptyDocs>
+                <div class="empty">Aucun document disponible.</div>
+              </ng-template>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='vie'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Vie étudiante</h2>
+            <span class="muted">Événements, services, opportunités.</span>
+            <div class="actions">
+              <a class="pill" href="#student-campus-news">Voir les actualités</a>
+            </div>
+          </div>
+          <ng-container *ngIf="(announcements$ | async) as news">
+            <div id="student-campus-news" class="list" *ngIf="news.length; else emptyCampus">
+              <div class="list-item" *ngFor="let a of news">
+                <div class="list-title">{{ a.title }}</div>
+                <div class="list-meta">{{ a.category }} — {{ a.createdAt | date:'dd/MM/yyyy' }}</div>
+                <div class="list-body">{{ a.body }}</div>
+              </div>
+            </div>
+            <ng-template #emptyCampus>
+              <div class="empty">Aucune actualité pour le moment.</div>
+            </ng-template>
+          </ng-container>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='profile'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Mon profil</h2>
+            <span class="muted">Mettre à jour mes coordonnées et préférences.</span>
+          </div>
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
+            <div class="field">
+              <label>Email</label>
+              <input formControlName="email" type="email" />
+            </div>
+            <div class="field">
+              <label>Téléphone</label>
+              <input formControlName="phone" />
+            </div>
+            <div class="field">
+              <label>Adresse</label>
+              <input formControlName="address" />
+            </div>
+            <div class="prefs">
+              <label><input type="checkbox" formControlName="notifyEmail" /> Email</label>
+              <label><input type="checkbox" formControlName="notifySms" /> SMS</label>
+              <label><input type="checkbox" formControlName="notifyPush" /> Notifications</label>
+            </div>
+            <button class="pill" type="submit">Enregistrer</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="selectedSession" (click)="closeSessionDetails()" (keydown.escape)="closeSessionDetails()" tabindex="0"></div>
+<div class="modal" *ngIf="selectedSession" (keydown)="onModalKeydown($event)" tabindex="0" role="dialog" aria-modal="true" aria-labelledby="session-modal-title">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="session-modal-title">{{ selectedSession.label || 'Séance' }}</h3>
+      <button class="pill ghost small" type="button" (click)="closeSessionDetails()">Fermer</button>
     </div>
-    <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="profile-form">
-      <div class="field">
-        <label>Email</label>
-        <input formControlName="email" type="email" />
+    <div class="modal-body">
+      <div class="meta-row">
+        <span>Date</span>
+        <strong>{{ selectedSession.date | date:'dd/MM/yyyy' }}</strong>
       </div>
-      <div class="field">
-        <label>Téléphone</label>
-        <input formControlName="phone" />
+      <div class="meta-row">
+        <span>Horaire</span>
+        <strong>{{ selectedSession.startTime }}–{{ selectedSession.endTime }}</strong>
       </div>
-      <div class="field">
-        <label>Adresse</label>
-        <input formControlName="address" />
+      <div class="meta-row" *ngIf="(groups$ | async) as groups">
+        <span>Groupe</span>
+        <strong>{{ groupLabel(groups.items, selectedSession.groupId) }}</strong>
       </div>
-      <div class="prefs">
-        <label><input type="checkbox" formControlName="notifyEmail" /> Email</label>
-        <label><input type="checkbox" formControlName="notifySms" /> SMS</label>
-        <label><input type="checkbox" formControlName="notifyPush" /> Notifications</label>
+      <div class="divider"></div>
+      <div class="modal-section" *ngIf="selectedSession.content">
+        <h4>Cahier de texte</h4>
+        <p>{{ selectedSession.content }}</p>
       </div>
-      <button class="pill" type="submit">Enregistrer</button>
-    </form>
-  </section>
+      <div class="modal-section" *ngIf="selectedSession.homework">
+        <h4>Devoirs</h4>
+        <p>{{ selectedSession.homework }}</p>
+      </div>
+      <div class="modal-section" *ngIf="!selectedSession.content && !selectedSession.homework">
+        <p class="muted">Aucun détail pour cette séance.</p>
+      </div>
+    </div>
+  </div>
 </div>

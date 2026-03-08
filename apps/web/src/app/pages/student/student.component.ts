@@ -41,6 +41,11 @@ export class StudentComponent {
   readonly resources$ = this.resources.list();
   readonly assignments$ = this.assignments.list();
   readonly announcements$ = this.announcements.list();
+  readonly calendarEvents$ = this.students.listMyCalendarEvents({
+    dateFrom: this.dateShift(-14),
+    dateTo: this.dateShift(120),
+    limit: 8,
+  });
   readonly documents$ = this.students.listMyDocuments(1, 20);
   readonly docRequests$ = this.docRequests.listMine();
   readonly justifications$ = this.attendance.listMyJustifications();
@@ -61,6 +66,20 @@ export class StudentComponent {
     dateTo: [''],
     groupId: [''],
   });
+
+  calendarFilterForm = this.fb.group({
+    type: [''],
+  });
+
+  readonly filteredCalendarEvents$ = this.calendarFilterForm.valueChanges.pipe(
+    startWith(this.calendarFilterForm.value),
+    switchMap((filter) => this.students.listMyCalendarEvents({
+      dateFrom: this.dateShift(-14),
+      dateTo: this.dateShift(120),
+      limit: 8,
+      type: (filter.type || undefined) as any,
+    })),
+  );
 
   readonly upcomingSessions$ = this.sessions$.pipe(
     map((sessions) => sessions.filter((s) => new Date(s.date).getTime() >= this.today().getTime())),
@@ -110,7 +129,7 @@ export class StudentComponent {
 
   selectedSession: any | null = null;
 
-  activeTab: 'dashboard' | 'planning' | 'resources' | 'assignments' | 'notes' | 'attendance' | 'finance' | 'documents' | 'campus' | 'profile' = 'dashboard';
+  activeTab: 'dashboard' | 'scolarite' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile' = 'dashboard';
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
   toastMessage: string | null = null;
@@ -222,6 +241,19 @@ export class StudentComponent {
         push: !!raw.notifyPush,
       },
     }).subscribe();
+  }
+
+  setActiveTab(tab: 'dashboard' | 'scolarite' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile') {
+    this.activeTab = tab;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  openDocumentRequest(type: 'releve_notes' | 'attestation_scolarite' | 'certificat_reussite' | 'carte_etudiante' | 'autre') {
+    this.docRequestForm.patchValue({ type });
+    this.setActiveTab('services');
+    setTimeout(() => {
+      document.getElementById('student-doc-request')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   submitPayment() {
@@ -340,6 +372,23 @@ export class StudentComponent {
   groupLabel(groups: any[] | null, groupId: string | undefined) {
     if (!groups || !groupId) return '—';
     return groups.find((g) => g._id === groupId)?.name ?? '—';
+  }
+
+  calendarTypeLabel(type: string) {
+    switch (type) {
+      case 'rentree':
+        return 'Rentrée';
+      case 'vacances':
+        return 'Vacances';
+      case 'examens':
+        return 'Examens';
+      case 'deliberations':
+        return 'Délibérations';
+      case 'rattrapage':
+        return 'Rattrapage';
+      default:
+        return 'Autre';
+    }
   }
 
   private dateShift(days: number) {

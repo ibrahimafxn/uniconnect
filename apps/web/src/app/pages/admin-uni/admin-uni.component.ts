@@ -151,7 +151,12 @@ export class AdminUniComponent implements OnInit {
 
   suspendUser(user: AdminUser) {
     const label = user.suspended ? 'Réactiver' : 'Suspendre';
-    this.confirm.open({title: `${label} ${user.email} ?`, confirmLabel: label, danger: !user.suspended})
+    this.confirm.open({
+      title: `${label} ${user.email} ?`,
+      message: user.suspended ? 'Confirmer la réactivation du compte.' : 'Confirmer la suspension du compte.',
+      confirmLabel: label,
+      danger: !user.suspended,
+    })
       .subscribe(ok => {
         if (!ok) return;
         const action = user.suspended ? this.api.reactivateUser(user._id) : this.api.suspendUser(user._id);
@@ -300,19 +305,21 @@ export class AdminUniComponent implements OnInit {
 
   // Init year form ─────────────────────────────────────────────────────────────
 
-  initYearForm = this.fb.group({
-    name: ['', Validators.required],
-    startDate: ['', Validators.required],
-    endDate: ['', Validators.required],
-    isActive: [false],
-  });
-
   semesters = this.fb.array([
     this.fb.group({name: ['S1', Validators.required], startDate: ['', Validators.required], endDate: ['', Validators.required]}),
     this.fb.group({name: ['S2', Validators.required], startDate: ['', Validators.required], endDate: ['', Validators.required]}),
   ]);
 
   offerLines = this.fb.array<ReturnType<typeof this.newOfferLine>>([]);
+
+  initYearForm = this.fb.group({
+    name: ['', Validators.required],
+    startDate: ['', Validators.required],
+    endDate: ['', Validators.required],
+    isActive: [false],
+    semesters: this.semesters,
+    offerLines: this.offerLines,
+  });
 
   newOfferLine() {
     return this.fb.group({
@@ -334,13 +341,27 @@ export class AdminUniComponent implements OnInit {
   submitInitYear() {
     if (this.initYearForm.invalid) return;
     const v = this.initYearForm.value as any;
+    const semesters = this.semesters.value
+      .map(s => ({
+        name: (s?.name ?? '').trim(),
+        startDate: s?.startDate ?? '',
+        endDate: s?.endDate ?? '',
+      }))
+      .filter(s => s.name && s.startDate && s.endDate);
+    const offers = this.offerLines.value
+      .map(o => ({
+        programId: o?.programId ?? '',
+        levelId: o?.levelId ?? '',
+        capacity: Number(o?.capacity ?? 0),
+      }))
+      .filter(o => o.programId && o.levelId && o.capacity);
     const body = {
       name: v.name,
       startDate: v.startDate,
       endDate: v.endDate,
       isActive: v.isActive,
-      semesters: this.semesters.value.filter(s => s.name && s.startDate && s.endDate),
-      offers: this.offerLines.value.filter(o => o.programId && o.levelId && o.capacity),
+      semesters,
+      offers,
     };
     this.drawerLoading = true;
     this.api.initializeYear(body).subscribe({
@@ -405,7 +426,11 @@ export class AdminUniComponent implements OnInit {
   }
 
   deleteCalEvent(event: CalendarEvent) {
-    this.confirm.open({title: `Supprimer l'événement "${event.label}" ?`, danger: true})
+    this.confirm.open({
+      title: `Supprimer l'événement "${event.label}" ?`,
+      message: 'Cette suppression est définitive.',
+      danger: true,
+    })
       .subscribe(ok => {
         if (!ok) return;
         this.api.deleteCalendarEvent(event._id).subscribe({next: () => this.loadCalendarEvents()});
@@ -458,6 +483,8 @@ export class AdminUniComponent implements OnInit {
 
   // Fee template form ───────────────────────────────────────────────────────────
 
+  feeInstallments = this.fb.array<ReturnType<typeof this.newInstallmentLine>>([]);
+
   feeForm = this.fb.group({
     label: ['', Validators.required],
     offerId: ['', Validators.required],
@@ -470,9 +497,8 @@ export class AdminUniComponent implements OnInit {
       mtn_momo: [false],
       moov_money: [false],
     }),
+    feeInstallments: this.feeInstallments,
   });
-
-  feeInstallments = this.fb.array<ReturnType<typeof this.newInstallmentLine>>([]);
 
   newInstallmentLine() {
     return this.fb.group({
@@ -506,7 +532,11 @@ export class AdminUniComponent implements OnInit {
       totalAmount: Number(v.totalAmount),
       currency: v.currency || 'XOF',
       acceptedMethods: methods,
-      installments: this.feeInstallments.value.map(i => ({...i, amount: Number(i.amount)})),
+      installments: this.feeInstallments.value.map(i => ({
+        amount: Number(i.amount),
+        label: i.label ?? '',
+        dueDate: i.dueDate ?? '',
+      })),
     };
     this.drawerLoading = true;
     this.api.createFeeTemplate(body).subscribe({
@@ -568,7 +598,7 @@ export class AdminUniComponent implements OnInit {
   }
 
   deleteExemption(ex: FeeExemption) {
-    this.confirm.open({title: 'Supprimer cette exonération ?', danger: true})
+    this.confirm.open({title: 'Supprimer cette exonération ?', message: 'Confirmer la suppression de cette exonération ?', danger: true})
       .subscribe(ok => {
         if (!ok) return;
         this.api.deleteExemption(ex._id).subscribe({next: () => this.loadFinanceData()});
