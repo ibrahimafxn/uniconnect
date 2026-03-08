@@ -94,6 +94,7 @@ export class AdminComponent implements OnInit {
     if (tab === 'users' && this.uniUsers.length === 0) this.loadUniUsers();
     if (tab === 'academic') this.loadAcademicDataUni();
     if (tab === 'finance') this.loadFinanceData();
+    if (tab === 'communication' && this.announceHistory.length === 0) this.loadAnnounceHistory();
   }
 
   // === DRAWER ===
@@ -1607,8 +1608,7 @@ export class AdminComponent implements OnInit {
       }
       installmentCtrl.updateValueAndValidity({ emitEvent: false });
     });
-    // Load dashboard and announce history on init
+    // Load dashboard on init (default tab)
     this.loadDashboard();
-    this.loadAnnounceHistory();
   }
 }
