@@ -1,0 +1,37 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Export du planning</h1>
+      <p class="subtitle">Exportez votre emploi du temps en PDF ou au format iCalendar (.ics) pour l'intégrer à votre agenda.</p>
+    </div>
+  </div>
+
+  <!-- Filtres de date -->
+  <div class="filter-bar">
+    <div class="field">
+      <label>Du</label>
+      <input type="date" [(ngModel)]="dateFrom" />
+    </div>
+    <div class="field">
+      <label>Au</label>
+      <input type="date" [(ngModel)]="dateTo" />
+    </div>
+  </div>
+
+  <!-- Actions d'export -->
+  <div class="export-cards">
+    <div class="export-card">
+      <div class="export-icon">📄</div>
+      <h3>PDF</h3>
+      <p>Tableau récapitulatif de vos séances au format imprimable.</p>
+      <button (click)="exportPdf()">Télécharger le PDF</button>
+    </div>
+
+    <div class="export-card">
+      <div class="export-icon">📅</div>
+      <h3>iCalendar (.ics)</h3>
+      <p>Format compatible Google Calendar, Outlook, Apple Calendar…</p>
+      <button (click)="exportIcal()">Télécharger le fichier .ics</button>
+    </div>
+  </div>
+</div>

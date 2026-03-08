@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 
 export type AttendanceStatus = 'present' | 'absent' | 'excused';
@@ -48,5 +48,14 @@ export class AttendanceApi {
 
   getStudentSummary(studentId: string) {
     return this.http.get<any>(`${this.baseUrl}/students/${studentId}/summary`);
+  }
+
+  /** UC-E04 — Étudiants en difficulté (taux d'absence > seuil) */
+  getAbsenceAlerts(groupId: string, threshold = 30) {
+    const params = new HttpParams().set('threshold', threshold);
+    return this.http.get<(AttendanceSummary & { absenceRate: number })[]>(
+      `${this.baseUrl}/groups/${groupId}/alerts`,
+      { params },
+    );
   }
 }

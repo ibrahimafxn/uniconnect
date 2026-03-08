@@ -77,4 +77,12 @@ export class MessagesApi {
   attachmentDownloadUrl(attachmentId: string) {
     return `${this.baseUrl}/attachments/${attachmentId}/download`;
   }
+
+  /** UC-E07 — Broadcast d'un message à tous les étudiants d'un groupe */
+  broadcastToGroup(groupId: string, content: string) {
+    return this.http.post<{ conversation: Conversation; message: Message; recipientCount: number }>(
+      `${this.baseUrl}/broadcast/group`,
+      { groupId, content },
+    );
+  }
 }

@@ -13,6 +13,8 @@ import { MessagesModule } from './messages/messages.module';
 import { NotesModule } from './notes/notes.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
+import { ResourcesModule } from './resources/resources.module';
+import { JuryModule } from './jury/jury.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
     NotesModule,
     AttendanceModule,
     TeacherProfileModule,
+    ResourcesModule,
+    JuryModule,
   ],
   controllers: [AppController],
   providers: [],

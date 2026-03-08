@@ -1,0 +1,88 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Ressources pédagogiques</h1>
+      <p class="subtitle">Déposez vos cours, TD et supports de cours (PDF, présentations…).</p>
+    </div>
+    <button class="ghost" (click)="refresh()">Rafraîchir</button>
+  </div>
+
+  <!-- UC-E02: Upload de ressource -->
+  <div class="upload-card" *ngIf="isTeacher || isAdmin">
+    <h2>Déposer un document</h2>
+    <form [formGroup]="uploadForm" (ngSubmit)="upload()" class="upload-form">
+      <div class="field">
+        <label>Titre *</label>
+        <input formControlName="title" placeholder="Ex : Cours Chapitre 3 — Algorithmique" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input formControlName="description" placeholder="Description optionnelle" />
+      </div>
+      <div class="field">
+        <label>Groupe cible</label>
+        <select formControlName="groupId">
+          <option value="">— Tous les groupes —</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Fichier *</label>
+        <input type="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg" (change)="onFileSelected($event)" />
+        <span class="hint" *ngIf="selectedFile">{{ selectedFile.name }} ({{ formatSize(selectedFile.size) }})</span>
+      </div>
+      <div class="form-actions">
+        <button type="submit" [disabled]="uploadForm.invalid || !selectedFile || uploading">
+          {{ uploading ? 'Envoi en cours…' : 'Déposer la ressource' }}
+        </button>
+        <span class="success-msg" *ngIf="uploadSuccess">✓ Ressource déposée avec succès.</span>
+        <span class="error-msg" *ngIf="uploadError">{{ uploadError }}</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filtre par groupe -->
+  <div class="filter-bar">
+    <label>Filtrer par groupe :</label>
+    <select (change)="filterByGroup($any($event.target).value)">
+      <option value="">Toutes les ressources</option>
+      <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+    </select>
+  </div>
+
+  <!-- Liste des ressources -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Fichier</th>
+          <th>Taille</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of (resources$ | async)">
+          <td>
+            <strong>{{ r.title }}</strong>
+            <span class="muted block" *ngIf="r.description">{{ r.description }}</span>
+          </td>
+          <td>
+            <span class="code-chip">{{ r.mimeType.split('/')[1]?.toUpperCase() }}</span>
+            {{ r.originalName }}
+          </td>
+          <td class="muted">{{ formatSize(r.size) }}</td>
+          <td class="muted">{{ r.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td class="actions">
+            <button class="icon-btn" (click)="download(r)" title="Télécharger">⬇</button>
+            <button class="icon-btn danger" (click)="delete(r._id)" title="Supprimer" *ngIf="isTeacher || isAdmin">🗑</button>
+          </td>
+        </tr>
+        <tr *ngIf="(resources$ | async)?.length === 0">
+          <td colspan="5" class="empty-row">Aucune ressource disponible.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -50,5 +50,16 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Résumé des présences d\'un étudiant' })
   getStudentSummary(@Param('studentId') studentId: string) {
     return this.attendanceService.getStudentAttendanceSummary(studentId);
+  }
+
+  /** UC-E04 — Alertes étudiants en difficulté (taux d'absence > seuil) */
+  @Get('groups/:groupId/alerts')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @ApiOperation({ summary: 'Étudiants en difficulté (absences > seuil)' })
+  getAbsenceAlerts(
+    @Param('groupId') groupId: string,
+    @Query('threshold') threshold?: string,
+  ) {
+    return this.attendanceService.getAbsenceAlerts(groupId, threshold ? Number(threshold) : 30);
   }
 }

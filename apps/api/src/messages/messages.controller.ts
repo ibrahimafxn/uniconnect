@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
+import { Roles } from '../common/roles.decorator';
 import { parsePagination } from '../common/pagination';
 import { MessagesService } from './messages.service';
 import { CreateDirectConversationDto } from './dto/create-direct-conversation.dto';
@@ -163,6 +164,23 @@ export class MessagesController {
       throw new BadRequestException('File is required');
     }
     return this.messagesService.createAttachment(conversationId, file, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  /** UC-E07 — Broadcast message à tous les étudiants d'un groupe */
+  @Post('broadcast/group')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @ApiOperation({ summary: "Envoyer un message à tous les étudiants d'un groupe" })
+  broadcastToGroup(
+    @Body() body: { groupId: string; content: string },
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.messagesService.broadcastToGroup(body.groupId, body.content, {
       userId: req.user.userId,
       email: req.user.email,
       role: req.user.role,

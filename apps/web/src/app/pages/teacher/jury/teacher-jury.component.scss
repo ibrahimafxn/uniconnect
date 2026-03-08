@@ -1,0 +1,47 @@
+.setup-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  .field { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+  label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted, #6b7280); }
+  input, select { padding: 0.5rem 0.75rem; border: 1px solid var(--border, #e5e7eb); border-radius: 8px; font-size: 0.9rem; }
+}
+
+.score-input, .ects-input { width: 70px; text-align: center; }
+.comment-input { width: 100%; }
+
+.jury-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.btn-save {
+  padding: 0.6rem 1.5rem;
+  background: var(--primary, #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.success-msg { color: #10b981; font-size: 0.85rem; }
+.error-msg { color: #ef4444; font-size: 0.85rem; }
+.block { display: block; }
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  &.badge-success { background: #d1fae5; color: #065f46; }
+  &.badge-warning { background: #fef3c7; color: #92400e; }
+  &.badge-danger { background: #fee2e2; color: #991b1b; }
+}
+
+.history-section { margin-top: 2rem; h2 { font-size: 1rem; margin-bottom: 1rem; } }

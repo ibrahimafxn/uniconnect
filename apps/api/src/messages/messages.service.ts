@@ -5,6 +5,7 @@ import { Conversation } from './schemas/conversation.schema';
 import { Message } from './schemas/message.schema';
 import { MessageAttachment } from './schemas/message-attachment.schema';
 import { User } from '../users/user.schema';
+import { StudentProfile } from '../students/student-profile.schema';
 import { AuditLogService, AuditActor } from '../audit/audit-log.service';
 
 @Injectable()
@@ -18,6 +19,8 @@ export class MessagesService {
     private readonly attachmentModel: Model<MessageAttachment>,
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
+    @InjectModel(StudentProfile.name)
+    private readonly studentModel: Model<StudentProfile>,
     private readonly auditLog: AuditLogService,
   ) {}
 
@@ -212,6 +215,63 @@ export class MessagesService {
     }
     await this.ensureParticipant(String(attachment.conversationId), actor.userId);
     return attachment;
+  }
+
+  /**
+   * UC-E07 — Broadcast d'un message à tous les étudiants d'un groupe.
+   * Crée (ou réutilise) une conversation de groupe et envoie le message.
+   */
+  async broadcastToGroup(
+    groupId: string,
+    content: string,
+    actor: AuditActor,
+  ) {
+    if (!content?.trim()) throw new BadRequestException('Message vide.');
+
+    // Récupérer les étudiants du groupe
+    const students = await this.studentModel
+      .find({ groupId: new Types.ObjectId(groupId) })
+      .lean()
+      .exec();
+
+    if (students.length === 0) {
+      throw new BadRequestException('Aucun étudiant dans ce groupe.');
+    }
+
+    // Récupérer les comptes utilisateurs des étudiants (par email)
+    const emails = students.map((s) => (s as any).email).filter(Boolean);
+    const users = await this.userModel.find({ email: { $in: emails } }).lean().exec();
+
+    const participantIds = [
+      new Types.ObjectId(actor.userId),
+      ...users.map((u) => u._id as Types.ObjectId),
+    ];
+
+    // Créer une conversation de groupe dédiée à ce broadcast
+    const title = `Annonce groupe — ${new Date().toLocaleDateString('fr-FR')}`;
+    const conversation = await this.conversationModel.create({
+      type: 'group',
+      title,
+      participantIds,
+      lastMessageAt: new Date(),
+    });
+
+    // Envoyer le message
+    const message = await this.messageModel.create({
+      conversationId: conversation._id,
+      senderId: new Types.ObjectId(actor.userId),
+      body: content.trim(),
+    });
+
+    await this.auditLog.log({
+      action: 'messages.broadcast',
+      entity: 'group',
+      entityId: groupId,
+      actor,
+      metadata: { recipients: participantIds.length - 1, conversationId: String(conversation._id) },
+    });
+
+    return { conversation, message, recipientCount: participantIds.length - 1 };
   }
 
   private async ensureParticipant(conversationId: string, userId: string) {

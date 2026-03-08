@@ -1,0 +1,84 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Mes feuilles d'intervention</h1>
+      <p class="subtitle">Déclarez vos heures d'enseignement pour le suivi de paiement vacataire.</p>
+    </div>
+  </div>
+
+  <!-- Nouvelle feuille -->
+  <div class="card">
+    <h2>Nouvelle déclaration d'heures</h2>
+    <div class="grid-form">
+      <div class="field">
+        <label>Période *</label>
+        <input [(ngModel)]="draft.period" placeholder="Ex : 2026-03" />
+      </div>
+      <div class="field">
+        <label>Taux horaire ({{ draft.currency }}) *</label>
+        <input type="number" [(ngModel)]="draft.hourlyRate" min="0" />
+      </div>
+      <div class="field">
+        <label>Heures CM</label>
+        <input type="number" [(ngModel)]="draft.hoursCM" min="0" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Heures TD</label>
+        <input type="number" [(ngModel)]="draft.hoursTD" min="0" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Heures TP</label>
+        <input type="number" [(ngModel)]="draft.hoursTP" min="0" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Commentaire</label>
+        <input [(ngModel)]="draft.comment" placeholder="Observations optionnelles" />
+      </div>
+    </div>
+
+    <div class="totals">
+      <span>Total : <strong>{{ totalHours }}h</strong></span>
+      <span>Montant estimé : <strong>{{ totalAmount | number:'1.0-0' }} {{ draft.currency }}</strong></span>
+    </div>
+
+    <div class="form-actions">
+      <button [disabled]="creating || !draft.period || draft.hourlyRate <= 0" (click)="create()">
+        {{ creating ? 'Enregistrement…' : 'Créer le brouillon' }}
+      </button>
+      <span class="success-msg" *ngIf="createSuccess">✓ Feuille créée.</span>
+      <span class="error-msg" *ngIf="createError">{{ createError }}</span>
+    </div>
+  </div>
+
+  <!-- Liste -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Période</th>
+          <th>CM</th><th>TD</th><th>TP</th>
+          <th>Taux</th><th>Montant</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of (sheets$ | async)">
+          <td><strong>{{ s.period }}</strong></td>
+          <td>{{ s.hoursCM }}h</td>
+          <td>{{ s.hoursTD }}h</td>
+          <td>{{ s.hoursTP }}h</td>
+          <td class="muted">{{ s.hourlyRate | number }} {{ s.currency }}</td>
+          <td><strong>{{ s.totalAmount | number:'1.0-0' }} {{ s.currency }}</strong></td>
+          <td><span class="badge" [ngClass]="statusClass(s.status)">{{ statusLabel(s.status) }}</span></td>
+          <td>
+            <button *ngIf="s.status === 'draft'" class="btn-sm" (click)="submit(s._id)">Soumettre</button>
+          </td>
+        </tr>
+        <tr *ngIf="(sheets$ | async)?.length === 0">
+          <td colspan="8" class="empty-row">Aucune feuille d'intervention.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

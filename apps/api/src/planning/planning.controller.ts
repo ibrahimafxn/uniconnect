@@ -8,8 +8,11 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import PDFDocument from 'pdfkit';
 import { PlanningService } from './planning.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
@@ -196,5 +199,134 @@ export class PlanningController {
       ip: req.ip,
       userAgent: req.headers?.['user-agent'],
     });
+  }
+
+  /** UC-E08 — Export planning en PDF */
+  @Get('sessions/export/pdf')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @ApiOperation({ summary: 'Exporter le planning en PDF' })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  @ApiQuery({ name: 'groupId', required: false })
+  async exportPdf(
+    @Query('dateFrom') dateFrom: string | undefined,
+    @Query('dateTo') dateTo: string | undefined,
+    @Query('groupId') groupId: string | undefined,
+    @Request() req: { user: { userId: string; email?: string; role: Role } },
+    @Res() res: Response,
+  ) {
+    const sessions = await this.planningService.listSessions({
+      dateFrom,
+      dateTo,
+      groupId,
+      teacherId: undefined,
+      roomId: undefined,
+      user: { userId: req.user.userId, email: req.user.email ?? '', role: req.user.role },
+    });
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    const chunks: Buffer[] = [];
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => {
+      const buf = Buffer.concat(chunks);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="planning.pdf"');
+      res.send(buf);
+    });
+
+    doc.fontSize(18).font('Helvetica-Bold').text('Planning — UniConnect', { align: 'center' });
+    if (dateFrom || dateTo) {
+      doc.moveDown(0.3).fontSize(11).font('Helvetica').text(
+        `Période : ${dateFrom ?? '—'} → ${dateTo ?? '—'}`, { align: 'center' },
+      );
+    }
+    doc.moveDown().moveTo(40, doc.y).lineTo(555, doc.y).stroke().moveDown(0.5);
+
+    const colX = { date: 40, time: 120, label: 205, group: 355, room: 460 };
+    doc.fontSize(10).font('Helvetica-Bold');
+    doc.text('Date', colX.date, doc.y, { width: 75 });
+    const hY = doc.y - doc.currentLineHeight();
+    doc.text('Horaire', colX.time, hY, { width: 80 });
+    doc.text('Intitulé', colX.label, hY, { width: 145 });
+    doc.text('Groupe', colX.group, hY, { width: 100 });
+    doc.text('Salle', colX.room, hY, { width: 95 });
+    doc.moveDown(0.3).moveTo(40, doc.y).lineTo(555, doc.y).stroke().moveDown(0.3);
+
+    doc.font('Helvetica').fontSize(9);
+    for (const s of sessions as any[]) {
+      if (doc.y > 750) doc.addPage();
+      const rowY = doc.y;
+      const dateStr = new Date(s.date).toLocaleDateString('fr-FR');
+      doc.text(dateStr, colX.date, rowY, { width: 75 });
+      doc.text(`${s.startTime}–${s.endTime}`, colX.time, rowY, { width: 80 });
+      doc.text(s.label ?? '—', colX.label, rowY, { width: 145 });
+      doc.text(String((s.groupId as any)?._id ?? s.groupId ?? ''), colX.group, rowY, { width: 100 });
+      doc.text(String((s.roomId as any)?._id ?? s.roomId ?? ''), colX.room, rowY, { width: 95 });
+      doc.moveDown(0.4);
+    }
+
+    if ((sessions as any[]).length === 0) {
+      doc.text('Aucune séance pour cette période.', { align: 'center' });
+    }
+
+    doc.end();
+  }
+
+  /** UC-E08 — Export planning au format iCalendar (.ics) */
+  @Get('sessions/export/ical')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @ApiOperation({ summary: 'Exporter le planning au format iCal (.ics)' })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  @ApiQuery({ name: 'groupId', required: false })
+  async exportIcal(
+    @Query('dateFrom') dateFrom: string | undefined,
+    @Query('dateTo') dateTo: string | undefined,
+    @Query('groupId') groupId: string | undefined,
+    @Request() req: { user: { userId: string; email?: string; role: Role } },
+    @Res() res: Response,
+  ) {
+    const sessions = await this.planningService.listSessions({
+      dateFrom,
+      dateTo,
+      groupId,
+      teacherId: undefined,
+      roomId: undefined,
+      user: { userId: req.user.userId, email: req.user.email ?? '', role: req.user.role },
+    });
+
+    const fmt = (d: Date, time: string) => {
+      const [h, m] = time.split(':');
+      const dt = new Date(d);
+      dt.setHours(Number(h), Number(m), 0, 0);
+      return dt.toISOString().replace(/[-:]/g, '').replace('.000', '');
+    };
+
+    const lines: string[] = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//UniConnect//Planning//FR',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+    ];
+
+    for (const s of sessions as any[]) {
+      const date = new Date(s.date);
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${s._id}@uniconnect`,
+        `DTSTART:${fmt(date, s.startTime)}`,
+        `DTEND:${fmt(date, s.endTime)}`,
+        `SUMMARY:${s.label ?? 'Séance'}`,
+        `DESCRIPTION:Groupe ${s.groupId} — Salle ${s.roomId}`,
+        'END:VEVENT',
+      );
+    }
+
+    lines.push('END:VCALENDAR');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="planning.ics"');
+    res.send(lines.join('\r\n'));
   }
 }

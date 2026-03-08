@@ -1,0 +1,119 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Jury &amp; Délibération</h1>
+      <p class="subtitle">Saisie des décisions de jury (LMD) — Admis · Ajourné · Redoublant.</p>
+    </div>
+  </div>
+
+  <!-- Sélection groupe + session -->
+  <div class="setup-bar">
+    <div class="field">
+      <label>Groupe</label>
+      <select [(ngModel)]="selectedGroupId" (change)="loadSheet()">
+        <option value="">— Choisir un groupe —</option>
+        <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Session de délibération</label>
+      <input [(ngModel)]="session" placeholder="Ex : Juin 2026 — L1 Informatique" />
+    </div>
+  </div>
+
+  <!-- Table de délibération -->
+  <ng-container *ngIf="entries.length > 0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Étudiant</th>
+            <th>Moy. générale</th>
+            <th>ECTS obtenus</th>
+            <th>Décision</th>
+            <th>Commentaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of entries">
+            <td>
+              <strong>{{ e.lastName }} {{ e.firstName }}</strong>
+              <span class="muted block">{{ e.studentNumber }}</span>
+            </td>
+            <td>
+              <input
+                type="number"
+                [(ngModel)]="e.overallAverage"
+                min="0" max="20" step="0.01"
+                placeholder="—"
+                class="score-input"
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                [(ngModel)]="e.ectsObtained"
+                min="0" step="1"
+                placeholder="0"
+                class="ects-input"
+              />
+            </td>
+            <td>
+              <select [(ngModel)]="e.decision">
+                <option value="admis">Admis(e)</option>
+                <option value="admis_avec_dettes">Admis(e) avec dettes</option>
+                <option value="ajourne">Ajourné(e)</option>
+                <option value="redoublant">Redoublant(e)</option>
+              </select>
+            </td>
+            <td>
+              <input type="text" [(ngModel)]="e.comment" placeholder="Commentaire optionnel" class="comment-input" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="jury-footer">
+      <button class="btn-save" [disabled]="saving || !session" (click)="save()">
+        {{ saving ? 'Enregistrement…' : 'Valider les décisions' }}
+      </button>
+      <span class="success-msg" *ngIf="saved">✓ Décisions enregistrées.</span>
+      <span class="error-msg" *ngIf="saveError">{{ saveError }}</span>
+    </div>
+  </ng-container>
+
+  <div class="empty-state" *ngIf="entries.length === 0 && selectedGroupId">
+    <p>Aucun étudiant trouvé dans ce groupe.</p>
+  </div>
+  <div class="empty-state" *ngIf="!selectedGroupId">
+    <p>Sélectionnez un groupe pour préparer la feuille de délibération.</p>
+  </div>
+
+  <!-- Historique des décisions -->
+  <ng-container *ngIf="(decisions$ | async) as decisions">
+    <div *ngIf="decisions.length > 0" class="history-section">
+      <h2>Décisions enregistrées</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Session</th><th>Étudiant</th><th>Décision</th><th>Moyenne</th><th>ECTS</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of decisions">
+              <td class="muted">{{ d.session }}</td>
+              <td>{{ d.studentId }}</td>
+              <td>
+                <span class="badge" [ngClass]="decisionClass(d.decision)">
+                  {{ decisionLabels[d.decision] ?? d.decision }}
+                </span>
+              </td>
+              <td>{{ d.overallAverage | number:'1.2-2' }}</td>
+              <td>{{ d.ectsObtained }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>

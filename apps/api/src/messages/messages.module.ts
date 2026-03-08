@@ -6,6 +6,7 @@ import { Conversation, ConversationSchema } from './schemas/conversation.schema'
 import { Message, MessageSchema } from './schemas/message.schema';
 import { MessageAttachment, MessageAttachmentSchema } from './schemas/message-attachment.schema';
 import { User, UserSchema } from '../users/user.schema';
+import { StudentProfile, StudentProfileSchema } from '../students/student-profile.schema';
 import { AuditModule } from '../audit/audit.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { AuditModule } from '../audit/audit.module';
       { name: Message.name, schema: MessageSchema },
       { name: MessageAttachment.name, schema: MessageAttachmentSchema },
       { name: User.name, schema: UserSchema },
+      { name: StudentProfile.name, schema: StudentProfileSchema },
     ]),
   ],
   providers: [MessagesService],

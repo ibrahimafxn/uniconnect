@@ -1,0 +1,79 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Communication &amp; Alertes</h1>
+      <p class="subtitle">Envoyez un message à un groupe entier (UC-E07) et visualisez les étudiants en difficulté (UC-E04).</p>
+    </div>
+  </div>
+
+  <!-- Sélection du groupe -->
+  <div class="field group-select">
+    <label>Groupe cible</label>
+    <select [(ngModel)]="selectedGroupId" (change)="loadAlerts()">
+      <option value="">— Choisir un groupe —</option>
+      <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+    </select>
+  </div>
+
+  <div class="two-col" *ngIf="selectedGroupId">
+
+    <!-- UC-E07 Broadcast -->
+    <div class="card">
+      <h2>Envoyer un message au groupe</h2>
+      <textarea
+        [(ngModel)]="messageContent"
+        rows="5"
+        placeholder="Votre message à tous les étudiants du groupe…"
+      ></textarea>
+      <div class="form-actions">
+        <button [disabled]="sending || !messageContent.trim()" (click)="send()">
+          {{ sending ? 'Envoi en cours…' : 'Envoyer à tout le groupe' }}
+        </button>
+        <span class="success-msg" *ngIf="sent">
+          ✓ Message envoyé à {{ recipientCount }} étudiant(s).
+        </span>
+        <span class="error-msg" *ngIf="sendError">{{ sendError }}</span>
+      </div>
+    </div>
+
+    <!-- UC-E04 Alertes -->
+    <div class="card alerts-card">
+      <div class="alerts-header">
+        <h2>Étudiants en difficulté</h2>
+        <div class="threshold-row">
+          <label>Seuil d'absence :</label>
+          <input type="number" [(ngModel)]="alertThreshold" min="1" max="100" class="threshold-input" />
+          <span>%</span>
+          <button class="btn-sm" (click)="loadAlerts()">Actualiser</button>
+        </div>
+      </div>
+
+      <div *ngIf="loadingAlerts" class="loading">Chargement…</div>
+
+      <ng-container *ngIf="alerts$ | async as alerts">
+        <div *ngIf="alerts.length === 0" class="empty-state-inline">
+          Aucun étudiant ne dépasse le seuil de {{ alertThreshold }}% d'absences.
+        </div>
+        <ul class="alert-list" *ngIf="alerts.length > 0">
+          <li *ngFor="let a of alerts" class="alert-item">
+            <div class="student-info">
+              <strong>{{ a.lastName }} {{ a.firstName }}</strong>
+              <span class="muted">{{ a.studentNumber }}</span>
+            </div>
+            <div class="stats">
+              <span class="absence-rate" [class.critical]="a.absenceRate >= 50">
+                {{ a.absenceRate }}% d'absences
+              </span>
+              <span class="muted">{{ a.absent }}/{{ a.total }} séances</span>
+            </div>
+          </li>
+        </ul>
+      </ng-container>
+    </div>
+
+  </div>
+
+  <div class="empty-state" *ngIf="!selectedGroupId">
+    <p>Sélectionnez un groupe pour accéder à la communication et aux alertes.</p>
+  </div>
+</div>

@@ -120,4 +120,23 @@ export class AttendanceService {
 
     return results;
   }
+
+  /**
+   * UC-E04 — Alertes étudiants en difficulté.
+   * Retourne les étudiants du groupe ayant un taux d'absence > seuil (défaut 30 %).
+   */
+  async getAbsenceAlerts(groupId: string, threshold = 30) {
+    const summary = await this.getGroupAttendanceSummary(groupId);
+    return summary
+      .filter((s) => {
+        if (s.total === 0) return false;
+        const absenceRate = Math.round(((s.absent) / s.total) * 100);
+        return absenceRate > threshold;
+      })
+      .map((s) => ({
+        ...s,
+        absenceRate: Math.round((s.absent / s.total) * 100),
+      }))
+      .sort((a, b) => b.absenceRate - a.absenceRate);
+  }
 }
