@@ -3,15 +3,36 @@ import {CommonModule} from '@angular/common';
 import {
   FormArray, FormBuilder, ReactiveFormsModule, Validators, FormsModule,
 } from '@angular/forms';
-import {Observable, of, tap, take, combineLatest, map, distinctUntilChanged, switchMap, startWith} from 'rxjs';
+import {Observable, of, tap, take, combineLatest, map, distinctUntilChanged, switchMap, startWith, forkJoin} from 'rxjs';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
 import {UsersApi} from '../../core/api/users.api';
 import {Paginated, StudentDocument} from '../../core/api/students.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
+import {
+  AdminApi, AdminUser, CalendarEvent, ExecutiveDashboard,
+  FeeExemption, FeeTemplate, FinancialReport, ImportResult, MesrsReport,
+} from '../../core/api/admin.api';
 
-export type AdminTab = 'structure' | 'students' | 'payments' | 'users' | 'documents';
+export type AdminTab =
+  | 'dashboard'
+  | 'structure'
+  | 'students'
+  | 'payments'
+  | 'documents'
+  | 'users'
+  | 'academic'
+  | 'finance'
+  | 'communication';
+
+type DrawerMode =
+  | 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group'
+  | 'student' | 'plan' | 'payment' | 'user' | 'document'
+  | 'import-students' | 'assign-role' | 'reset-password-result'
+  | 'init-year' | 'calendar-event' | 'fee-template' | 'apply-template'
+  | 'exemption' | 'announce'
+  | null;
 
 type PaymentView = Payment & {
   installmentDueDate?: string;
@@ -48,29 +69,46 @@ export class AdminComponent implements OnInit {
   private readonly payments = inject(PaymentsApi);
   private readonly usersApi = inject(UsersApi);
   private readonly confirm = inject(ConfirmService);
+  private readonly adminApi = inject(AdminApi);
 
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
 
   // === TABS ===
-  activeTab: AdminTab = 'structure';
+  activeTab: AdminTab = 'dashboard';
   tabs: Array<{id: AdminTab; label: string; icon: string}> = [
+    {id: 'dashboard', label: 'Tableau de bord', icon: '📊'},
     {id: 'structure', label: 'Structure', icon: '🏛️'},
     {id: 'students', label: 'Étudiants', icon: '🎓'},
     {id: 'payments', label: 'Paiements', icon: '💰'},
     {id: 'documents', label: 'Documents', icon: '📄'},
     {id: 'users', label: 'Utilisateurs', icon: '👤'},
+    {id: 'academic', label: 'Année académique', icon: '📅'},
+    {id: 'finance', label: 'Finances', icon: '💳'},
+    {id: 'communication', label: 'Communication', icon: '📢'},
   ];
+
+  setTab(tab: AdminTab) {
+    this.activeTab = tab;
+    if (tab === 'dashboard' && !this.dashboard) this.loadDashboard();
+    if (tab === 'users' && this.uniUsers.length === 0) this.loadUniUsers();
+    if (tab === 'academic') this.loadAcademicDataUni();
+    if (tab === 'finance') this.loadFinanceData();
+  }
 
   // === DRAWER ===
   drawerOpen = false;
   drawerTitle = '';
-  drawerMode: 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group' | 'student' | 'plan' | 'payment' | 'user' | 'document' | null = null;
+  drawerMode: DrawerMode = null;
+  drawerLoading = false;
+  drawerError = '';
 
-  openDrawer(mode: typeof this.drawerMode, title: string) {
+  openDrawer(mode: DrawerMode, title: string) {
     this.drawerMode = mode;
     this.drawerTitle = title;
     this.drawerOpen = true;
+    this.drawerError = '';
+    this.drawerLoading = false;
     if (mode === 'student' && !this.editingStudentId) {
       this.applyActiveYearDefault(this.studentForm);
     }
@@ -82,7 +120,16 @@ export class AdminComponent implements OnInit {
   closeDrawer() {
     this.drawerOpen = false;
     this.drawerMode = null;
+    this.drawerError = '';
+    this.drawerLoading = false;
     this.cancelAll();
+    // admin-uni specific resets
+    this.importResult = null;
+    this.resetPasswordResult = '';
+    this.applyTemplateResult = null;
+    this.announcementResult = null;
+    this.selectedUserId = '';
+    this.selectedTemplateId = '';
   }
 
   saveCompactMode() {
@@ -118,11 +165,48 @@ export class AdminComponent implements OnInit {
 
   cancelAll() {
     this.cancelEditYear(); this.cancelEditProgram(); this.cancelEditLevel();
-    this.cancelEditSemester(); this.cancelEditOffer(); this.cancelEditGroup(); this.cancelEditStudent(); this.cancelEditPlan();
+    this.cancelEditSemester(); this.cancelEditOffer(); this.cancelEditGroup();
+    this.cancelEditStudent(); this.cancelEditPlan();
     this.cancelEditPayment(); this.cancelEditDocument(); this.cancelEditUser();
   }
 
-  // === ACADEMIC ===
+  // ============================================================
+  // === DASHBOARD (admin-uni) ===================================
+  // ============================================================
+
+  dashboard: ExecutiveDashboard | null = null;
+  mesrsReport: MesrsReport | null = null;
+  systemStatus: any = null;
+  dashboardLoading = true;
+  showMesrsReport = false;
+  showSystemStatus = false;
+
+  loadDashboard() {
+    this.dashboardLoading = true;
+    this.adminApi.getExecutiveDashboard().subscribe({
+      next: (d) => { this.dashboard = d; this.dashboardLoading = false; },
+      error: () => { this.dashboardLoading = false; },
+    });
+  }
+
+  loadMesrsReport() {
+    this.showMesrsReport = true;
+    this.adminApi.getMesrsReport(this.dashboard?.activeAcademicYear?.id).subscribe({
+      next: (r) => { this.mesrsReport = r; },
+    });
+  }
+
+  loadSystemStatus() {
+    this.showSystemStatus = true;
+    this.adminApi.getSystemStatus().subscribe({
+      next: (s) => { this.systemStatus = s; },
+    });
+  }
+
+  // ============================================================
+  // === ACADEMIC STRUCTURE (admin) ==============================
+  // ============================================================
+
   years$ = this.academic.listYears();
   semesters$ = this.academic.listSemesters();
   programs$ = this.academic.listPrograms();
@@ -149,9 +233,7 @@ export class AdminComponent implements OnInit {
   programForm = this.fb.group({ name: ['', Validators.required], code: [''] });
   editingProgramId: string | null = null;
 
-  levelForm = this.fb.group({
-    name: ['', Validators.required],
-  });
+  levelForm = this.fb.group({ name: ['', Validators.required] });
   editingLevelId: string | null = null;
 
   offerForm = this.fb.group({
@@ -189,10 +271,11 @@ export class AdminComponent implements OnInit {
       name: year.name ?? '', startDate: this.fmtDate(year.startDate),
       endDate: this.fmtDate(year.endDate), isActive: !!year.isActive,
     });
-    this.openDrawer('year', 'Modifier l\'année');
+    this.openDrawer('year', "Modifier l'année");
   }
 
   cancelEditYear() { this.editingYearId = null; this.yearForm.reset({isActive: false}); }
+
   deleteYear(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer année', message: "Confirmer la suppression de l'année académique ?", danger: true, confirmLabel: 'Supprimer' },
@@ -218,10 +301,8 @@ export class AdminComponent implements OnInit {
   selectSemesterForEdit(s: any) {
     this.editingSemesterId = s._id;
     this.semesterForm.setValue({
-      name: s.name ?? '',
-      startDate: this.fmtDate(s.startDate),
-      endDate: this.fmtDate(s.endDate),
-      academicYearId: s.academicYearId ?? '',
+      name: s.name ?? '', startDate: this.fmtDate(s.startDate),
+      endDate: this.fmtDate(s.endDate), academicYearId: s.academicYearId ?? '',
     });
     this.openDrawer('semester', 'Modifier le semestre');
   }
@@ -257,6 +338,7 @@ export class AdminComponent implements OnInit {
   }
 
   cancelEditProgram() { this.editingProgramId = null; this.programForm.reset(); }
+
   deleteProgram(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer filière', message: 'Confirmer la suppression de la filière ?', danger: true, confirmLabel: 'Supprimer' },
@@ -286,6 +368,7 @@ export class AdminComponent implements OnInit {
   }
 
   cancelEditLevel() { this.editingLevelId = null; this.levelForm.reset(); }
+
   deleteLevel(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer niveau', message: 'Confirmer la suppression du niveau ?', danger: true, confirmLabel: 'Supprimer' },
@@ -311,10 +394,8 @@ export class AdminComponent implements OnInit {
   selectOfferForEdit(o: any) {
     this.editingOfferId = o._id;
     this.offerForm.setValue({
-      programId: o.programId ?? '',
-      levelId: o.levelId ?? '',
-      academicYearId: o.academicYearId ?? '',
-      capacity: o.capacity ?? 0,
+      programId: o.programId ?? '', levelId: o.levelId ?? '',
+      academicYearId: o.academicYearId ?? '', capacity: o.capacity ?? 0,
     });
     this.openDrawer('offer', "Modifier l'offre");
   }
@@ -345,14 +426,12 @@ export class AdminComponent implements OnInit {
 
   selectGroupForEdit(g: any) {
     this.editingGroupId = g._id;
-    this.groupForm.setValue({
-      name: g.name ?? '',
-      offerId: g.offerId ?? '',
-    });
+    this.groupForm.setValue({name: g.name ?? '', offerId: g.offerId ?? ''});
     this.openDrawer('group', 'Modifier le groupe');
   }
 
   cancelEditGroup() { this.editingGroupId = null; this.groupForm.reset(); }
+
   deleteGroup(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer groupe', message: 'Confirmer la suppression du groupe ?', danger: true, confirmLabel: 'Supprimer' },
@@ -415,7 +494,10 @@ export class AdminComponent implements OnInit {
     return groups.filter((g) => g.offerId === offerId);
   }
 
-  // === STUDENTS ===
+  // ============================================================
+  // === STUDENTS ================================================
+  // ============================================================
+
   studentQuery = '';
   studentPage = 1;
   studentLimit = 20;
@@ -450,9 +532,7 @@ export class AdminComponent implements OnInit {
     if (!control || control.value) return;
     this.years$.pipe(take(1)).subscribe((res) => {
       const active = res?.items?.find((y) => y.isActive);
-      if (active && !control.value) {
-        control.setValue(active._id);
-      }
+      if (active && !control.value) control.setValue(active._id);
     });
   }
 
@@ -473,12 +553,13 @@ export class AdminComponent implements OnInit {
       firstName: s.firstName ?? '', lastName: s.lastName ?? '', gender: s.gender ?? 'female',
       birthDate: this.fmtDate(s.birthDate), status: s.status ?? 'active',
       email: s.email ?? '', phone: s.phone ?? '', address: s.address ?? '',
-      offerId: s.offerId ?? '', programId: s.programId ?? '', groupId: s.groupId ?? '', academicYearId: s.academicYearId ?? '',
+      offerId: s.offerId ?? '', programId: s.programId ?? '', groupId: s.groupId ?? '',
+      academicYearId: s.academicYearId ?? '',
     });
     if (!s.offerId) this.setStudentOfferFromGroup(s.groupId ?? '', 'edit');
     if (s.offerId) this.onStudentOfferChange(s.offerId, 'edit');
     this.applyActiveYearDefault(this.editStudentForm);
-    this.openDrawer('student', 'Modifier l\'étudiant');
+    this.openDrawer('student', "Modifier l'étudiant");
   }
 
   cancelEditStudent() {
@@ -511,9 +592,7 @@ export class AdminComponent implements OnInit {
     if (!groupId) return;
     this.groups$.pipe(take(1)).subscribe((res) => {
       const group = res?.items?.find((g) => g._id === groupId);
-      if (!group || (offerId && group.offerId !== offerId)) {
-        form.get('groupId')?.setValue('');
-      }
+      if (!group || (offerId && group.offerId !== offerId)) form.get('groupId')?.setValue('');
     });
   }
 
@@ -556,7 +635,10 @@ export class AdminComponent implements OnInit {
     this.students$ = this.loadStudents();
   }
 
-  // === DOCUMENTS ===
+  // ============================================================
+  // === DOCUMENTS ===============================================
+  // ============================================================
+
   documentStudentId = '';
   documentFile: File | null = null;
   editingDocumentId: string | null = null;
@@ -571,7 +653,10 @@ export class AdminComponent implements OnInit {
   }
 
   loadDocuments() {
-    if (!this.documentStudentId) { this.documents$ = of({items: [], total: 0, page: 1, limit: 20, skip: 0}); return; }
+    if (!this.documentStudentId) {
+      this.documents$ = of({items: [], total: 0, page: 1, limit: 20, skip: 0});
+      return;
+    }
     this.documents$ = this.students.listStudentDocuments(this.documentStudentId, 1, 20);
   }
 
@@ -608,9 +693,13 @@ export class AdminComponent implements OnInit {
       () => this.students.deleteStudentDocument(id).subscribe(() => this.loadDocuments()),
     );
   }
+
   documentDownloadUrl(id: string) { return this.students.downloadStudentDocument(id); }
 
-  // === PAYMENTS ===
+  // ============================================================
+  // === PAYMENTS ================================================
+  // ============================================================
+
   plans$ = this.payments.listPlans();
   payments$ = this.payments.listPayments();
   unpaid$ = this.payments.listUnpaid();
@@ -632,26 +721,22 @@ export class AdminComponent implements OnInit {
     paymentMethod: ['espece', Validators.required],
   });
 
-  // === Auto-display payment plan when student is selected ===
   studentPlans$ = this.paymentForm.get('studentId')!.valueChanges.pipe(
     startWith(this.paymentForm.get('studentId')!.value),
     distinctUntilChanged(),
     switchMap(studentId => {
       if (!studentId) return of(null);
-      return this.plans$.pipe(
-        map(plans => plans.filter(p => p.studentId === studentId))
-      );
-    })
+      return this.plans$.pipe(map(plans => plans.filter(p => p.studentId === studentId)));
+    }),
   );
 
-  // Auto-select plan if exactly one exists, and prepare installments display
   selectedPlan$ = this.studentPlans$.pipe(
     tap(plans => {
       if (plans && plans.length === 1) {
         this.paymentForm.patchValue({ planId: plans[0]._id }, { emitEvent: false });
       }
     }),
-    map(plans => plans && plans.length > 0 ? plans[0] : null)
+    map(plans => plans && plans.length > 0 ? plans[0] : null),
   );
 
   get installments() { return this.planForm.get('installments') as FormArray; }
@@ -673,34 +758,21 @@ export class AdminComponent implements OnInit {
       this.confirmAndRun(
         { title: 'Modifier plan', message: 'Confirmer la modification du plan de paiement ?' },
         () => obs.subscribe(
-          () => {
-            this.cancelEditPlan();
-            this.refreshPayments();
-            this.closeDrawer();
-            alert('✅ Plan modifié avec succès');
-          },
-          (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Modification échouée'))
+          () => { this.cancelEditPlan(); this.refreshPayments(); this.closeDrawer(); alert('✅ Plan modifié avec succès'); },
+          (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Modification échouée')),
         ),
       );
       return;
     }
     obs.subscribe(
-      () => {
-        this.cancelEditPlan();
-        this.refreshPayments();
-        this.closeDrawer();
-        alert('✅ Plan créé avec succès');
-      },
-      (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Création échouée'))
+      () => { this.cancelEditPlan(); this.refreshPayments(); this.closeDrawer(); alert('✅ Plan créé avec succès'); },
+      (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Création échouée')),
     );
   }
 
   createPlanFromPayment() {
     const studentId = this.paymentForm.get('studentId')?.value;
-    if (!studentId) {
-      alert('⚠️ Veuillez d\'abord sélectionner un étudiant');
-      return;
-    }
+    if (!studentId) { alert("⚠️ Veuillez d'abord sélectionner un étudiant"); return; }
     this.cancelEditPlan();
     this.planForm.patchValue({ studentId }, { emitEvent: false });
     this.openDrawer('plan', 'Créer un plan de paiement');
@@ -711,37 +783,25 @@ export class AdminComponent implements OnInit {
     this.planForm.patchValue({studentId: p.studentId ?? '', label: p.label ?? '', totalAmount: p.totalAmount ?? 0, currency: p.currency ?? 'XOF'});
     this.installments.clear();
     (p.installments ?? []).forEach((inst: any) =>
-      this.installments.push(this.fb.group({amount: [inst.amount ?? 0, Validators.required], dueDate: [this.fmtDate(inst.dueDate), Validators.required], label: [inst.label ?? '']}))
+      this.installments.push(this.fb.group({
+        amount: [inst.amount ?? 0, Validators.required],
+        dueDate: [this.fmtDate(inst.dueDate), Validators.required],
+        label: [inst.label ?? ''],
+      })),
     );
     this.openDrawer('plan', 'Modifier le plan');
   }
 
   cancelEditPlan() { this.editingPlanId = null; this.planForm.reset({currency: 'XOF', totalAmount: 0}); this.installments.clear(); }
+
   deletePlan(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer plan', message: 'Confirmer la suppression du plan de paiement ?', danger: true, confirmLabel: 'Supprimer' },
       () => this.payments.deletePlan(id).subscribe(
-        () => {
-          this.refreshPayments();
-          alert('✅ Plan supprimé avec succès');
-        },
-        (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Suppression échouée'))
+        () => { this.refreshPayments(); alert('✅ Plan supprimé avec succès'); },
+        (err) => alert('❌ Erreur: ' + (err?.error?.message || 'Suppression échouée')),
       ),
     );
-  }
-
-  ngOnInit() {
-    this.paymentForm.get('planId')?.valueChanges.subscribe((planId) => {
-      const installmentCtrl = this.paymentForm.get('installmentId');
-      if (!installmentCtrl) return;
-      if (planId) {
-        installmentCtrl.setValidators([Validators.required]);
-      } else {
-        installmentCtrl.clearValidators();
-        installmentCtrl.setValue('');
-      }
-      installmentCtrl.updateValueAndValidity({ emitEvent: false });
-    });
   }
 
   createPayment() {
@@ -761,17 +821,23 @@ export class AdminComponent implements OnInit {
 
   selectPaymentForEdit(p: any) {
     this.editingPaymentId = p._id;
-    this.paymentForm.setValue({studentId: p.studentId ?? '', planId: p.planId ?? '', installmentId: p.installmentId ?? '', amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt), reference: p.reference ?? '', paymentMethod: p.paymentMethod ?? 'espece'});
+    this.paymentForm.setValue({
+      studentId: p.studentId ?? '', planId: p.planId ?? '', installmentId: p.installmentId ?? '',
+      amount: p.amount ?? 0, currency: p.currency ?? 'XOF', paidAt: this.fmtDate(p.paidAt),
+      reference: p.reference ?? '', paymentMethod: p.paymentMethod ?? 'espece',
+    });
     this.openDrawer('payment', 'Modifier le paiement');
   }
 
   cancelEditPayment() { this.editingPaymentId = null; this.paymentForm.reset({currency: 'XOF', amount: 0}); }
+
   deletePayment(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer paiement', message: 'Confirmer la suppression du paiement ?', danger: true, confirmLabel: 'Supprimer' },
       () => this.payments.deletePayment(id).subscribe(() => this.refreshPayments()),
     );
   }
+
   receiptUrl(id: string) { return this.payments.receiptUrl(id); }
 
   downloadPlanPdf(planId: string, planLabel: string) {
@@ -788,48 +854,120 @@ export class AdminComponent implements OnInit {
     this.unpaid$ = this.payments.listUnpaid();
     this.plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
     this.paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$, this.allStudents$);
-    // Refresh KPIs with new payment data
     this.kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
-      map(([plans, payments]) => {
-        // Calculate total paid for each plan/installment
-        const paidByPlanInst = new Map<string, Map<string, number>>();
-        payments.forEach((payment) => {
-          if (!payment.planId || !payment.installmentId) return;
-          if (!paidByPlanInst.has(payment.planId)) {
-            paidByPlanInst.set(payment.planId, new Map());
-          }
-          const byInst = paidByPlanInst.get(payment.planId)!;
-          byInst.set(
-            payment.installmentId,
-            (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
-          );
-        });
+      map(([plans, payments]) => this.calcKpis(plans, payments)),
+    );
+  }
 
-        // Calculate totals from plans
-        let totalDue = 0;
-        plans.forEach((plan) => {
-          const byInst = paidByPlanInst.get(plan._id) ?? new Map();
-          (plan.installments ?? []).forEach((inst) => {
-            const paid = byInst.get(inst._id ?? '') ?? 0;
-            const remaining = Math.max(0, (inst.amount ?? 0) - paid);
-            totalDue += remaining;
-          });
-        });
+  plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
+  paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$, this.allStudents$);
 
-        const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const grandTotal = totalCollected + totalDue;
-        const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
-        
-        return {
-          totalCollected,
-          totalDue,
-          paymentRate: Math.round(paymentRate * 10) / 10,
-        };
+  kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
+    map(([plans, payments]) => this.calcKpis(plans, payments)),
+  );
+
+  private calcKpis(plans: PaymentPlan[], payments: Payment[]) {
+    const paidByPlanInst = new Map<string, Map<string, number>>();
+    payments.forEach((payment) => {
+      if (!payment.planId || !payment.installmentId) return;
+      if (!paidByPlanInst.has(payment.planId)) paidByPlanInst.set(payment.planId, new Map());
+      const byInst = paidByPlanInst.get(payment.planId)!;
+      byInst.set(payment.installmentId, (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0));
+    });
+    let totalDue = 0;
+    plans.forEach((plan) => {
+      const byInst = paidByPlanInst.get(plan._id) ?? new Map();
+      (plan.installments ?? []).forEach((inst) => {
+        const paid = byInst.get(inst._id ?? '') ?? 0;
+        totalDue += Math.max(0, (inst.amount ?? 0) - paid);
+      });
+    });
+    const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const grandTotal = totalCollected + totalDue;
+    const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
+    return { totalCollected, totalDue, paymentRate: Math.round(paymentRate * 10) / 10 };
+  }
+
+  getPlanInstallments(plans: PaymentPlan[] | null | undefined, planId: string | null | undefined) {
+    if (!plans || !planId) return [];
+    return plans.find((p) => p._id === planId)?.installments ?? [];
+  }
+
+  getInstallmentStatus(plan: any, installmentId: string): { status: 'paid' | 'partial' | 'unpaid'; paid: number } {
+    const payments = (this.payments$ as any).value || [];
+    const paid = payments
+      .filter((p: any) => p.planId === plan._id && p.installmentId === installmentId)
+      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    const installment = plan.installments?.find((i: any) => i._id === installmentId);
+    const dueAmount = installment?.amount || 0;
+    if (paid >= dueAmount) return { status: 'paid', paid };
+    if (paid > 0) return { status: 'partial', paid };
+    return { status: 'unpaid', paid };
+  }
+
+  private buildPaymentsView(
+    plans$: Observable<PaymentPlan[]>,
+    payments$: Observable<Payment[]>,
+    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
+  ): Observable<PaymentView[]> {
+    return combineLatest([plans$, payments$, students$]).pipe(
+      map(([plans, payments, students]) => {
+        const planById = new Map(plans.map((p) => [p._id, p]));
+        const studentById = new Map(students.map((s) => [s._id, s]));
+        return payments.map((payment) => {
+          const student = studentById.get(payment.studentId);
+          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
+          if (!payment.planId || !payment.installmentId) return { ...payment, studentName };
+          const plan = planById.get(payment.planId);
+          const installment = plan?.installments?.find((inst) => inst._id === payment.installmentId);
+          if (!installment) return { ...payment, studentName };
+          const paidAt = new Date(payment.paidAt);
+          const dueDate = new Date(installment.dueDate);
+          return {
+            ...payment, studentName,
+            installmentDueDate: installment.dueDate,
+            installmentLabel: installment.label,
+            isEarly: paidAt.getTime() < dueDate.getTime(),
+          };
+        });
       }),
     );
   }
 
-  // === USERS ===
+  private buildPlansView(
+    plans$: Observable<PaymentPlan[]>,
+    payments$: Observable<Payment[]>,
+    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
+  ): Observable<PaymentPlanView[]> {
+    return combineLatest([plans$, payments$, students$]).pipe(
+      map(([plans, payments, students]) => {
+        const studentById = new Map(students.map((s) => [s._id, s]));
+        const paidByPlanInst = new Map<string, Map<string, number>>();
+        payments.forEach((payment) => {
+          if (!payment.planId || !payment.installmentId) return;
+          if (!paidByPlanInst.has(payment.planId)) paidByPlanInst.set(payment.planId, new Map());
+          const byInst = paidByPlanInst.get(payment.planId)!;
+          byInst.set(payment.installmentId, (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0));
+        });
+        return plans.map((plan) => {
+          const student = studentById.get(plan.studentId);
+          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
+          const byInst = paidByPlanInst.get(plan._id) ?? new Map();
+          const installmentStatus = (plan.installments ?? []).map((inst) => {
+            const paid = byInst.get(inst._id ?? '') ?? 0;
+            const remaining = Math.max(0, (inst.amount ?? 0) - paid);
+            return { _id: inst._id, amount: inst.amount, dueDate: inst.dueDate, label: inst.label, paid, remaining };
+          });
+          return { ...plan, studentName, installmentStatus };
+        });
+      }),
+    );
+  }
+
+  // ============================================================
+  // === USERS (basic — UsersApi) ================================
+  // ============================================================
+
   users$ = this.usersApi.listAll();
   userCreateError: string | null = null;
   userCreateSuccess = false;
@@ -856,7 +994,7 @@ export class AdminComponent implements OnInit {
     this.userForm.setValue({email: u.email ?? '', password: '', role: u.role ?? 'teacher'});
     this.userCreateError = null;
     this.userCreateSuccess = false;
-    this.openDrawer('user', 'Modifier l\'utilisateur');
+    this.openDrawer('user', "Modifier l'utilisateur");
   }
 
   cancelEditUser() {
@@ -877,46 +1015,23 @@ export class AdminComponent implements OnInit {
       this.confirmAndRun(
         { title: 'Modifier utilisateur', message: "Confirmer la modification de cet utilisateur ?" },
         () => this.usersApi.updateUser(this.editingUserId as string, payload).subscribe({
-          next: () => {
-            this.userCreateSuccess = true;
-            this.cancelEditUser();
-            this.users$ = this.usersApi.listAll();
-            this.closeDrawer();
-          },
-          error: (err) => {
-            this.userCreateError = err?.error?.message ?? 'Erreur lors de la mise à jour.';
-          },
+          next: () => { this.userCreateSuccess = true; this.cancelEditUser(); this.users$ = this.usersApi.listAll(); this.closeDrawer(); },
+          error: (err) => { this.userCreateError = err?.error?.message ?? 'Erreur lors de la mise à jour.'; },
         }),
       );
       return;
     }
-
     this.usersApi.createUser(raw).subscribe({
-      next: () => {
-        this.userCreateSuccess = true;
-        this.userForm.reset({role: 'teacher'});
-        this.users$ = this.usersApi.listAll();
-        this.closeDrawer();
-      },
-      error: (err) => {
-        this.userCreateError = err?.error?.message ?? 'Erreur lors de la création.';
-      },
+      next: () => { this.userCreateSuccess = true; this.userForm.reset({role: 'teacher'}); this.users$ = this.usersApi.listAll(); this.closeDrawer(); },
+      error: (err) => { this.userCreateError = err?.error?.message ?? 'Erreur lors de la création.'; },
     });
   }
 
   deleteUser(id: string) {
     this.confirmAndRun(
       { title: 'Supprimer utilisateur', message: "Confirmer la suppression de cet utilisateur ?", danger: true, confirmLabel: 'Supprimer' },
-      () => this.usersApi.deleteUser(id).subscribe(() => {
-        this.users$ = this.usersApi.listAll();
-      }),
+      () => this.usersApi.deleteUser(id).subscribe(() => { this.users$ = this.usersApi.listAll(); }),
     );
-  }
-
-  private confirmAndRun(options: ConfirmOptions, action: () => void) {
-    this.confirm.open(options).pipe(take(1)).subscribe((ok) => {
-      if (ok) action();
-    });
   }
 
   private setUserFormMode(mode: 'create' | 'edit') {
@@ -938,7 +1053,515 @@ export class AdminComponent implements OnInit {
     return map[role] ?? role;
   }
 
-  // === SHARED ===
+  // ============================================================
+  // === USERS (advanced — AdminApi) =============================
+  // ============================================================
+
+  uniUsers: AdminUser[] = [];
+  userTotal = 0;
+  userPage = 0;
+  readonly userLimit = 20;
+  userLoading = false;
+  userQ = '';
+  userRoleFilter = '';
+  userSuspendedFilter = '';
+
+  loadUniUsers() {
+    this.userLoading = true;
+    const params: any = {skip: this.userPage * this.userLimit, limit: this.userLimit};
+    if (this.userQ) params.q = this.userQ;
+    if (this.userRoleFilter) params.role = this.userRoleFilter;
+    if (this.userSuspendedFilter !== '') params.suspended = this.userSuspendedFilter === 'true';
+    this.adminApi.listUsers(params).subscribe({
+      next: ({items, total}) => { this.uniUsers = items; this.userTotal = total; this.userLoading = false; },
+      error: () => { this.userLoading = false; },
+    });
+  }
+
+  searchUniUsers() { this.userPage = 0; this.loadUniUsers(); }
+  userPagePrev() { if (this.userPage > 0) { this.userPage--; this.loadUniUsers(); } }
+  userPageNext() { if ((this.userPage + 1) * this.userLimit < this.userTotal) { this.userPage++; this.loadUniUsers(); } }
+  get userTotalPages() { return Math.ceil(this.userTotal / this.userLimit); }
+
+  suspendUser(user: AdminUser) {
+    const label = user.suspended ? 'Réactiver' : 'Suspendre';
+    this.confirm.open({title: `${label} ${user.email} ?`, confirmLabel: label, danger: !user.suspended})
+      .subscribe(ok => {
+        if (!ok) return;
+        const action = user.suspended ? this.adminApi.reactivateUser(user._id) : this.adminApi.suspendUser(user._id);
+        action.subscribe({
+          next: () => this.loadUniUsers(),
+          error: () => alert("Erreur lors de l'opération."),
+        });
+      });
+  }
+
+  selectedUserId = '';
+  resetPasswordResult = '';
+
+  openResetPassword(user: AdminUser) {
+    this.selectedUserId = user._id;
+    this.openDrawer('reset-password-result', `Réinitialiser le mot de passe — ${user.email}`);
+    this.drawerLoading = true;
+    this.adminApi.resetPassword(user._id).subscribe({
+      next: ({tempPassword}) => { this.resetPasswordResult = tempPassword; this.drawerLoading = false; },
+      error: () => { this.drawerError = 'Erreur lors de la réinitialisation.'; this.drawerLoading = false; },
+    });
+  }
+
+  roleForm = this.fb.group({ role: ['', Validators.required] });
+  readonly roleOptions = [
+    {value: 'admin', label: 'Administrateur'},
+    {value: 'teacher', label: 'Enseignant permanent'},
+    {value: 'external', label: 'Enseignant vacataire'},
+    {value: 'student', label: 'Étudiant'},
+  ];
+
+  openAssignRole(user: AdminUser) {
+    this.selectedUserId = user._id;
+    this.roleForm.setValue({role: user.role});
+    this.openDrawer('assign-role', `Modifier le rôle — ${user.email}`);
+  }
+
+  submitAssignRole() {
+    if (this.roleForm.invalid || !this.selectedUserId) return;
+    this.drawerLoading = true;
+    this.adminApi.assignRole(this.selectedUserId, this.roleForm.value.role!).subscribe({
+      next: () => { this.closeDrawer(); this.loadUniUsers(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  // Bulk import
+  importResult: ImportResult | null = null;
+  uniYears: any[] = [];
+  uniOffers: any[] = [];
+  uniGroups: any[] = [];
+
+  importForm = this.fb.group({
+    offerId: ['', Validators.required],
+    groupId: ['', Validators.required],
+    csvText: ['', Validators.required],
+  });
+
+  openImport() {
+    this.importResult = null;
+    this.importForm.reset();
+    if (this.uniYears.length === 0) this.loadAcademicDataUni();
+    this.openDrawer('import-students', "Import en masse d'étudiants");
+  }
+
+  onImportOfferChange(offerId: string) {
+    this.importForm.patchValue({groupId: ''});
+    this.uniGroups = [];
+    if (!offerId) return;
+    this.academic.listGroups().subscribe(g => {
+      this.uniGroups = (g.items ?? []).filter((x: any) => String(x.offerId) === offerId);
+    });
+  }
+
+  submitImport() {
+    if (this.importForm.invalid) return;
+    const {offerId, groupId, csvText} = this.importForm.value as any;
+    const rows = this.parseCsv(csvText);
+    if (rows.length === 0) { this.drawerError = 'Aucune ligne valide trouvée dans le CSV.'; return; }
+    this.drawerLoading = true;
+    this.drawerError = '';
+    this.adminApi.importStudents(offerId, groupId, rows).subscribe({
+      next: (result) => { this.importResult = result; this.drawerLoading = false; },
+      error: (e) => { this.drawerError = e?.error?.message ?? "Erreur lors de l'import."; this.drawerLoading = false; },
+    });
+  }
+
+  private parseCsv(text: string): any[] {
+    const lines = text.trim().split('\n').slice(1);
+    return lines
+      .map((line) => {
+        const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+        if (parts.length < 4) return null;
+        return {
+          lastName: parts[0], firstName: parts[1],
+          gender: parts[2]?.toLowerCase() === 'f' || parts[2]?.toLowerCase() === 'female' ? 'female' : 'male',
+          birthDate: parts[3], email: parts[4] || undefined, phone: parts[5] || undefined,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  // Audit logs
+  auditLogs: any[] = [];
+  auditTotal = 0;
+  showAuditLogs = false;
+  auditActionFilter = '';
+
+  loadAuditLogs() {
+    this.showAuditLogs = true;
+    this.adminApi.listAuditLogs({limit: 30, action: this.auditActionFilter || undefined}).subscribe({
+      next: ({items, total}) => { this.auditLogs = items; this.auditTotal = total; },
+    });
+  }
+
+  // ============================================================
+  // === ACADEMIC TAB (admin-uni) ================================
+  // ============================================================
+
+  uniPrograms: any[] = [];
+  uniLevels: any[] = [];
+  calendarEvents: CalendarEvent[] = [];
+  calendarYearId = '';
+  academicOffers: any[] = [];
+  academicYears: any[] = [];
+
+  loadAcademicDataUni() {
+    forkJoin({
+      years: this.academic.listYears(),
+      programs: this.academic.listPrograms(),
+      levels: this.academic.listLevels(),
+      offers: this.academic.listOffers(),
+    }).subscribe(({years, programs, levels, offers}) => {
+      this.academicYears = years.items ?? [];
+      this.uniYears = years.items ?? [];
+      this.uniPrograms = programs.items ?? [];
+      this.uniLevels = levels.items ?? [];
+      this.academicOffers = offers.items ?? [];
+      this.uniOffers = offers.items ?? [];
+    });
+  }
+
+  // Init year form
+  initYearForm = this.fb.group({
+    name: ['', Validators.required],
+    startDate: ['', Validators.required],
+    endDate: ['', Validators.required],
+    isActive: [false],
+  });
+
+  semesters = this.fb.array([
+    this.fb.group({name: ['S1', Validators.required], startDate: ['', Validators.required], endDate: ['', Validators.required]}),
+    this.fb.group({name: ['S2', Validators.required], startDate: ['', Validators.required], endDate: ['', Validators.required]}),
+  ]);
+
+  offerLines = this.fb.array<ReturnType<typeof this.newOfferLine>>([]);
+
+  newOfferLine() {
+    return this.fb.group({
+      programId: ['', Validators.required],
+      levelId: ['', Validators.required],
+      capacity: [30, [Validators.required, Validators.min(1)]],
+    });
+  }
+
+  addSemester() { this.semesters.push(this.fb.group({name: [''], startDate: [''], endDate: ['']})); }
+  removeSemester(i: number) { this.semesters.removeAt(i); }
+  addOfferLine() { this.offerLines.push(this.newOfferLine()); }
+  removeOfferLine(i: number) { this.offerLines.removeAt(i); }
+
+  submitInitYear() {
+    if (this.initYearForm.invalid) return;
+    const v = this.initYearForm.value as any;
+    const body = {
+      name: v.name, startDate: v.startDate, endDate: v.endDate, isActive: v.isActive,
+      semesters: this.semesters.value.filter(s => s.name && s.startDate && s.endDate),
+      offers: this.offerLines.value.filter(o => o.programId && o.levelId && o.capacity),
+    };
+    this.drawerLoading = true;
+    this.adminApi.initializeYear(body).subscribe({
+      next: () => { this.closeDrawer(); this.loadAcademicDataUni(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  closeYear(year: any) {
+    this.confirm.open({
+      title: `Clôturer l'année ${year.name} ?`,
+      message: "Cette action est irréversible. L'année sera archivée.",
+      confirmLabel: 'Clôturer', danger: true,
+    }).subscribe(ok => {
+      if (!ok) return;
+      this.adminApi.closeYear(year._id).subscribe({
+        next: (r) => { alert(`Année ${r.closedYear} clôturée. ${r.archivedStudents} étudiants archivés.`); this.loadAcademicDataUni(); },
+        error: (e) => alert(e?.error?.message ?? 'Erreur.'),
+      });
+    });
+  }
+
+  // Calendar events
+  calEventForm = this.fb.group({
+    academicYearId: ['', Validators.required],
+    type: ['examens', Validators.required],
+    label: ['', Validators.required],
+    startDate: ['', Validators.required],
+    endDate: ['', Validators.required],
+  });
+
+  readonly calEventTypes = [
+    {value: 'rentree', label: 'Rentrée'},
+    {value: 'vacances', label: 'Vacances'},
+    {value: 'examens', label: 'Examens'},
+    {value: 'deliberations', label: 'Délibérations'},
+    {value: 'rattrapage', label: 'Rattrapage'},
+    {value: 'autre', label: 'Autre'},
+  ];
+
+  openCalEventDrawer() {
+    this.calEventForm.reset({type: 'examens'});
+    this.openDrawer('calendar-event', 'Ajouter un événement');
+  }
+
+  loadCalendarEvents() {
+    if (!this.calendarYearId) return;
+    this.adminApi.listCalendarEvents({academicYearId: this.calendarYearId}).subscribe({
+      next: ({items}) => { this.calendarEvents = items; },
+    });
+  }
+
+  submitCalEvent() {
+    if (this.calEventForm.invalid) return;
+    this.drawerLoading = true;
+    this.adminApi.createCalendarEvent(this.calEventForm.value as any).subscribe({
+      next: () => { this.closeDrawer(); this.loadCalendarEvents(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  deleteCalEvent(event: CalendarEvent) {
+    this.confirm.open({title: `Supprimer l'événement "${event.label}" ?`, danger: true})
+      .subscribe(ok => {
+        if (!ok) return;
+        this.adminApi.deleteCalendarEvent(event._id).subscribe({next: () => this.loadCalendarEvents()});
+      });
+  }
+
+  // Offer capacity editor
+  editingCapacityOfferId = '';
+  editingCapacity = 30;
+
+  startEditCapacity(offer: any) { this.editingCapacityOfferId = offer._id; this.editingCapacity = offer.capacity; }
+  saveCapacity() {
+    this.adminApi.updateOfferCapacity(this.editingCapacityOfferId, this.editingCapacity).subscribe({
+      next: () => { this.editingCapacityOfferId = ''; this.loadAcademicDataUni(); },
+      error: (e) => alert(e?.error?.message ?? 'Erreur.'),
+    });
+  }
+  cancelCapacityEdit() { this.editingCapacityOfferId = ''; }
+
+  // ============================================================
+  // === FINANCE TAB (admin-uni) =================================
+  // ============================================================
+
+  feeTemplates: FeeTemplate[] = [];
+  exemptions: FeeExemption[] = [];
+  financialReport: FinancialReport | null = null;
+  financeLoading = false;
+
+  loadFinanceData() {
+    this.financeLoading = true;
+    forkJoin({
+      templates: this.adminApi.listFeeTemplates(),
+      report: this.adminApi.getFinancialReport(),
+      exemptions: this.adminApi.listExemptions(),
+    }).subscribe({
+      next: ({templates, report, exemptions}) => {
+        this.feeTemplates = templates.items;
+        this.financialReport = report;
+        this.exemptions = exemptions.items;
+        this.financeLoading = false;
+      },
+      error: () => { this.financeLoading = false; },
+    });
+  }
+
+  // Fee template form
+  feeForm = this.fb.group({
+    label: ['', Validators.required],
+    offerId: ['', Validators.required],
+    totalAmount: [0, [Validators.required, Validators.min(1)]],
+    currency: ['XOF'],
+    acceptedMethods: this.fb.group({
+      espece: [true], virement: [false], orange_money: [false], mtn_momo: [false], moov_money: [false],
+    }),
+  });
+
+  feeInstallments = this.fb.array<ReturnType<typeof this.newInstallmentLine>>([]);
+
+  newInstallmentLine() {
+    return this.fb.group({
+      label: ['', Validators.required],
+      amount: [0, [Validators.required, Validators.min(1)]],
+      dueDate: ['', Validators.required],
+    });
+  }
+
+  addInstallmentLine() { this.feeInstallments.push(this.newInstallmentLine()); }
+  removeInstallmentLine(i: number) { this.feeInstallments.removeAt(i); }
+
+  openFeeTemplateDrawer() {
+    this.feeForm.reset({currency: 'XOF', acceptedMethods: {espece: true}});
+    this.feeInstallments.clear();
+    this.addInstallmentLine();
+    this.openDrawer('fee-template', 'Nouveau modèle de frais');
+  }
+
+  get installmentTotal() {
+    return this.feeInstallments.value.reduce((s, i) => s + Number(i.amount || 0), 0);
+  }
+
+  submitFeeTemplate() {
+    if (this.feeForm.invalid) return;
+    const v = this.feeForm.value as any;
+    const methods = Object.keys(v.acceptedMethods).filter(k => v.acceptedMethods[k]);
+    const body = {
+      label: v.label, offerId: v.offerId, totalAmount: Number(v.totalAmount),
+      currency: v.currency || 'XOF', acceptedMethods: methods,
+      installments: this.feeInstallments.value.map(i => ({...i, amount: Number(i.amount)})),
+    };
+    this.drawerLoading = true;
+    this.adminApi.createFeeTemplate(body).subscribe({
+      next: () => { this.closeDrawer(); this.loadFinanceData(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  // Apply template
+  selectedTemplateId = '';
+  applyTemplateStudentIds = '';
+  applyTemplateResult: {applied: number; skipped: number} | null = null;
+
+  openApplyTemplate(template: FeeTemplate) {
+    this.selectedTemplateId = template._id;
+    this.applyTemplateStudentIds = '';
+    this.applyTemplateResult = null;
+    this.openDrawer('apply-template', `Appliquer "${template.label}"`);
+  }
+
+  submitApplyTemplate() {
+    if (!this.selectedTemplateId || !this.applyTemplateStudentIds.trim()) return;
+    const ids = this.applyTemplateStudentIds.split('\n').map(s => s.trim()).filter(Boolean);
+    this.drawerLoading = true;
+    this.adminApi.applyFeeTemplate(this.selectedTemplateId, ids).subscribe({
+      next: (r) => { this.applyTemplateResult = r; this.drawerLoading = false; },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  // Exemptions
+  exemptionForm = this.fb.group({
+    studentId: ['', Validators.required],
+    academicYearId: ['', Validators.required],
+    type: ['total', Validators.required],
+    percentage: [100, [Validators.required, Validators.min(0), Validators.max(100)]],
+    reason: ['', Validators.required],
+  });
+
+  openExemptionDrawer() {
+    this.exemptionForm.reset({type: 'total', percentage: 100});
+    if (this.uniYears.length === 0) this.loadAcademicDataUni();
+    this.openDrawer('exemption', 'Nouvelle exonération');
+  }
+
+  onExemptionTypeChange(type: string) {
+    if (type === 'total') this.exemptionForm.patchValue({percentage: 100});
+  }
+
+  submitExemption() {
+    if (this.exemptionForm.invalid) return;
+    this.drawerLoading = true;
+    this.adminApi.createExemption(this.exemptionForm.value as any).subscribe({
+      next: () => { this.closeDrawer(); this.loadFinanceData(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  deleteExemption(ex: FeeExemption) {
+    this.confirm.open({title: 'Supprimer cette exonération ?', danger: true})
+      .subscribe(ok => {
+        if (!ok) return;
+        this.adminApi.deleteExemption(ex._id).subscribe({next: () => this.loadFinanceData()});
+      });
+  }
+
+  // ============================================================
+  // === COMMUNICATION TAB (admin-uni) ===========================
+  // ============================================================
+
+  announcementResult: {success: boolean; recipientCount: number; sentAt: string} | null = null;
+  announceHistory: any[] = [];
+
+  announceForm = this.fb.group({
+    title: ['', [Validators.required, Validators.maxLength(100)]],
+    content: ['', [Validators.required, Validators.maxLength(2000)]],
+    targetAll: [true],
+    targetStudent: [false],
+    targetTeacher: [false],
+    targetAdmin: [false],
+  });
+
+  openAnnounceDrawer() {
+    this.announceForm.reset({targetAll: true});
+    this.announcementResult = null;
+    this.openDrawer('announce', 'Nouvelle annonce officielle');
+  }
+
+  submitAnnounce() {
+    if (this.announceForm.invalid) return;
+    const v = this.announceForm.value as any;
+    const targetRoles: string[] = [];
+    if (v.targetAll) {
+      targetRoles.push('student', 'teacher', 'admin');
+    } else {
+      if (v.targetStudent) targetRoles.push('student');
+      if (v.targetTeacher) targetRoles.push('teacher');
+      if (v.targetAdmin) targetRoles.push('admin');
+    }
+    if (targetRoles.length === 0) { this.drawerError = 'Sélectionnez au moins un groupe cible.'; return; }
+    this.drawerLoading = true;
+    this.adminApi.broadcastAnnouncement({title: v.title, content: v.content, targetRoles}).subscribe({
+      next: (r) => { this.announcementResult = r; this.drawerLoading = false; this.loadAnnounceHistory(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  loadAnnounceHistory() {
+    this.adminApi.listAuditLogs({action: 'BROADCAST_ANNOUNCEMENT', limit: 10}).subscribe({
+      next: ({items}) => { this.announceHistory = items; },
+    });
+  }
+
+  // ============================================================
+  // === HELPERS =================================================
+  // ============================================================
+
+  // Helpers using array properties (admin-uni tabs: academic, finance)
+  uniProgramName(id: string) { return this.uniPrograms.find(p => p._id === id)?.name ?? id; }
+  uniLevelName(id: string) { return this.uniLevels.find(l => l._id === id)?.name ?? id; }
+  uniYearName(id: string) { return this.uniYears.find(y => y._id === id)?.name ?? id; }
+  uniOfferLabel(id: string) {
+    const o = this.uniOffers.find(x => x._id === id);
+    if (!o) return id;
+    return `${this.uniProgramName(String(o.programId))} — ${this.uniLevelName(String(o.levelId))}`;
+  }
+
+  calEventTypeLabel(type: string) { return this.calEventTypes.find(t => t.value === type)?.label ?? type; }
+
+  roleBadgeClass(role: string) { return `role-${role?.replace('_', '-')}`; }
+
+  roleLabel(role: string) {
+    const map: Record<string, string> = {
+      super_admin: 'Super Admin', admin: 'Admin',
+      teacher: 'Enseignant', external: 'Vacataire', student: 'Étudiant',
+    };
+    return map[role] ?? role;
+  }
+
+  formatNumber(n: number) { return new Intl.NumberFormat('fr-FR').format(Math.round(n)); }
+  formatDate(d: string) {
+    return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'});
+  }
+
+  // ============================================================
+  // === SHARED ==================================================
+  // ============================================================
+
   refresh() {
     this.refreshAcademic();
     this.students$ = this.loadStudents();
@@ -947,165 +1570,45 @@ export class AdminComponent implements OnInit {
     this.users$ = this.usersApi.listAll();
   }
 
+  private confirmAndRun(options: ConfirmOptions, action: () => void) {
+    this.confirm.open(options).pipe(take(1)).subscribe((ok) => { if (ok) action(); });
+  }
+
   private fmtDate(value: string | Date | undefined): string {
     if (!value) return '';
     const d = value instanceof Date ? value : new Date(value);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
   }
 
-  // Calculate installment payment status (paid, partial, unpaid)
-  getInstallmentStatus(plan: any, installmentId: string): { status: 'paid' | 'partial' | 'unpaid'; paid: number } {
-    const payments = (this.payments$ as any).value || [];
-    const paid = payments
-      .filter((p: any) => p.planId === plan._id && p.installmentId === installmentId)
-      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-
-    const installment = plan.installments?.find((i: any) => i._id === installmentId);
-    const dueAmount = installment?.amount || 0;
-
-    if (paid >= dueAmount) return { status: 'paid', paid };
-    if (paid > 0) return { status: 'partial', paid };
-    return { status: 'unpaid', paid };
-  }
-
-  plansView$ = this.buildPlansView(this.plans$, this.payments$, this.allStudents$);
-  paymentsView$ = this.buildPaymentsView(this.plans$, this.payments$, this.allStudents$);
-
-  // KPI Observables - Synchronized with real data
-  kpis$ = combineLatest([this.plans$, this.payments$]).pipe(
-    map(([plans, payments]) => {
-      // Calculate total paid for each plan/installment
-      const paidByPlanInst = new Map<string, Map<string, number>>();
-      payments.forEach((payment) => {
-        if (!payment.planId || !payment.installmentId) return;
-        if (!paidByPlanInst.has(payment.planId)) {
-          paidByPlanInst.set(payment.planId, new Map());
-        }
-        const byInst = paidByPlanInst.get(payment.planId)!;
-        byInst.set(
-          payment.installmentId,
-          (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
-        );
-      });
-
-      // Calculate totals from plans
-      let totalDue = 0;
-      plans.forEach((plan) => {
-        const byInst = paidByPlanInst.get(plan._id) ?? new Map();
-        (plan.installments ?? []).forEach((inst) => {
-          const paid = byInst.get(inst._id ?? '') ?? 0;
-          const remaining = Math.max(0, (inst.amount ?? 0) - paid);
-          totalDue += remaining;
-        });
-      });
-
-      const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      const grandTotal = totalCollected + totalDue;
-      const paymentRate = grandTotal > 0 ? (totalCollected / grandTotal) * 100 : 0;
-      
-      return {
-        totalCollected,
-        totalDue,
-        paymentRate: Math.round(paymentRate * 10) / 10,
-      };
-    }),
-  );
-
-  getPlanInstallments(plans: PaymentPlan[] | null | undefined, planId: string | null | undefined) {
-    if (!plans || !planId) return [];
-    return plans.find((p) => p._id === planId)?.installments ?? [];
-  }
-
-  private buildPaymentsView(
-    plans$: Observable<PaymentPlan[]>,
-    payments$: Observable<Payment[]>,
-    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
-  ): Observable<PaymentView[]> {
-    return combineLatest([plans$, payments$, students$]).pipe(
-      map(([plans, payments, students]) => {
-        const planById = new Map(plans.map((p) => [p._id, p]));
-        const studentById = new Map(students.map((s) => [s._id, s]));
-        return payments.map((payment) => {
-          const student = studentById.get(payment.studentId);
-          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
-          if (!payment.planId || !payment.installmentId) return { ...payment, studentName };
-          const plan = planById.get(payment.planId);
-          const installment = plan?.installments?.find(
-            (inst) => inst._id === payment.installmentId,
-          );
-          if (!installment) return { ...payment, studentName };
-          const paidAt = new Date(payment.paidAt);
-          const dueDate = new Date(installment.dueDate);
-          return {
-            ...payment,
-            studentName,
-            installmentDueDate: installment.dueDate,
-            installmentLabel: installment.label,
-            isEarly: paidAt.getTime() < dueDate.getTime(),
-          };
-        });
-      }),
-    );
-  }
-
-  private buildPlansView(
-    plans$: Observable<PaymentPlan[]>,
-    payments$: Observable<Payment[]>,
-    students$: Observable<{_id: string; firstName: string; lastName: string}[]>,
-  ): Observable<PaymentPlanView[]> {
-    return combineLatest([plans$, payments$, students$]).pipe(
-      map(([plans, payments, students]) => {
-        const studentById = new Map(students.map((s) => [s._id, s]));
-        const paidByPlanInst = new Map<string, Map<string, number>>();
-        payments.forEach((payment) => {
-          if (!payment.planId || !payment.installmentId) return;
-          if (!paidByPlanInst.has(payment.planId)) {
-            paidByPlanInst.set(payment.planId, new Map());
-          }
-          const byInst = paidByPlanInst.get(payment.planId)!;
-          byInst.set(
-            payment.installmentId,
-            (byInst.get(payment.installmentId) ?? 0) + (payment.amount ?? 0),
-          );
-        });
-
-        return plans.map((plan) => {
-          const student = studentById.get(plan.studentId);
-          const studentName = student ? `${student.lastName} ${student.firstName}` : undefined;
-          const byInst = paidByPlanInst.get(plan._id) ?? new Map();
-          const installmentStatus = (plan.installments ?? []).map((inst) => {
-            const paid = byInst.get(inst._id ?? '') ?? 0;
-            const remaining = Math.max(0, (inst.amount ?? 0) - paid);
-            return {
-              _id: inst._id,
-              amount: inst.amount,
-              dueDate: inst.dueDate,
-              label: inst.label,
-              paid,
-              remaining,
-            };
-          });
-          return { ...plan, studentName, installmentStatus };
-        });
-      }),
-    );
-  }
-
   private loadCompactMode(): boolean {
     try {
       const raw = localStorage.getItem('ui.compactMode') ?? localStorage.getItem('student.compactMode');
       return raw === 'true';
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   }
 
   private loadUltraCompactMode(): boolean {
     try {
       const raw = localStorage.getItem('ui.ultraCompactMode') ?? localStorage.getItem('student.ultraCompactMode');
       return raw === 'true';
-    } catch {
-      return false;
-    }
+    } catch { return false; }
+  }
+
+  ngOnInit() {
+    // Payment form: installmentId required only when planId set
+    this.paymentForm.get('planId')?.valueChanges.subscribe((planId) => {
+      const installmentCtrl = this.paymentForm.get('installmentId');
+      if (!installmentCtrl) return;
+      if (planId) {
+        installmentCtrl.setValidators([Validators.required]);
+      } else {
+        installmentCtrl.clearValidators();
+        installmentCtrl.setValue('');
+      }
+      installmentCtrl.updateValueAndValidity({ emitEvent: false });
+    });
+    // Load dashboard and announce history on init
+    this.loadDashboard();
+    this.loadAnnounceHistory();
   }
 }

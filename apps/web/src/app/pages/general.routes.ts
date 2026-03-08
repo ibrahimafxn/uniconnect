@@ -7,7 +7,6 @@ import {PlanningComponent} from './planning/planning.component';
 import {MessagesComponent} from './messages/messages.component';
 import {NotesComponent} from './notes/notes.component';
 import {SupportComponent} from './support/support.component';
-import {AdminUniComponent} from './admin-uni/admin-uni.component';
 import {StudentComponent} from './student/student.component';
 
 export const GENERAL_ROUTES: Routes = [
@@ -18,7 +17,7 @@ export const GENERAL_ROUTES: Routes = [
       {path: 'dashboard', component: DashboardComponent, canActivate: [roleGuard(['admin', 'super_admin'])]},
       {path: 'student', component: StudentComponent, canActivate: [roleGuard(['student'])]},
       {path: 'admin', component: AdminComponent, canActivate: [roleGuard(['admin', 'super_admin'])]},
-      {path: 'admin-uni', component: AdminUniComponent, canActivate: [roleGuard(['admin', 'super_admin'])]},
+      {path: 'admin-uni', redirectTo: 'admin'},
       {path: 'planning', component: PlanningComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},
       {path: 'messages', component: MessagesComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},
       {path: 'notes', component: NotesComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},

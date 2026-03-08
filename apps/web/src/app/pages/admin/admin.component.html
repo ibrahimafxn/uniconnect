@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h1>Administration</h1>
-      <p class="subtitle">Gestion complète de l'établissement</p>
+      <p class="subtitle">Gestion globale de l'université — Conforme MESRS Côte d'Ivoire</p>
     </div>
     <div class="header-actions">
       <label class="toggle">
@@ -23,12 +23,132 @@
       class="tab"
       *ngFor="let t of tabs"
       [class.active]="activeTab === t.id"
-      (click)="activeTab = t.id"
+      (click)="setTab(t.id)"
     >
       <span class="tab-icon">{{ t.icon }}</span>
       {{ t.label }}
     </button>
   </div>
+
+  <!-- ================== TABLEAU DE BORD ================== -->
+  <ng-container *ngIf="activeTab === 'dashboard'">
+    <div *ngIf="dashboardLoading" class="loading-state">Chargement du tableau de bord…</div>
+
+    <ng-container *ngIf="dashboard && !dashboardLoading">
+      <div class="year-banner" *ngIf="dashboard.activeAcademicYear">
+        <span class="year-icon">🎓</span>
+        <span>Année académique active : <strong>{{ dashboard.activeAcademicYear.name }}</strong></span>
+      </div>
+      <div class="year-banner warn" *ngIf="!dashboard.activeAcademicYear">
+        ⚠️ Aucune année académique active. Initialisez-en une dans l'onglet <strong>Année académique</strong>.
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon">🎓</div>
+          <div class="kpi-value">{{ formatNumber(dashboard.students.total) }}</div>
+          <div class="kpi-label">Étudiants inscrits</div>
+          <div class="kpi-sub">{{ formatNumber(dashboard.students.active) }} actifs</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">👤</div>
+          <div class="kpi-value">{{ formatNumber(dashboard.users.total) }}</div>
+          <div class="kpi-label">Utilisateurs</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🏛️</div>
+          <div class="kpi-value">{{ formatNumber(dashboard.programs.total) }}</div>
+          <div class="kpi-label">Filières</div>
+          <div class="kpi-sub">{{ formatNumber(dashboard.offers.total) }} offres</div>
+        </div>
+        <div class="kpi-card accent" [class.warning]="dashboard.finance.recoveryRate < 50">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-value">{{ dashboard.finance.recoveryRate }}%</div>
+          <div class="kpi-label">Taux de recouvrement</div>
+          <div class="kpi-sub">{{ formatNumber(dashboard.finance.totalCollected) }} / {{ formatNumber(dashboard.finance.totalExpected) }} XOF</div>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="info-card">
+          <h2>Répartition des inscriptions</h2>
+          <div class="breakdown-list">
+            <div class="breakdown-row" *ngFor="let s of dashboard.students.byEnrollmentStatus | keyvalue">
+              <span class="enrollment-badge" [class]="'enroll-' + s.key">{{ s.key }}</span>
+              <span class="breakdown-count">{{ s.value }}</span>
+            </div>
+            <div class="breakdown-row empty" *ngIf="(dashboard.students.byEnrollmentStatus | keyvalue).length === 0">
+              Aucune inscription enregistrée.
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h2>Activité récente</h2>
+          <div class="activity-list">
+            <div class="activity-item" *ngFor="let log of dashboard.recentActivity">
+              <span class="action-chip">{{ log.action }}</span>
+              <span class="activity-meta">{{ formatDate(log.createdAt) }}</span>
+            </div>
+            <div class="empty-note" *ngIf="dashboard.recentActivity.length === 0">Aucune activité récente.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-actions">
+        <button class="btn-report" (click)="loadMesrsReport()">📋 Rapport MESRS</button>
+        <button class="btn-report ghost" (click)="loadSystemStatus()">🖥️ Supervision système</button>
+      </div>
+
+      <div class="report-panel" *ngIf="showMesrsReport && mesrsReport">
+        <h2>Rapport MESRS — {{ mesrsReport.academicYear?.name }}</h2>
+        <div class="report-date">Généré le {{ formatDate(mesrsReport.reportDate) }}</div>
+        <div class="report-grid">
+          <div class="report-stat"><span>Total étudiants</span><strong>{{ mesrsReport.totalStudents }}</strong></div>
+          <div class="report-stat"><span>Femmes</span><strong>{{ mesrsReport.byGender.female }}</strong></div>
+          <div class="report-stat"><span>Hommes</span><strong>{{ mesrsReport.byGender.male }}</strong></div>
+          <div class="report-stat"><span>Filières</span><strong>{{ mesrsReport.totalPrograms }}</strong></div>
+          <div class="report-stat"><span>Offres de formation</span><strong>{{ mesrsReport.totalOffers }}</strong></div>
+        </div>
+        <h3>Effectifs par offre de formation</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Offre</th><th>Étudiants</th><th>Capacité</th><th>Taux remplissage</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let o of mesrsReport.offerBreakdown">
+                <td>{{ o.offerLabel }}</td>
+                <td>{{ o.studentCount }}</td>
+                <td class="muted">{{ o.capacity }}</td>
+                <td>
+                  <div class="fill-bar-wrap">
+                    <div class="fill-bar" [style.width]="(o.fillRate ?? 0) + '%'" [class.overfull]="(o.fillRate ?? 0) > 100"></div>
+                    <span>{{ o.fillRate !== null ? o.fillRate + '%' : '—' }}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="mesrsReport.offerBreakdown.length === 0"><td colspan="4" class="empty-row">Aucune donnée.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="report-panel" *ngIf="showSystemStatus && systemStatus">
+        <h2>Supervision système</h2>
+        <div class="sys-status-grid">
+          <div class="sys-stat"><span class="sys-label">Statut</span><span class="status-chip ok">{{ systemStatus.system.status }}</span></div>
+          <div class="sys-stat"><span class="sys-label">Actions (24h)</span><strong>{{ systemStatus.activity.last24hActions }}</strong></div>
+          <div class="sys-stat"><span class="sys-label">Total logs</span><strong>{{ formatNumber(systemStatus.activity.totalAuditLogs) }}</strong></div>
+          <div class="sys-stat"><span class="sys-label">Comptes suspendus</span><strong [class.red-text]="systemStatus.users.suspended > 0">{{ systemStatus.users.suspended }}</strong></div>
+        </div>
+        <h3>Actions les plus fréquentes (24h)</h3>
+        <div class="action-table">
+          <div class="action-row" *ngFor="let a of systemStatus.activity.topActions">
+            <span class="action-chip">{{ a._id }}</span>
+            <span class="action-count">{{ a.count }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
 
   <!-- ================== STRUCTURE ACADÉMIQUE ================== -->
   <ng-container *ngIf="activeTab === 'structure'">
@@ -405,30 +525,304 @@
   <!-- ================== UTILISATEURS ================== -->
   <ng-container *ngIf="activeTab === 'users'">
     <div class="tab-toolbar">
-      <span class="muted">Gérez les comptes enseignants, admins et étudiants.</span>
-      <button class="btn-add" (click)="openCreateUser()">+ Créer</button>
+      <div class="search-bar">
+        <input placeholder="Rechercher par email…" [(ngModel)]="userQ" (keyup.enter)="searchUniUsers()" />
+        <select [(ngModel)]="userRoleFilter" (change)="searchUniUsers()">
+          <option value="">Tous les rôles</option>
+          <option value="admin">Admin</option>
+          <option value="teacher">Enseignant</option>
+          <option value="external">Vacataire</option>
+          <option value="student">Étudiant</option>
+        </select>
+        <select [(ngModel)]="userSuspendedFilter" (change)="searchUniUsers()">
+          <option value="">Tous</option>
+          <option value="false">Actifs</option>
+          <option value="true">Suspendus</option>
+        </select>
+        <button (click)="searchUniUsers()">🔍</button>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn-add" (click)="openCreateUser()">+ Créer</button>
+        <button class="btn-add" (click)="openImport()">⬆ Import CSV</button>
+        <button class="btn-secondary" (click)="loadAuditLogs()">📋 Journaux</button>
+      </div>
+    </div>
+
+    <div class="pagination" *ngIf="userTotal > userLimit">
+      <button [disabled]="userPage === 0" (click)="userPagePrev()">← Précédent</button>
+      <span class="page-info">Page {{ userPage + 1 }} / {{ userTotalPages }}</span>
+      <button [disabled]="(userPage + 1) * userLimit >= userTotal" (click)="userPageNext()">Suivant →</button>
     </div>
 
     <div class="table-wrap main-table">
       <table>
-        <thead><tr><th>Email</th><th>Rôle</th><th>Créé le</th><th></th></tr></thead>
+        <thead>
+          <tr><th>Email</th><th>Rôle</th><th>État</th><th>Créé le</th><th class="actions-th">Actions</th></tr>
+        </thead>
         <tbody>
-          <tr *ngFor="let u of (users$ | async)">
-            <td><strong>{{ u.email }}</strong></td>
+          <tr *ngIf="userLoading"><td colspan="5" class="empty-row">Chargement…</td></tr>
+          <tr *ngFor="let u of uniUsers" [class.row-suspended]="u.suspended">
+            <td><span class="email-cell">{{ u.email }}</span></td>
+            <td><span class="role-badge" [class]="roleBadgeClass(u.role)">{{ roleLabel(u.role) }}</span></td>
             <td>
-              <span class="role-badge" [class]="'role-' + u.role">{{ roleBadge(u.role) }}</span>
+              <span class="badge" [class.badge-suspended]="u.suspended" [class.badge-active]="!u.suspended">
+                {{ u.suspended ? 'Suspendu' : 'Actif' }}
+              </span>
             </td>
-            <td class="muted">{{ u.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="muted">{{ formatDate(u.createdAt) }}</td>
             <td class="actions">
-              <button class="icon-btn" (click)="selectUserForEdit(u)">✏</button>
-              <button class="icon-btn danger" (click)="deleteUser(u.id)">🗑</button>
+              <button class="icon-btn" (click)="openResetPassword(u)" title="Réinitialiser MDP">🔑</button>
+              <button class="icon-btn" (click)="openAssignRole(u)" title="Modifier le rôle">🔄</button>
+              <button class="icon-btn" [class.danger]="!u.suspended" [class.success]="u.suspended"
+                (click)="suspendUser(u)" [title]="u.suspended ? 'Réactiver' : 'Suspendre'">
+                {{ u.suspended ? '✅' : '🚫' }}
+              </button>
+              <button class="icon-btn danger" (click)="deleteUser(u._id)" title="Supprimer">🗑</button>
             </td>
           </tr>
-          <tr *ngIf="(users$ | async)?.length === 0">
-            <td colspan="4" class="empty-row">Aucun utilisateur.</td>
-          </tr>
+          <tr *ngIf="!userLoading && uniUsers.length === 0"><td colspan="5" class="empty-row">Aucun utilisateur.</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="audit-panel" *ngIf="showAuditLogs">
+      <div class="audit-header">
+        <h2>Journal des activités <span class="muted">({{ auditTotal }} entrées)</span></h2>
+        <div class="audit-filter">
+          <input placeholder="Filtrer par action…" [(ngModel)]="auditActionFilter" (keyup.enter)="loadAuditLogs()" />
+          <button (click)="loadAuditLogs()">🔍</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Action</th><th>Entité</th><th>Acteur</th><th>Date</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let log of auditLogs">
+              <td><span class="action-chip">{{ log.action }}</span></td>
+              <td class="muted">{{ log.entity }}</td>
+              <td class="muted">{{ log.actorEmail ?? log.actorId }}</td>
+              <td class="muted">{{ formatDate(log.createdAt) }}</td>
+            </tr>
+            <tr *ngIf="auditLogs.length === 0"><td colspan="4" class="empty-row">Aucun log.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================== ANNÉE ACADÉMIQUE ================== -->
+  <ng-container *ngIf="activeTab === 'academic'">
+    <div class="tab-toolbar">
+      <div></div>
+      <div class="toolbar-actions">
+        <button class="btn-add" (click)="openDrawer('init-year', 'Initialiser une nouvelle année')">+ Nouvelle année</button>
+        <button class="btn-secondary" (click)="openCalEventDrawer()">📅 Ajouter événement</button>
+      </div>
+    </div>
+
+    <div class="section-grid">
+      <div class="info-card full">
+        <h2>Années académiques</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nom</th><th>Début</th><th>Fin</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let y of academicYears">
+                <td><strong>{{ y.name }}</strong></td>
+                <td class="muted">{{ formatDate(y.startDate) }}</td>
+                <td class="muted">{{ formatDate(y.endDate) }}</td>
+                <td><span class="badge" [class.active-badge]="y.isActive">{{ y.isActive ? 'Active' : 'Archivée' }}</span></td>
+                <td class="actions">
+                  <button class="btn-close-year" *ngIf="y.isActive" (click)="closeYear(y)">🔒 Clôturer</button>
+                </td>
+              </tr>
+              <tr *ngIf="academicYears.length === 0"><td colspan="5" class="empty-row">Aucune année.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-card full">
+        <h2>Capacités d'accueil par offre</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Offre</th><th>Année</th><th>Capacité</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let o of academicOffers">
+                <td><strong>{{ uniProgramName(o.programId) }} — {{ uniLevelName(o.levelId) }}</strong></td>
+                <td class="muted">{{ uniYearName(o.academicYearId) }}</td>
+                <td>
+                  <ng-container *ngIf="editingCapacityOfferId !== o._id">
+                    <span class="capacity-chip">{{ o.capacity }}</span>
+                  </ng-container>
+                  <ng-container *ngIf="editingCapacityOfferId === o._id">
+                    <input class="capacity-input" type="number" [(ngModel)]="editingCapacity" min="1" />
+                  </ng-container>
+                </td>
+                <td class="actions">
+                  <ng-container *ngIf="editingCapacityOfferId !== o._id">
+                    <button class="icon-btn" (click)="startEditCapacity(o)" title="Modifier la capacité">✏</button>
+                  </ng-container>
+                  <ng-container *ngIf="editingCapacityOfferId === o._id">
+                    <button class="icon-btn success" (click)="saveCapacity()" title="Enregistrer">✔</button>
+                    <button class="icon-btn" (click)="cancelCapacityEdit()" title="Annuler">✕</button>
+                  </ng-container>
+                </td>
+              </tr>
+              <tr *ngIf="academicOffers.length === 0"><td colspan="4" class="empty-row">Aucune offre.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="info-card full">
+        <div class="struct-head">
+          <h2>Calendrier universitaire</h2>
+          <div class="cal-filter">
+            <select [(ngModel)]="calendarYearId" (change)="loadCalendarEvents()">
+              <option value="">— Choisir une année —</option>
+              <option *ngFor="let y of academicYears" [value]="y._id">{{ y.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Type</th><th>Libellé</th><th>Début</th><th>Fin</th><th></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let ev of calendarEvents">
+                <td><span class="cal-type-badge" [class]="'cal-' + ev.type">{{ calEventTypeLabel(ev.type) }}</span></td>
+                <td>{{ ev.label }}</td>
+                <td class="muted">{{ formatDate(ev.startDate) }}</td>
+                <td class="muted">{{ formatDate(ev.endDate) }}</td>
+                <td class="actions"><button class="icon-btn danger" (click)="deleteCalEvent(ev)" title="Supprimer">🗑</button></td>
+              </tr>
+              <tr *ngIf="calendarEvents.length === 0 && !calendarYearId"><td colspan="5" class="empty-row">Sélectionnez une année pour afficher le calendrier.</td></tr>
+              <tr *ngIf="calendarEvents.length === 0 && calendarYearId"><td colspan="5" class="empty-row">Aucun événement pour cette année.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================== FINANCES ================== -->
+  <ng-container *ngIf="activeTab === 'finance'">
+    <div *ngIf="financeLoading" class="loading-state">Chargement…</div>
+    <ng-container *ngIf="!financeLoading">
+      <div class="finance-kpi-grid" *ngIf="financialReport">
+        <div class="fin-kpi-card">
+          <div class="fin-label">Montant attendu</div>
+          <div class="fin-value">{{ formatNumber(financialReport.totalExpected) }}</div>
+          <div class="fin-sub">{{ financialReport.currency }}</div>
+        </div>
+        <div class="fin-kpi-card success">
+          <div class="fin-label">Encaissé</div>
+          <div class="fin-value">{{ formatNumber(financialReport.totalCollected) }}</div>
+          <div class="fin-sub">{{ financialReport.currency }}</div>
+        </div>
+        <div class="fin-kpi-card" [class.danger]="financialReport.totalBalance > 0">
+          <div class="fin-label">Solde dû</div>
+          <div class="fin-value">{{ formatNumber(financialReport.totalBalance) }}</div>
+          <div class="fin-sub">{{ financialReport.currency }}</div>
+        </div>
+        <div class="fin-kpi-card accent" [class.warning]="financialReport.recoveryRate < 50">
+          <div class="fin-label">Taux de recouvrement</div>
+          <div class="fin-value">{{ financialReport.recoveryRate }}%</div>
+          <div class="recovery-bar"><div class="recovery-fill" [style.width]="financialReport.recoveryRate + '%'"></div></div>
+        </div>
+        <div class="fin-kpi-card">
+          <div class="fin-label">Exonérations</div>
+          <div class="fin-value">{{ financialReport.exemptionCount }}</div>
+        </div>
+      </div>
+
+      <div class="info-card" *ngIf="financialReport">
+        <h2>Répartition par mode de paiement</h2>
+        <div class="method-list">
+          <div class="method-row" *ngFor="let m of financialReport.byPaymentMethod | keyvalue">
+            <span class="method-chip">{{ m.key }}</span>
+            <span>{{ formatNumber(+m.value) }} XOF</span>
+          </div>
+          <div class="empty-note" *ngIf="(financialReport.byPaymentMethod | keyvalue).length === 0">Aucun paiement enregistré.</div>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="info-card full">
+          <div class="struct-head">
+            <h2>Modèles de frais de scolarité</h2>
+            <button (click)="openFeeTemplateDrawer()">+ Nouveau modèle</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Libellé</th><th>Offre</th><th>Montant</th><th>Tranches</th><th>Modes de paiement</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let t of feeTemplates">
+                  <td><strong>{{ t.label }}</strong></td>
+                  <td class="muted">{{ uniOfferLabel(t.offerId) }}</td>
+                  <td><span class="amount-chip">{{ formatNumber(t.totalAmount) }} {{ t.currency }}</span></td>
+                  <td class="muted">{{ t.installments.length }} tranche(s)</td>
+                  <td><span class="method-tag" *ngFor="let m of t.acceptedMethods">{{ m }}</span></td>
+                  <td class="actions"><button class="icon-btn" (click)="openApplyTemplate(t)" title="Appliquer aux étudiants">▶</button></td>
+                </tr>
+                <tr *ngIf="feeTemplates.length === 0"><td colspan="6" class="empty-row">Aucun modèle de frais.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="info-card full">
+          <div class="struct-head">
+            <h2>Exonérations</h2>
+            <button (click)="openExemptionDrawer()">+ Nouvelle exonération</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Étudiant</th><th>Année</th><th>Type</th><th>%</th><th>Motif</th><th></th></tr></thead>
+              <tbody>
+                <tr *ngFor="let ex of exemptions">
+                  <td class="muted">{{ ex.studentId }}</td>
+                  <td class="muted">{{ uniYearName(ex.academicYearId) }}</td>
+                  <td><span class="badge" [class.active-badge]="ex.type === 'total'">{{ ex.type }}</span></td>
+                  <td><strong>{{ ex.percentage }}%</strong></td>
+                  <td class="muted">{{ ex.reason }}</td>
+                  <td class="actions"><button class="icon-btn danger" (click)="deleteExemption(ex)" title="Supprimer">🗑</button></td>
+                </tr>
+                <tr *ngIf="exemptions.length === 0"><td colspan="6" class="empty-row">Aucune exonération.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ================== COMMUNICATION ================== -->
+  <ng-container *ngIf="activeTab === 'communication'">
+    <div class="comm-layout">
+      <div class="comm-main">
+        <div class="info-card">
+          <div class="struct-head">
+            <h2>Diffuser une annonce officielle</h2>
+            <button class="btn-add" (click)="openAnnounceDrawer()">+ Nouvelle annonce</button>
+          </div>
+          <p class="comm-desc">Envoyez une annonce à l'ensemble ou à un sous-groupe de la communauté universitaire.</p>
+          <h3>Historique des annonces</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Titre</th><th>Destinataires</th><th>Date</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let log of announceHistory">
+                  <td><strong>{{ log.metadata?.title }}</strong></td>
+                  <td class="muted">{{ log.metadata?.recipientCount }} utilisateurs ({{ log.metadata?.targetRoles?.join(', ') }})</td>
+                  <td class="muted">{{ formatDate(log.createdAt) }}</td>
+                </tr>
+                <tr *ngIf="announceHistory.length === 0"><td colspan="3" class="empty-row">Aucune annonce envoyée.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </ng-container>
 </div>
@@ -756,6 +1150,289 @@
       <div class="error-msg" *ngIf="userCreateError">{{ userCreateError }}</div>
       <button type="submit" [disabled]="userForm.invalid">{{ editingUserId ? 'Enregistrer' : 'Créer le compte' }}</button>
     </form>
+
+    <!-- Réinitialiser le mot de passe -->
+    <ng-container *ngIf="drawerMode === 'reset-password-result'">
+      <div *ngIf="drawerLoading" class="loading-state">Réinitialisation en cours…</div>
+      <div *ngIf="drawerError" class="error-msg">{{ drawerError }}</div>
+      <div *ngIf="resetPasswordResult" class="password-result">
+        <p>Le mot de passe provisoire a été généré avec succès :</p>
+        <div class="temp-password">{{ resetPasswordResult }}</div>
+        <p class="hint">Transmettez ce mot de passe à l'utilisateur de manière sécurisée.</p>
+      </div>
+    </ng-container>
+
+    <!-- Modifier le rôle -->
+    <ng-container *ngIf="drawerMode === 'assign-role'">
+      <form [formGroup]="roleForm" (ngSubmit)="submitAssignRole()">
+        <div class="field">
+          <label>Nouveau rôle</label>
+          <select formControlName="role">
+            <option *ngFor="let r of roleOptions" [value]="r.value">{{ r.label }}</option>
+          </select>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="roleForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : 'Modifier le rôle' }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Import en masse -->
+    <ng-container *ngIf="drawerMode === 'import-students'">
+      <ng-container *ngIf="!importResult">
+        <form [formGroup]="importForm" (ngSubmit)="submitImport()">
+          <div class="field">
+            <label>Offre de formation</label>
+            <select formControlName="offerId" (change)="onImportOfferChange($any($event.target).value)">
+              <option value="">— Sélectionner —</option>
+              <option *ngFor="let o of uniOffers" [value]="o._id">{{ uniOfferLabel(o._id) }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Groupe</label>
+            <select formControlName="groupId">
+              <option value="">— Sélectionner une offre d'abord —</option>
+              <option *ngFor="let g of uniGroups" [value]="g._id">{{ g.name }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Données CSV</label>
+            <p class="hint">Format : NOM,PRÉNOM,GENRE(m/f),DATE_NAISSANCE(AAAA-MM-JJ),EMAIL,TÉLÉPHONE</p>
+            <textarea formControlName="csvText" rows="10" placeholder="nom,prenom,genre,date_naissance,email&#10;Koné,Aya,f,2000-05-15,aya@email.com"></textarea>
+          </div>
+          <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+          <button type="submit" [disabled]="importForm.invalid || drawerLoading">
+            {{ drawerLoading ? 'Import en cours…' : '⬆ Importer' }}
+          </button>
+        </form>
+      </ng-container>
+      <ng-container *ngIf="importResult">
+        <div class="import-result" [class.success]="importResult.errorCount === 0" [class.partial]="importResult.errorCount > 0">
+          <div class="result-summary">
+            <div class="result-stat ok">✔ {{ importResult.successCount }} importés</div>
+            <div class="result-stat err" *ngIf="importResult.errorCount > 0">✕ {{ importResult.errorCount }} erreurs</div>
+          </div>
+          <div class="credentials-block" *ngIf="importResult.credentials.length > 0">
+            <h4>Identifiants provisoires</h4>
+            <div class="cred-row" *ngFor="let c of importResult.credentials">
+              <span class="matricule">{{ c.studentNumber }}</span>
+              <span class="email-cell">{{ c.email }}</span>
+              <span class="temp-pw">{{ c.password }}</span>
+            </div>
+          </div>
+          <div class="error-list" *ngIf="importResult.errors.length > 0">
+            <h4>Erreurs</h4>
+            <div class="error-row" *ngFor="let e of importResult.errors">Ligne {{ e.row }} : {{ e.message }}</div>
+          </div>
+        </div>
+        <button class="ghost" (click)="importResult = null">← Nouvel import</button>
+      </ng-container>
+    </ng-container>
+
+    <!-- Initialiser une année académique -->
+    <ng-container *ngIf="drawerMode === 'init-year'">
+      <form [formGroup]="initYearForm" (ngSubmit)="submitInitYear()">
+        <div class="field"><label>Nom de l'année</label><input formControlName="name" placeholder="ex: 2025-2026" /></div>
+        <div class="field"><label>Date de début</label><input type="date" formControlName="startDate" /></div>
+        <div class="field"><label>Date de fin</label><input type="date" formControlName="endDate" /></div>
+        <div class="checkbox-row">
+          <input type="checkbox" formControlName="isActive" id="isActive" />
+          <label for="isActive">Définir comme année active</label>
+        </div>
+        <div class="installments-block">
+          <div class="block-header">
+            <h4>Semestres</h4>
+            <button type="button" class="ghost small" (click)="addSemester()">+ Ajouter</button>
+          </div>
+          <ng-container [formArray]="semesters">
+            <div class="semester-row" *ngFor="let sem of semesters.controls; let i = index" [formGroupIndex]="i">
+              <ng-container [formGroup]="$any(sem)">
+                <input formControlName="name" placeholder="S1" style="width:60px" />
+                <input type="date" formControlName="startDate" />
+                <input type="date" formControlName="endDate" />
+                <button type="button" class="icon-btn danger" (click)="removeSemester(i)">✕</button>
+              </ng-container>
+            </div>
+          </ng-container>
+        </div>
+        <div class="installments-block">
+          <div class="block-header">
+            <h4>Offres de formation</h4>
+            <button type="button" class="ghost small" (click)="addOfferLine()">+ Ajouter</button>
+          </div>
+          <ng-container [formArray]="offerLines">
+            <div class="offer-row" *ngFor="let ol of offerLines.controls; let i = index" [formGroupIndex]="i">
+              <ng-container [formGroup]="$any(ol)">
+                <select formControlName="programId">
+                  <option value="">Filière</option>
+                  <option *ngFor="let p of uniPrograms" [value]="p._id">{{ p.name }}</option>
+                </select>
+                <select formControlName="levelId">
+                  <option value="">Niveau</option>
+                  <option *ngFor="let l of uniLevels" [value]="l._id">{{ l.name }}</option>
+                </select>
+                <input type="number" formControlName="capacity" placeholder="Cap." style="width:80px" />
+                <button type="button" class="icon-btn danger" (click)="removeOfferLine(i)">✕</button>
+              </ng-container>
+            </div>
+          </ng-container>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="initYearForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Initialisation…' : "🎓 Initialiser l'année" }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Événement calendrier -->
+    <ng-container *ngIf="drawerMode === 'calendar-event'">
+      <form [formGroup]="calEventForm" (ngSubmit)="submitCalEvent()">
+        <div class="field">
+          <label>Année académique</label>
+          <select formControlName="academicYearId">
+            <option value="">— Sélectionner —</option>
+            <option *ngFor="let y of academicYears" [value]="y._id">{{ y.name }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select formControlName="type">
+            <option *ngFor="let t of calEventTypes" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+        <div class="field"><label>Libellé</label><input formControlName="label" placeholder="ex: Examens S1 — Licence" /></div>
+        <div class="field"><label>Date de début</label><input type="date" formControlName="startDate" /></div>
+        <div class="field"><label>Date de fin</label><input type="date" formControlName="endDate" /></div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="calEventForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : '📅 Ajouter' }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Modèle de frais -->
+    <ng-container *ngIf="drawerMode === 'fee-template'">
+      <form [formGroup]="feeForm" (ngSubmit)="submitFeeTemplate()">
+        <div class="field"><label>Libellé du modèle</label><input formControlName="label" placeholder="ex: Frais L1 Informatique 2025-2026" /></div>
+        <div class="field">
+          <label>Offre de formation</label>
+          <select formControlName="offerId">
+            <option value="">— Sélectionner —</option>
+            <option *ngFor="let o of uniOffers" [value]="o._id">{{ uniOfferLabel(o._id) }}</option>
+          </select>
+        </div>
+        <div class="field"><label>Montant total (XOF)</label><input type="number" formControlName="totalAmount" min="1" /></div>
+        <div class="field">
+          <label>Modes de paiement acceptés</label>
+          <div [formGroup]="$any(feeForm.get('acceptedMethods'))" class="methods-grid">
+            <label class="checkbox-row"><input type="checkbox" formControlName="espece" /> Espèces</label>
+            <label class="checkbox-row"><input type="checkbox" formControlName="virement" /> Virement</label>
+            <label class="checkbox-row"><input type="checkbox" formControlName="orange_money" /> Orange Money</label>
+            <label class="checkbox-row"><input type="checkbox" formControlName="mtn_momo" /> MTN MoMo</label>
+            <label class="checkbox-row"><input type="checkbox" formControlName="moov_money" /> Moov Money</label>
+          </div>
+        </div>
+        <div class="installments-block">
+          <div class="block-header">
+            <h4>Tranches <span class="hint">(total : {{ formatNumber(installmentTotal) }} XOF)</span></h4>
+            <button type="button" class="ghost small" (click)="addInstallmentLine()">+ Tranche</button>
+          </div>
+          <ng-container [formArray]="feeInstallments">
+            <div class="installment-row" *ngFor="let inst of feeInstallments.controls; let i = index" [formGroupIndex]="i">
+              <ng-container [formGroup]="$any(inst)">
+                <input formControlName="label" placeholder="Tranche 1" />
+                <input type="number" formControlName="amount" placeholder="Montant" />
+                <input type="date" formControlName="dueDate" />
+                <button type="button" class="icon-btn danger" (click)="removeInstallmentLine(i)">✕</button>
+              </ng-container>
+            </div>
+          </ng-container>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="feeForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : '💰 Créer le modèle' }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Appliquer un modèle de frais -->
+    <ng-container *ngIf="drawerMode === 'apply-template'">
+      <ng-container *ngIf="!applyTemplateResult">
+        <div class="field">
+          <label>IDs des étudiants (un par ligne)</label>
+          <textarea [(ngModel)]="applyTemplateStudentIds" rows="8" placeholder="67abc123def456...&#10;67abc456def789..."></textarea>
+          <p class="hint">Copiez les identifiants MongoDB des étudiants concernés.</p>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button (click)="submitApplyTemplate()" [disabled]="!applyTemplateStudentIds.trim() || drawerLoading">
+          {{ drawerLoading ? 'Application…' : '▶ Appliquer' }}
+        </button>
+      </ng-container>
+      <div class="apply-result" *ngIf="applyTemplateResult">
+        <div class="result-stat ok">✔ {{ applyTemplateResult.applied }} plans créés</div>
+        <div class="result-stat warn" *ngIf="applyTemplateResult.skipped > 0">⚠ {{ applyTemplateResult.skipped }} ignorés (déjà existant)</div>
+        <button class="ghost" (click)="applyTemplateResult = null">← Réessayer</button>
+      </div>
+    </ng-container>
+
+    <!-- Exonération -->
+    <ng-container *ngIf="drawerMode === 'exemption'">
+      <form [formGroup]="exemptionForm" (ngSubmit)="submitExemption()">
+        <div class="field"><label>ID Étudiant</label><input formControlName="studentId" placeholder="ID MongoDB de l'étudiant" /></div>
+        <div class="field">
+          <label>Année académique</label>
+          <select formControlName="academicYearId">
+            <option value="">— Sélectionner —</option>
+            <option *ngFor="let y of uniYears" [value]="y._id">{{ y.name }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Type d'exonération</label>
+          <select formControlName="type" (change)="onExemptionTypeChange($any($event.target).value)">
+            <option value="total">Totale (100%)</option>
+            <option value="partial">Partielle</option>
+          </select>
+        </div>
+        <div class="field" *ngIf="exemptionForm.value.type === 'partial'">
+          <label>Pourcentage de réduction</label>
+          <input type="number" formControlName="percentage" min="1" max="99" />
+        </div>
+        <div class="field"><label>Motif</label><input formControlName="reason" placeholder="ex: Boursier MESRS, Cas social…" /></div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="exemptionForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : "✔ Créer l'exonération" }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Annonce -->
+    <ng-container *ngIf="drawerMode === 'announce'">
+      <ng-container *ngIf="!announcementResult">
+        <form [formGroup]="announceForm" (ngSubmit)="submitAnnounce()">
+          <div class="field"><label>Titre de l'annonce</label><input formControlName="title" placeholder="ex: Rentrée académique 2025-2026" maxlength="100" /></div>
+          <div class="field"><label>Contenu</label><textarea formControlName="content" rows="6" placeholder="Message de l'annonce…" maxlength="2000"></textarea></div>
+          <div class="field">
+            <label>Destinataires</label>
+            <label class="checkbox-row"><input type="checkbox" formControlName="targetAll" /> Toute la communauté</label>
+            <ng-container *ngIf="!announceForm.value.targetAll">
+              <label class="checkbox-row"><input type="checkbox" formControlName="targetStudent" /> Étudiants</label>
+              <label class="checkbox-row"><input type="checkbox" formControlName="targetTeacher" /> Enseignants</label>
+              <label class="checkbox-row"><input type="checkbox" formControlName="targetAdmin" /> Administrateurs</label>
+            </ng-container>
+          </div>
+          <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+          <button type="submit" [disabled]="announceForm.invalid || drawerLoading">
+            {{ drawerLoading ? 'Envoi…' : '📢 Diffuser l\'annonce' }}
+          </button>
+        </form>
+      </ng-container>
+      <div class="announce-result" *ngIf="announcementResult">
+        <div class="result-stat ok">✔ Annonce diffusée à {{ announcementResult.recipientCount }} utilisateurs</div>
+        <div class="muted" style="font-size:13px;margin-top:8px">{{ formatDate(announcementResult.sentAt) }}</div>
+        <button class="ghost" style="margin-top:12px" (click)="closeDrawer()">Fermer</button>
+      </div>
+    </ng-container>
 
   </div>
 </div>
