@@ -4,6 +4,8 @@ import { InscriptionService } from './inscription.service';
 import { InscriptionController } from './inscription.controller';
 import { LmdService } from './lmd.service';
 import { LmdController } from './lmd.controller';
+import { DeliberationService } from './deliberation.service';
+import { DeliberationController } from './deliberation.controller';
 import {
   InscriptionCampaign,
   InscriptionCampaignSchema,
@@ -21,6 +23,14 @@ import {
   SemesterResult,
   SemesterResultSchema,
 } from './schemas/semester-result.schema';
+import {
+  Deliberation,
+  DeliberationSchema,
+} from './schemas/deliberation.schema';
+import {
+  JuryDecision,
+  JuryDecisionSchema,
+} from './schemas/jury-decision.schema';
 import {
   StudentProfile,
   StudentProfileSchema,
@@ -42,6 +52,8 @@ import { EmailService } from '../common/email.service';
       { name: LmdConfig.name, schema: LmdConfigSchema },
       { name: EvaluationPeriod.name, schema: EvaluationPeriodSchema },
       { name: SemesterResult.name, schema: SemesterResultSchema },
+      { name: Deliberation.name, schema: DeliberationSchema },
+      { name: JuryDecision.name, schema: JuryDecisionSchema },
       { name: StudentProfile.name, schema: StudentProfileSchema },
       { name: Subject.name, schema: SubjectSchema },
       { name: Evaluation.name, schema: EvaluationSchema },
@@ -50,8 +62,8 @@ import { EmailService } from '../common/email.service';
       { name: Group.name, schema: GroupSchema },
     ]),
   ],
-  providers: [InscriptionService, LmdService, EmailService],
-  controllers: [InscriptionController, LmdController],
-  exports: [InscriptionService, LmdService],
+  providers: [InscriptionService, LmdService, DeliberationService, EmailService],
+  controllers: [InscriptionController, LmdController, DeliberationController],
+  exports: [InscriptionService, LmdService, DeliberationService],
 })
 export class ScolariteModule {}
