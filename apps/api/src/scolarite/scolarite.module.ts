@@ -6,6 +6,12 @@ import { LmdService } from './lmd.service';
 import { LmdController } from './lmd.controller';
 import { DeliberationService } from './deliberation.service';
 import { DeliberationController } from './deliberation.controller';
+import { OfficialDocumentService } from './official-document.service';
+import { OfficialDocumentController } from './official-document.controller';
+import { AttendanceAlertService } from './attendance-alert.service';
+import { AttendanceAlertController } from './attendance-alert.controller';
+import { ScolariteDashboardService } from './scolarite-dashboard.service';
+import { ScolariteDashboardController } from './scolarite-dashboard.controller';
 import {
   InscriptionCampaign,
   InscriptionCampaignSchema,
@@ -32,6 +38,18 @@ import {
   JuryDecisionSchema,
 } from './schemas/jury-decision.schema';
 import {
+  OfficialDocument,
+  OfficialDocumentSchema,
+} from './schemas/official-document.schema';
+import {
+  DocumentRequest,
+  DocumentRequestSchema,
+} from './schemas/document-request.schema';
+import {
+  AttendanceAlert,
+  AttendanceAlertSchema,
+} from './schemas/attendance-alert.schema';
+import {
   StudentProfile,
   StudentProfileSchema,
 } from '../students/student-profile.schema';
@@ -40,8 +58,18 @@ import { Evaluation, EvaluationSchema } from '../notes/schemas/evaluation.schema
 import { Grade, GradeSchema } from '../notes/schemas/grade.schema';
 import { User, UserSchema } from '../users/user.schema';
 import { Group, GroupSchema } from '../academic/group.schema';
+import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema';
 import { AuditModule } from '../audit/audit.module';
 import { EmailService } from '../common/email.service';
+
+// Attendance schemas
+import {
+  Attendance,
+  AttendanceSchema,
+} from '../attendance/attendance.schema';
+import { Session, SessionSchema } from '../planning/session.schema';
+import { Payment, PaymentSchema } from '../payments/payment.schema';
+import { PaymentPlan, PaymentPlanSchema } from '../payments/payment-plan.schema';
 
 @Module({
   imports: [
@@ -54,16 +82,46 @@ import { EmailService } from '../common/email.service';
       { name: SemesterResult.name, schema: SemesterResultSchema },
       { name: Deliberation.name, schema: DeliberationSchema },
       { name: JuryDecision.name, schema: JuryDecisionSchema },
+      { name: OfficialDocument.name, schema: OfficialDocumentSchema },
+      { name: DocumentRequest.name, schema: DocumentRequestSchema },
+      { name: AttendanceAlert.name, schema: AttendanceAlertSchema },
       { name: StudentProfile.name, schema: StudentProfileSchema },
       { name: Subject.name, schema: SubjectSchema },
       { name: Evaluation.name, schema: EvaluationSchema },
       { name: Grade.name, schema: GradeSchema },
       { name: User.name, schema: UserSchema },
       { name: Group.name, schema: GroupSchema },
+      { name: Attendance.name, schema: AttendanceSchema },
+      { name: Session.name, schema: SessionSchema },
+      { name: Payment.name, schema: PaymentSchema },
+      { name: PaymentPlan.name, schema: PaymentPlanSchema },
+      { name: AuditLog.name, schema: AuditLogSchema },
     ]),
   ],
-  providers: [InscriptionService, LmdService, DeliberationService, EmailService],
-  controllers: [InscriptionController, LmdController, DeliberationController],
-  exports: [InscriptionService, LmdService, DeliberationService],
+  providers: [
+    InscriptionService,
+    LmdService,
+    DeliberationService,
+    OfficialDocumentService,
+    AttendanceAlertService,
+    ScolariteDashboardService,
+    EmailService,
+  ],
+  controllers: [
+    InscriptionController,
+    LmdController,
+    DeliberationController,
+    OfficialDocumentController,
+    AttendanceAlertController,
+    ScolariteDashboardController,
+  ],
+  exports: [
+    InscriptionService,
+    LmdService,
+    DeliberationService,
+    OfficialDocumentService,
+    AttendanceAlertService,
+    ScolariteDashboardService,
+  ],
 })
 export class ScolariteModule {}
