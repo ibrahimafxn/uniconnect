@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 // External schemas
+import { Announcement, AnnouncementSchema } from '../announcements/announcement.schema';
 import { User, UserSchema } from '../users/user.schema';
 import { StudentProfile, StudentProfileSchema } from '../students/student-profile.schema';
 import { Enrollment, EnrollmentSchema } from '../students/enrollment.schema';
@@ -50,6 +51,7 @@ import { AuditModule } from '../audit/audit.module';
       { name: Group.name, schema: GroupSchema },
       { name: Program.name, schema: ProgramSchema },
       { name: Level.name, schema: LevelSchema },
+      { name: Announcement.name, schema: AnnouncementSchema },
       // Admin-specific
       { name: BulkImportJob.name, schema: BulkImportJobSchema },
       { name: FeeTemplate.name, schema: FeeTemplateSchema },

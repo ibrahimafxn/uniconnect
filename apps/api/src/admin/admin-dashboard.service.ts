@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { Announcement, AnnouncementCategory, AnnouncementScope } from '../announcements/announcement.schema';
 import { User } from '../users/user.schema';
 import { StudentProfile } from '../students/student-profile.schema';
 import { Enrollment } from '../students/enrollment.schema';
@@ -33,6 +34,8 @@ export class AdminDashboardService {
     private readonly offerModel: Model<ProgramOffer>,
     @InjectModel(Program.name)
     private readonly programModel: Model<Program>,
+    @InjectModel(Announcement.name)
+    private readonly announcementModel: Model<Announcement>,
     private readonly auditLogService: AuditLogService,
   ) {}
 
@@ -196,6 +199,25 @@ export class AdminDashboardService {
   }) {
     const targetRoles = params.targetRoles ?? ['student', 'teacher', 'admin'];
 
+    // Determine scope from targetRoles
+    let scope: AnnouncementScope;
+    if (targetRoles.includes('student') && !targetRoles.includes('teacher') && !targetRoles.includes('admin')) {
+      scope = AnnouncementScope.Students;
+    } else if (targetRoles.includes('teacher') && !targetRoles.includes('student') && !targetRoles.includes('admin')) {
+      scope = AnnouncementScope.Teachers;
+    } else {
+      scope = AnnouncementScope.All;
+    }
+
+    // Persist the announcement so students/teachers can read it
+    const announcement = await this.announcementModel.create({
+      title: params.title,
+      body: params.content,
+      scope,
+      category: AnnouncementCategory.Official,
+      createdBy: new Types.ObjectId(params.actor.userId),
+    });
+
     // Count recipients
     const recipientCount = await this.userModel
       .countDocuments({ role: { $in: targetRoles }, suspended: { $ne: true } })
@@ -205,7 +227,7 @@ export class AdminDashboardService {
     await this.auditLogService.log({
       action: 'BROADCAST_ANNOUNCEMENT',
       entity: 'Announcement',
-      entityId: 'global',
+      entityId: String(announcement._id),
       actor: params.actor,
       metadata: {
         title: params.title,
