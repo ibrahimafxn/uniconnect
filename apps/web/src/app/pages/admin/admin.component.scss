@@ -812,6 +812,43 @@ input[type='tel'] {
   }
 }
 
+/* Apply template student picker */
+.apply-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.apply-student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 12px;
+}
+
+.apply-student-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  &:hover { background: #f3f4f6; }
+
+  .student-name { flex: 1; font-weight: 500; }
+  .student-num { color: #6b7280; font-size: 12px; }
+}
+
 @media (max-width: 640px) {
   .page { padding: 16px; }
   .tabs { width: 100%; overflow-x: auto; }

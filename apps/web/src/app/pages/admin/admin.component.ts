@@ -8,7 +8,7 @@ import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
 import {UsersApi} from '../../core/api/users.api';
-import {Paginated, StudentDocument} from '../../core/api/students.api';
+import {Paginated, Student, StudentDocument} from '../../core/api/students.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
 import {
   AdminApi, AdminUser, CalendarEvent, ExecutiveDashboard,
@@ -1425,21 +1425,66 @@ export class AdminComponent implements OnInit {
 
   // Apply template
   selectedTemplateId = '';
-  applyTemplateStudentIds = '';
+  applyTemplateStudents: Student[] = [];
+  applyTemplateSelectedIds = new Set<string>();
+  applyTemplateSearch = '';
+  applyTemplateLoading = false;
   applyTemplateResult: {applied: number; skipped: number} | null = null;
+
+  get filteredApplyStudents(): Student[] {
+    const q = this.applyTemplateSearch.toLowerCase().trim();
+    if (!q) return this.applyTemplateStudents;
+    return this.applyTemplateStudents.filter(s =>
+      `${s.firstName} ${s.lastName}`.toLowerCase().includes(q) ||
+      s.studentNumber.toLowerCase().includes(q)
+    );
+  }
+
+  get isAllApplySelected(): boolean {
+    const filtered = this.filteredApplyStudents;
+    return filtered.length > 0 && filtered.every(s => this.applyTemplateSelectedIds.has(s._id));
+  }
 
   openApplyTemplate(template: FeeTemplate) {
     this.selectedTemplateId = template._id;
-    this.applyTemplateStudentIds = '';
+    this.applyTemplateSelectedIds = new Set();
+    this.applyTemplateSearch = '';
     this.applyTemplateResult = null;
+    this.applyTemplateStudents = [];
+    this.applyTemplateLoading = true;
     this.openDrawer('apply-template', `Appliquer "${template.label}"`);
+    this.studentsApi.listStudents('', 1, 500).subscribe({
+      next: (res) => {
+        this.applyTemplateStudents = res.items.filter(s => s.offerId === template.offerId);
+        this.applyTemplateLoading = false;
+      },
+      error: () => { this.applyTemplateLoading = false; },
+    });
+  }
+
+  toggleApplyStudent(id: string) {
+    if (this.applyTemplateSelectedIds.has(id)) {
+      this.applyTemplateSelectedIds.delete(id);
+    } else {
+      this.applyTemplateSelectedIds.add(id);
+    }
+    this.applyTemplateSelectedIds = new Set(this.applyTemplateSelectedIds);
+  }
+
+  toggleAllApplyStudents() {
+    const filtered = this.filteredApplyStudents;
+    if (this.isAllApplySelected) {
+      filtered.forEach(s => this.applyTemplateSelectedIds.delete(s._id));
+    } else {
+      filtered.forEach(s => this.applyTemplateSelectedIds.add(s._id));
+    }
+    this.applyTemplateSelectedIds = new Set(this.applyTemplateSelectedIds);
   }
 
   submitApplyTemplate() {
-    if (!this.selectedTemplateId || !this.applyTemplateStudentIds.trim()) return;
-    const ids = this.applyTemplateStudentIds.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!this.selectedTemplateId || this.applyTemplateSelectedIds.size === 0) return;
     this.drawerLoading = true;
-    this.adminApi.applyFeeTemplate(this.selectedTemplateId, ids).subscribe({
+    this.adminApi.applyFeeTemplate(this.selectedTemplateId, [...this.applyTemplateSelectedIds]).subscribe({
       next: (r) => { this.applyTemplateResult = r; this.drawerLoading = false; },
       error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
     });
