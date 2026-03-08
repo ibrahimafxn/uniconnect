@@ -39,7 +39,7 @@ export class AdminAcademicController {
   @ApiOperation({
     summary: 'Initialiser une nouvelle année académique (UC-A01)',
     description:
-      'Crée l'année + les semestres + les offres de formation en une seule opération.',
+      "Crée l'année + les semestres + les offres de formation en une seule opération.",
   })
   initializeYear(
     @Body()
@@ -66,13 +66,13 @@ export class AdminAcademicController {
   }
 
   @Get('years/:id/summary')
-  @ApiOperation({ summary: 'Bilan détaillé d'une année académique' })
+  @ApiOperation({ summary: "Bilan détaillé d'une année académique" })
   getYearSummary(@Param('id') id: string) {
     return this.service.getYearSummary(id);
   }
 
   @Patch('offers/:id/capacity')
-  @ApiOperation({ summary: 'Modifier la capacité d'accueil d'une offre' })
+  @ApiOperation({ summary: "Modifier la capacité d'accueil d'une offre" })
   updateOfferCapacity(
     @Param('id') id: string,
     @Body() body: { capacity: number },
