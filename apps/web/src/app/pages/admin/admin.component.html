@@ -284,9 +284,10 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Libellé</th><th>Total</th><th>Échéances</th><th>Reste par échéance</th><th></th></tr></thead>
+            <thead><tr><th>Étudiant</th><th>Libellé</th><th>Total</th><th>Échéances</th><th>Reste par échéance</th><th></th></tr></thead>
             <tbody>
               <tr *ngFor="let p of (plansView$ | async)">
+                <td class="muted">{{ p.studentName || '—' }}</td>
                 <td><strong>{{ p.label }}</strong></td>
                 <td>{{ p.totalAmount | number }} {{ p.currency }}</td>
                 <td class="muted">{{ p.installments?.length ?? 0 }} échéance(s)</td>
@@ -302,7 +303,7 @@
                   <button class="icon-btn danger" (click)="deletePlan(p._id)">🗑</button>
                 </td>
               </tr>
-              <tr *ngIf="(plansView$ | async)?.length === 0"><td colspan="5" class="empty-row">Aucun plan.</td></tr>
+              <tr *ngIf="(plansView$ | async)?.length === 0"><td colspan="6" class="empty-row">Aucun plan.</td></tr>
             </tbody>
           </table>
         </div>
@@ -316,11 +317,20 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Date</th><th>Montant</th><th>Échéance</th><th>Anticipé</th><th>Référence</th><th>Reçu</th><th></th></tr></thead>
+            <thead><tr><th>Étudiant</th><th>Date</th><th>Montant</th><th>Méthode</th><th>Échéance</th><th>Anticipé</th><th>Référence</th><th>Reçu</th><th></th></tr></thead>
             <tbody>
               <tr *ngFor="let p of (paymentsView$ | async)">
+                <td class="muted">{{ p.studentName || '—' }}</td>
                 <td>{{ p.paidAt | date:'dd/MM/yyyy' }}</td>
                 <td><strong>{{ p.amount | number }} {{ p.currency }}</strong></td>
+                <td class="muted">
+                  <ng-container [ngSwitch]="p.paymentMethod">
+                    <span *ngSwitchCase="'espece'">Espèce</span>
+                    <span *ngSwitchCase="'carte_bancaire'">Carte</span>
+                    <span *ngSwitchCase="'mobile_money'">Mobile Money</span>
+                    <span *ngSwitchDefault>—</span>
+                  </ng-container>
+                </td>
                 <td class="muted">
                   <ng-container *ngIf="p.installmentDueDate; else noInst">
                     {{ p.installmentDueDate | date:'dd/MM/yyyy' }}<span *ngIf="p.installmentLabel"> — {{ p.installmentLabel }}</span>
@@ -338,7 +348,7 @@
                   <button class="icon-btn danger" (click)="deletePayment(p._id)">🗑</button>
                 </td>
               </tr>
-              <tr *ngIf="(paymentsView$ | async)?.length === 0"><td colspan="7" class="empty-row">Aucun paiement.</td></tr>
+              <tr *ngIf="(paymentsView$ | async)?.length === 0"><td colspan="9" class="empty-row">Aucun paiement.</td></tr>
             </tbody>
           </table>
         </div>
