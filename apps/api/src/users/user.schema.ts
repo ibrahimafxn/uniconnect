@@ -16,6 +16,9 @@ export class User extends Document {
   @Prop({ type: String, default: null })
   refreshTokenHash?: string | null;
 
+  @Prop({ type: Boolean, default: false })
+  suspended!: boolean;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
