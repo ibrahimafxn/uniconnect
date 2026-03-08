@@ -13,7 +13,6 @@ import { MessagesModule } from './messages/messages.module';
 import { NotesModule } from './notes/notes.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
-import { ScolariteModule } from './scolarite/scolarite.module';
 import { AdminModule } from './admin/admin.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { ResourcesModule } from './resources/resources.module';
@@ -38,7 +37,6 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     NotesModule,
     AttendanceModule,
     TeacherProfileModule,
-    ScolariteModule,
     AdminModule,
     ApplicationsModule,
     ResourcesModule,

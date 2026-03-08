@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
@@ -25,7 +25,7 @@ import {
   SemesterInit,
   OfferInit,
 } from './admin-academic.service';
-import { CalendarEventType } from './schemas/academic-calendar-event.schema';
+import type { CalendarEventType } from './schemas/academic-calendar-event.schema';
 
 @ApiTags('admin/academic')
 @ApiBearerAuth()

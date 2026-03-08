@@ -36,7 +36,7 @@ import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
 import { UpdateStudentSelfDto } from './dto/update-student-self.dto';
 import { parsePagination } from '../common/pagination';
 import { toObjectId } from '../common/object-id';
-import { CalendarEventType } from '../admin/schemas/academic-calendar-event.schema';
+import type { CalendarEventType } from '../admin/schemas/academic-calendar-event.schema';
 
 const uploadRoot = join(process.cwd(), 'uploads', 'students');
 

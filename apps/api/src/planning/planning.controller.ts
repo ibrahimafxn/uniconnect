@@ -136,9 +136,9 @@ export class PlanningController {
   async exportSessions(
     @Request() req: { user: { userId: string; email: string; role: Role } },
     @Query('format') format: 'pdf' | 'ics',
+    @Res() res: Response,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
-    @Res() res: Response,
   ) {
     const sessions = await this.planningService.listSessions({
       dateFrom,
