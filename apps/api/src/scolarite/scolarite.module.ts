@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InscriptionService } from './inscription.service';
 import { InscriptionController } from './inscription.controller';
+import { LmdService } from './lmd.service';
+import { LmdController } from './lmd.controller';
 import {
   InscriptionCampaign,
   InscriptionCampaignSchema,
@@ -10,10 +12,24 @@ import {
   ApplicationDossier,
   ApplicationDossierSchema,
 } from './schemas/application-dossier.schema';
+import { LmdConfig, LmdConfigSchema } from './schemas/lmd-config.schema';
+import {
+  EvaluationPeriod,
+  EvaluationPeriodSchema,
+} from './schemas/evaluation-period.schema';
+import {
+  SemesterResult,
+  SemesterResultSchema,
+} from './schemas/semester-result.schema';
 import {
   StudentProfile,
   StudentProfileSchema,
 } from '../students/student-profile.schema';
+import { Subject, SubjectSchema } from '../notes/schemas/subject.schema';
+import { Evaluation, EvaluationSchema } from '../notes/schemas/evaluation.schema';
+import { Grade, GradeSchema } from '../notes/schemas/grade.schema';
+import { User, UserSchema } from '../users/user.schema';
+import { Group, GroupSchema } from '../academic/group.schema';
 import { AuditModule } from '../audit/audit.module';
 import { EmailService } from '../common/email.service';
 
@@ -23,11 +39,19 @@ import { EmailService } from '../common/email.service';
     MongooseModule.forFeature([
       { name: InscriptionCampaign.name, schema: InscriptionCampaignSchema },
       { name: ApplicationDossier.name, schema: ApplicationDossierSchema },
+      { name: LmdConfig.name, schema: LmdConfigSchema },
+      { name: EvaluationPeriod.name, schema: EvaluationPeriodSchema },
+      { name: SemesterResult.name, schema: SemesterResultSchema },
       { name: StudentProfile.name, schema: StudentProfileSchema },
+      { name: Subject.name, schema: SubjectSchema },
+      { name: Evaluation.name, schema: EvaluationSchema },
+      { name: Grade.name, schema: GradeSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Group.name, schema: GroupSchema },
     ]),
   ],
-  providers: [InscriptionService, EmailService],
-  controllers: [InscriptionController],
-  exports: [InscriptionService],
+  providers: [InscriptionService, LmdService, EmailService],
+  controllers: [InscriptionController, LmdController],
+  exports: [InscriptionService, LmdService],
 })
 export class ScolariteModule {}
