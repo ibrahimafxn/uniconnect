@@ -5,6 +5,7 @@ import { Types } from 'mongoose';
 import { AdminUsersService } from './admin-users.service';
 import { User } from '../users/user.schema';
 import { StudentProfile } from '../students/student-profile.schema';
+import { TeacherProfile } from '../teacher-profile/teacher-profile.schema';
 import { AuditLog } from '../audit/audit-log.schema';
 import { BulkImportJob } from './schemas/bulk-import-job.schema';
 import { ProgramOffer } from '../academic/program-offer.schema';
@@ -36,6 +37,7 @@ describe('AdminUsersService', () => {
   let service: AdminUsersService;
   let userModel: ReturnType<typeof makeModel>;
   let studentModel: ReturnType<typeof makeModel>;
+  let teacherModel: ReturnType<typeof makeModel>;
   let auditLogModel: ReturnType<typeof makeModel>;
   let importJobModel: ReturnType<typeof makeModel>;
   let offerModel: ReturnType<typeof makeModel>;
@@ -46,6 +48,7 @@ describe('AdminUsersService', () => {
   beforeEach(async () => {
     userModel = makeModel();
     studentModel = makeModel();
+    teacherModel = makeModel();
     auditLogModel = makeModel();
     importJobModel = makeModel();
     offerModel = makeModel();
@@ -58,6 +61,7 @@ describe('AdminUsersService', () => {
         AdminUsersService,
         { provide: getModelToken(User.name), useValue: userModel },
         { provide: getModelToken(StudentProfile.name), useValue: studentModel },
+        { provide: getModelToken(TeacherProfile.name), useValue: teacherModel },
         { provide: getModelToken(AuditLog.name), useValue: auditLogModel },
         { provide: getModelToken(BulkImportJob.name), useValue: importJobModel },
         { provide: getModelToken(ProgramOffer.name), useValue: offerModel },
@@ -71,16 +75,64 @@ describe('AdminUsersService', () => {
   });
 
   describe('listUsers', () => {
-    it('should return paginated users without sensitive fields', async () => {
-      userModel.exec.mockResolvedValue([{ _id: makeId(), email: 'a@b.com', role: 'student' }]);
-      userModel.countDocuments = jest.fn().mockReturnThis();
-      // Re-chain countDocuments.exec separately
-      const countExec = jest.fn().mockResolvedValue(1);
-      userModel.countDocuments.mockReturnValue({ exec: countExec });
+    it('should return paginated users enriched with names', async () => {
+      const userId = new Types.ObjectId();
+      const user = { _id: userId, email: 'a@b.com', role: 'student' };
+      // listUsers now uses lean() — mock the chain for user query
+      userModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([user]),
+      });
+      userModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
+      // Student profile join
+      studentModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([{ email: 'a@b.com', firstName: 'Aya', lastName: 'Koné' }]),
+      });
+      // Teacher profile join
+      teacherModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
 
       const result = await service.listUsers({ skip: 0, limit: 10 });
       expect(result.total).toBe(1);
       expect(result.items).toHaveLength(1);
+      expect(result.items[0].firstName).toBe('Aya');
+      expect(result.items[0].lastName).toBe('Koné');
+    });
+
+    it('should return null names when no profile found', async () => {
+      const user = { _id: new Types.ObjectId(), email: 'admin@uni.com', role: 'admin' };
+      userModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([user]),
+      });
+      userModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
+      studentModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
+      teacherModel.find = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await service.listUsers({ skip: 0, limit: 10 });
+      expect(result.items[0].firstName).toBeNull();
+      expect(result.items[0].lastName).toBeNull();
     });
   });
 
