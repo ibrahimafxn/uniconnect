@@ -275,9 +275,10 @@ export class AdminUsersService {
         const passwordHash = await bcrypt.hash(tempPassword, 10);
 
         const email = row.email?.trim().toLowerCase() || undefined;
+        const assignedEmail = email ?? `${studentNumber.toLowerCase()}@uniconnect.local`;
 
         const user = await this.userModel.create({
-          email: email ?? `${studentNumber.toLowerCase()}@uniconnect.local`,
+          email: assignedEmail,
           passwordHash,
           role: Role.Student,
         });
@@ -288,7 +289,7 @@ export class AdminUsersService {
           studentNumber,
           gender: row.gender,
           birthDate,
-          email,
+          email: assignedEmail,
           phone: row.phone?.trim(),
           address: row.address?.trim(),
           groupId,
