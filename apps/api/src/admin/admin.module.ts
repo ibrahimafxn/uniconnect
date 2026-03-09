@@ -14,6 +14,7 @@ import { ProgramOffer, ProgramOfferSchema } from '../academic/program-offer.sche
 import { Group, GroupSchema } from '../academic/group.schema';
 import { Program, ProgramSchema } from '../academic/program.schema';
 import { Level, LevelSchema } from '../academic/level.schema';
+import { TeacherProfile, TeacherProfileSchema } from '../teacher-profile/teacher-profile.schema';
 
 // Admin schemas
 import { BulkImportJob, BulkImportJobSchema } from './schemas/bulk-import-job.schema';
@@ -50,6 +51,7 @@ import { AuditModule } from '../audit/audit.module';
       { name: Group.name, schema: GroupSchema },
       { name: Program.name, schema: ProgramSchema },
       { name: Level.name, schema: LevelSchema },
+      { name: TeacherProfile.name, schema: TeacherProfileSchema },
       // Admin-specific
       { name: BulkImportJob.name, schema: BulkImportJobSchema },
       { name: FeeTemplate.name, schema: FeeTemplateSchema },
