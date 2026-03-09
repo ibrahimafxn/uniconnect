@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Workbook } from 'exceljs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -372,6 +373,73 @@ export class AdminUsersService {
       throw new Error(`Ligne ${rowNum}: genre invalide (male|female).`);
     }
     if (!row.birthDate) throw new Error(`Ligne ${rowNum}: date de naissance manquante.`);
+  }
+
+  // ─── XLSX parsing (UC-A02) ───────────────────────────────────────────────
+
+  async parseXlsxImport(filePath: string): Promise<{
+    rows: ImportStudentRow[];
+    errors: { row: number; message: string }[];
+  }> {
+    const workbook = new Workbook();
+    await workbook.xlsx.readFile(filePath);
+    const sheet = workbook.worksheets[0];
+    if (!sheet) {
+      throw new BadRequestException('Fichier Excel vide ou invalide.');
+    }
+
+    const rows: ImportStudentRow[] = [];
+    const errors: { row: number; message: string }[] = [];
+    let headerRow: string[] = [];
+
+    sheet.eachRow((row, rowNumber) => {
+      const values = (row.values as any[]).slice(1).map((v) =>
+        v != null ? String(v).trim() : '',
+      );
+
+      if (rowNumber === 1) {
+        headerRow = values.map((v) => v.toLowerCase());
+        return;
+      }
+
+      const get = (col: string) => {
+        const idx = headerRow.indexOf(col);
+        return idx >= 0 ? values[idx] ?? '' : '';
+      };
+
+      const firstName = get('firstname') || get('prenom') || get('prénom');
+      const lastName = get('lastname') || get('nom');
+      const gender = get('gender') || get('genre');
+      const birthDate = get('birthdate') || get('datenaissance') || get('date_naissance');
+
+      const missingFields: string[] = [];
+      if (!firstName) missingFields.push('firstName');
+      if (!lastName) missingFields.push('lastName');
+      if (!gender) missingFields.push('gender');
+      if (!birthDate) missingFields.push('birthDate');
+
+      if (missingFields.length > 0) {
+        errors.push({ row: rowNumber, message: `Champs manquants: ${missingFields.join(', ')}` });
+        return;
+      }
+
+      if (!['male', 'female', 'other'].includes(gender.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Gender invalide: "${gender}" (male|female|other attendu)` });
+        return;
+      }
+
+      rows.push({
+        firstName,
+        lastName,
+        gender: gender.toLowerCase() as any,
+        birthDate,
+        email: get('email') || undefined,
+        phone: get('phone') || get('telephone') || undefined,
+        address: get('address') || get('adresse') || undefined,
+      });
+    });
+
+    return { rows, errors };
   }
 
   private async resolveUniqueStudentNumber(base: string): Promise<string> {
