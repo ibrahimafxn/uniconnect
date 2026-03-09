@@ -7,8 +7,14 @@ import {
   Post,
   Query,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { mkdirSync } from 'fs';
 import {
   ApiTags,
   ApiOperation,
@@ -145,6 +151,45 @@ export class AdminUsersController {
       groupId: body.groupId,
       actor: this.buildActor(req),
     });
+  }
+
+  @Post('parse-xlsx')
+  @ApiOperation({
+    summary: 'Prévisualiser un fichier XLSX avant import (UC-A02)',
+    description:
+      'Parse un fichier Excel et retourne les lignes validées + les erreurs sans créer de comptes.',
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          const dir = join(process.cwd(), 'uploads', 'imports');
+          mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname);
+          cb(null, `import_${Date.now()}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+        ];
+        if (!allowed.includes(file.mimetype)) {
+          return cb(new Error('Seuls les fichiers .xlsx et .xls sont acceptés'), false);
+        }
+        return cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  parseXlsx(
+    @UploadedFile() file: { path: string },
+  ) {
+    if (!file) throw new Error('file is required');
+    return this.service.parseXlsxImport(file.path);
   }
 
   private buildActor(req: any) {
