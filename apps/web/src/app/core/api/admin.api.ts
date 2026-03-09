@@ -100,6 +100,33 @@ export interface MesrsReport {
   offerBreakdown: {offerLabel: string; studentCount: number; capacity: number; fillRate: number | null}[];
 }
 
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  user: string;
+  from: string;
+  secure?: boolean;
+}
+
+export interface EmailTemplate {
+  key: string;
+  subject: string;
+  body: string;
+}
+
+export interface SystemParams {
+  maxStudentsPerGroup: number;
+  paymentGraceDays: number;
+  supportEmail: string;
+  maintenanceMode: boolean;
+  maxUploadSizeMb: number;
+}
+
+export interface XlsxParseResult {
+  rows: ImportStudentRow[];
+  errors: {row: number; message: string}[];
+}
+
 @Injectable({providedIn: 'root'})
 export class AdminApi {
   private readonly http = inject(HttpClient);
@@ -247,5 +274,43 @@ export class AdminApi {
     return this.http.post<{success: boolean; recipientCount: number; sentAt: string}>(
       `${BASE}/admin/dashboard/announcements`, body
     );
+  }
+
+  // ── Global Config (UC-A06) ───────────────────────────────────────────────
+
+  getSmtpConfig() {
+    return this.http.get<SmtpConfig | null>(`${BASE}/admin/config/smtp`);
+  }
+
+  updateSmtpConfig(body: SmtpConfig) {
+    return this.http.patch<SmtpConfig>(`${BASE}/admin/config/smtp`, body);
+  }
+
+  listEmailTemplates() {
+    return this.http.get<EmailTemplate[]>(`${BASE}/admin/config/email-templates`);
+  }
+
+  upsertEmailTemplate(key: string, body: {subject: string; body: string}) {
+    return this.http.post<EmailTemplate>(`${BASE}/admin/config/email-templates/${key}`, body);
+  }
+
+  deleteEmailTemplate(key: string) {
+    return this.http.delete<{success: boolean}>(`${BASE}/admin/config/email-templates/${key}`);
+  }
+
+  getSystemParams() {
+    return this.http.get<SystemParams>(`${BASE}/admin/config/system-params`);
+  }
+
+  updateSystemParams(body: Partial<SystemParams>) {
+    return this.http.patch<SystemParams>(`${BASE}/admin/config/system-params`, body);
+  }
+
+  // ── XLSX import preview (UC-A02) ──────────────────────────────────────────
+
+  parseXlsxFile(file: File) {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<XlsxParseResult>(`${BASE}/admin/users/parse-xlsx`, fd);
   }
 }

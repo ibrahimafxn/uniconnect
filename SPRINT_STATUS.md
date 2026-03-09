@@ -138,8 +138,57 @@ Planned scope:
 - Configurations globales (SMTP, URLs, templates).
 - Tests + doc Administration.
 
-### Statut (2026-03-07)
+### Statut (2026-03-09)
 - PLAN: `SPRINT_7_PLAN.md` cree avec scope complet (UC-A01 a UC-A06).
 - Work breakdown: 4 semaines avec deliverables API + UI + tests.
 - Metriques: Coverage API >= 85%, Web >= 75%.
 - Definition of Done: audit log, Swagger tags, seed data, doc.
+
+### Avancement (2026-03-09)
+
+#### UC-A01 — Structure académique (✅ 100%)
+- API: initializeYear, closeYear, getYearSummary, updateOfferCapacity, calendar events CRUD
+- UI: admin-uni onglet "Année académique" — formulaires init année + événements calendrier
+- Tests: service spec + controller spec
+
+#### UC-A02 — Import en masse (✅ 100%)
+- API: importStudents (JSON), parseXlsxImport (multipart XLSX via exceljs)
+  - POST /admin/users/import-students — import direct JSON rows
+  - POST /admin/users/parse-xlsx — prévisualisation XLSX avant import
+- UI: drawer import avec upload XLSX + prévisualisation + fallback CSV manuel
+- Tests: service spec + controller spec
+
+#### UC-A03 — Paramétrage paiements (✅ 100%)
+- API: fee-templates CRUD + apply, exemptions CRUD, rapport financier
+- UI: admin-uni onglet "Finances" — templates + exonérations + rapport
+- Tests: service spec + controller spec
+
+#### UC-A04 — Gestion utilisateurs & RBAC (✅ 100%)
+- API: listUsers, suspend/reactivate, resetPassword, assignRole, audit logs, importStudents
+- UI: admin-uni onglet "Utilisateurs" — liste + actions + journal d'audit
+- Tests: service spec + controller spec
+
+#### UC-A05 — Supervision & rapports (✅ 100%)
+- API: dashboard exécutif, rapport MESRS, status système, broadcastAnnouncement
+- UI: admin-uni onglet "Dashboard" + "Communication"
+- Tests: service spec + controller spec
+
+#### UC-A06 — Configuration globale (✅ 100%)
+- API: nouveau module global-config (SuperAdmin uniquement)
+  - GET/PATCH /admin/config/smtp
+  - GET/POST/DELETE /admin/config/email-templates/:key
+  - GET/PATCH /admin/config/system-params
+- UI: admin-uni onglet "Configuration" — SMTP + paramètres système + templates email
+- Tests: service spec + controller spec (16 tests)
+- Schema: SystemConfig (singleton MongoDB) avec markModified pour nested objects
+
+#### Nouveaux modules support (✅)
+- applications/ — dossiers candidatures publiques + workflow admin
+- assignments/ — travaux + soumissions + correction
+- resources/ — ressources pédagogiques avec upload
+- document-requests/ — demandes de documents officiels
+- announcements/ — annonces par rôle/groupe
+
+#### Couverture tests (2026-03-09)
+- API: 354 tests passent (46 suites) — 9 controller specs ajoutées
+- Tous les modules ont : service spec + controller spec
