@@ -3,12 +3,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Workbook } from 'exceljs';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/user.schema';
 import { Role } from '../common/roles.enum';
 import { StudentProfile, StudentGender } from '../students/student-profile.schema';
+import { TeacherProfile } from '../teacher-profile/teacher-profile.schema';
 import { AuditLog } from '../audit/audit-log.schema';
 import { AuditLogService, AuditActor } from '../audit/audit-log.service';
 import { BulkImportJob } from './schemas/bulk-import-job.schema';
@@ -45,6 +47,8 @@ export class AdminUsersService {
     private readonly userModel: Model<User>,
     @InjectModel(StudentProfile.name)
     private readonly studentModel: Model<StudentProfile>,
+    @InjectModel(TeacherProfile.name)
+    private readonly teacherModel: Model<TeacherProfile>,
     @InjectModel(AuditLog.name)
     private readonly auditLogModel: Model<AuditLog>,
     @InjectModel(BulkImportJob.name)
@@ -74,16 +78,39 @@ export class AdminUsersService {
       filter.email = { $regex: params.q, $options: 'i' };
     }
 
-    const [items, total] = await Promise.all([
+    const [users, total] = await Promise.all([
       this.userModel
         .find(filter)
         .select('-passwordHash -refreshTokenHash')
         .sort({ createdAt: -1 })
         .skip(params.skip)
         .limit(params.limit)
+        .lean()
         .exec(),
       this.userModel.countDocuments(filter).exec(),
     ]);
+
+    // Enrich with names from profiles
+    const userIds = users.map((u) => u._id);
+    const emails = users.map((u) => u.email);
+
+    const [studentProfiles, teacherProfiles] = await Promise.all([
+      this.studentModel.find({ email: { $in: emails } }).select('email firstName lastName').lean().exec(),
+      this.teacherModel.find({ userId: { $in: userIds } }).select('userId firstName lastName').lean().exec(),
+    ]);
+
+    const studentByEmail = new Map(studentProfiles.map((p) => [p.email, p]));
+    const teacherByUserId = new Map(teacherProfiles.map((p) => [String(p.userId), p]));
+
+    const items = users.map((u) => {
+      const sp = studentByEmail.get(u.email);
+      const tp = teacherByUserId.get(String(u._id));
+      return {
+        ...u,
+        firstName: sp?.firstName ?? tp?.firstName ?? null,
+        lastName: sp?.lastName ?? tp?.lastName ?? null,
+      };
+    });
 
     return { items, total };
   }
@@ -248,9 +275,10 @@ export class AdminUsersService {
         const passwordHash = await bcrypt.hash(tempPassword, 10);
 
         const email = row.email?.trim().toLowerCase() || undefined;
+        const assignedEmail = email ?? `${studentNumber.toLowerCase()}@uniconnect.local`;
 
         const user = await this.userModel.create({
-          email: email ?? `${studentNumber.toLowerCase()}@uniconnect.local`,
+          email: assignedEmail,
           passwordHash,
           role: Role.Student,
         });
@@ -261,7 +289,7 @@ export class AdminUsersService {
           studentNumber,
           gender: row.gender,
           birthDate,
-          email,
+          email: assignedEmail,
           phone: row.phone?.trim(),
           address: row.address?.trim(),
           groupId,
@@ -372,6 +400,73 @@ export class AdminUsersService {
       throw new Error(`Ligne ${rowNum}: genre invalide (male|female).`);
     }
     if (!row.birthDate) throw new Error(`Ligne ${rowNum}: date de naissance manquante.`);
+  }
+
+  // ─── XLSX parsing (UC-A02) ───────────────────────────────────────────────
+
+  async parseXlsxImport(filePath: string): Promise<{
+    rows: ImportStudentRow[];
+    errors: { row: number; message: string }[];
+  }> {
+    const workbook = new Workbook();
+    await workbook.xlsx.readFile(filePath);
+    const sheet = workbook.worksheets[0];
+    if (!sheet) {
+      throw new BadRequestException('Fichier Excel vide ou invalide.');
+    }
+
+    const rows: ImportStudentRow[] = [];
+    const errors: { row: number; message: string }[] = [];
+    let headerRow: string[] = [];
+
+    sheet.eachRow((row, rowNumber) => {
+      const values = (row.values as any[]).slice(1).map((v) =>
+        v != null ? String(v).trim() : '',
+      );
+
+      if (rowNumber === 1) {
+        headerRow = values.map((v) => v.toLowerCase());
+        return;
+      }
+
+      const get = (col: string) => {
+        const idx = headerRow.indexOf(col);
+        return idx >= 0 ? values[idx] ?? '' : '';
+      };
+
+      const firstName = get('firstname') || get('prenom') || get('prénom');
+      const lastName = get('lastname') || get('nom');
+      const gender = get('gender') || get('genre');
+      const birthDate = get('birthdate') || get('datenaissance') || get('date_naissance');
+
+      const missingFields: string[] = [];
+      if (!firstName) missingFields.push('firstName');
+      if (!lastName) missingFields.push('lastName');
+      if (!gender) missingFields.push('gender');
+      if (!birthDate) missingFields.push('birthDate');
+
+      if (missingFields.length > 0) {
+        errors.push({ row: rowNumber, message: `Champs manquants: ${missingFields.join(', ')}` });
+        return;
+      }
+
+      if (!['male', 'female', 'other'].includes(gender.toLowerCase())) {
+        errors.push({ row: rowNumber, message: `Gender invalide: "${gender}" (male|female|other attendu)` });
+        return;
+      }
+
+      rows.push({
+        firstName,
+        lastName,
+        gender: gender.toLowerCase() as any,
+        birthDate,
+        email: get('email') || undefined,
+        phone: get('phone') || get('telephone') || undefined,
+        address: get('address') || get('adresse') || undefined,
+      });
+    });
+
+    return { rows, errors };
   }
 
   private async resolveUniqueStudentNumber(base: string): Promise<string> {
