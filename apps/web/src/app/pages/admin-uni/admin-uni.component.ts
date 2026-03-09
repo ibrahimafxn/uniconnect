@@ -3,14 +3,15 @@ import {CommonModule} from '@angular/common';
 import {FormArray, FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {forkJoin} from 'rxjs';
 import {
-  AdminApi, AdminUser, CalendarEvent, ExecutiveDashboard,
+  AdminApi, AdminUser, CalendarEvent, EmailTemplate, ExecutiveDashboard,
   FeeExemption, FeeTemplate, FinancialReport, ImportResult, MesrsReport,
+  SmtpConfig, SystemParams, XlsxParseResult,
 } from '../../core/api/admin.api';
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {ConfirmService} from '../../core/confirm.service';
 
-export type AdminUniTab = 'dashboard' | 'users' | 'academic' | 'finance' | 'communication';
+export type AdminUniTab = 'dashboard' | 'users' | 'academic' | 'finance' | 'communication' | 'config';
 
 type DrawerMode =
   | 'import-students'
@@ -22,6 +23,9 @@ type DrawerMode =
   | 'apply-template'
   | 'exemption'
   | 'announce'
+  | 'smtp-config'
+  | 'email-template'
+  | 'system-params'
   | null;
 
 @Component({
@@ -47,6 +51,7 @@ export class AdminUniComponent implements OnInit {
     {id: 'academic', label: 'Année académique', icon: '🏛️'},
     {id: 'finance', label: 'Finances', icon: '💰'},
     {id: 'communication', label: 'Communication', icon: '📢'},
+    {id: 'config', label: 'Configuration', icon: '⚙️'},
   ];
 
   setTab(tab: AdminUniTab) {
@@ -55,6 +60,7 @@ export class AdminUniComponent implements OnInit {
     if (tab === 'users' && this.users.length === 0) this.loadUsers();
     if (tab === 'academic') this.loadAcademicData();
     if (tab === 'finance') this.loadFinanceData();
+    if (tab === 'config') this.loadConfigData();
   }
 
   // ── Drawer ──────────────────────────────────────────────────────────────────
@@ -694,6 +700,141 @@ export class AdminUniComponent implements OnInit {
 
   calEventTypeLabel(type: string) {
     return this.calEventTypes.find(t => t.value === type)?.label ?? type;
+  }
+
+  // ── Config tab (UC-A06) ───────────────────────────────────────────────────
+
+  smtpConfig: SmtpConfig | null = null;
+  systemParams: SystemParams | null = null;
+  emailTemplates: EmailTemplate[] = [];
+  configLoading = false;
+  selectedTemplateKey = '';
+
+  smtpForm = this.fb.group({
+    host: ['', Validators.required],
+    port: [587, [Validators.required, Validators.min(1), Validators.max(65535)]],
+    user: ['', Validators.required],
+    from: ['', [Validators.required, Validators.email]],
+    secure: [false],
+  });
+
+  systemParamsForm = this.fb.group({
+    maxStudentsPerGroup: [40, [Validators.required, Validators.min(1)]],
+    paymentGraceDays: [7, [Validators.required, Validators.min(0)]],
+    supportEmail: ['', [Validators.required, Validators.email]],
+    maintenanceMode: [false],
+    maxUploadSizeMb: [20, [Validators.required, Validators.min(1)]],
+  });
+
+  emailTemplateForm = this.fb.group({
+    subject: ['', Validators.required],
+    body: ['', Validators.required],
+  });
+
+  loadConfigData() {
+    this.configLoading = true;
+    forkJoin({
+      smtp: this.api.getSmtpConfig(),
+      params: this.api.getSystemParams(),
+      templates: this.api.listEmailTemplates(),
+    }).subscribe({
+      next: ({smtp, params, templates}) => {
+        this.smtpConfig = smtp;
+        this.systemParams = params;
+        this.emailTemplates = templates;
+        if (smtp) {
+          this.smtpForm.patchValue(smtp);
+        }
+        this.systemParamsForm.patchValue(params);
+        this.configLoading = false;
+      },
+      error: () => { this.configLoading = false; },
+    });
+  }
+
+  openSmtpDrawer() {
+    if (this.smtpConfig) this.smtpForm.patchValue(this.smtpConfig);
+    this.openDrawer('smtp-config', 'Configuration SMTP');
+  }
+
+  submitSmtpConfig() {
+    if (this.smtpForm.invalid) return;
+    this.drawerLoading = true;
+    this.api.updateSmtpConfig(this.smtpForm.value as SmtpConfig).subscribe({
+      next: (cfg) => { this.smtpConfig = cfg; this.closeDrawer(); this.loadConfigData(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  openSystemParamsDrawer() {
+    if (this.systemParams) this.systemParamsForm.patchValue(this.systemParams);
+    this.openDrawer('system-params', 'Paramètres système');
+  }
+
+  submitSystemParams() {
+    if (this.systemParamsForm.invalid) return;
+    this.drawerLoading = true;
+    this.api.updateSystemParams(this.systemParamsForm.value as Partial<SystemParams>).subscribe({
+      next: (p) => { this.systemParams = p; this.closeDrawer(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  openEmailTemplateDrawer(tmpl?: EmailTemplate) {
+    this.selectedTemplateKey = tmpl?.key ?? '';
+    this.emailTemplateForm.setValue({
+      subject: tmpl?.subject ?? '',
+      body: tmpl?.body ?? '',
+    });
+    const title = tmpl ? `Modifier template — ${tmpl.key}` : 'Nouveau template email';
+    this.openDrawer('email-template', title);
+  }
+
+  submitEmailTemplate() {
+    if (this.emailTemplateForm.invalid || !this.selectedTemplateKey) return;
+    this.drawerLoading = true;
+    this.api.upsertEmailTemplate(this.selectedTemplateKey, this.emailTemplateForm.value as any).subscribe({
+      next: () => { this.closeDrawer(); this.loadConfigData(); },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
+    });
+  }
+
+  deleteEmailTemplate(key: string) {
+    this.confirm.open({title: `Supprimer le template "${key}" ?`, message: 'Cette action est irréversible.', danger: true})
+      .subscribe(ok => {
+        if (!ok) return;
+        this.api.deleteEmailTemplate(key).subscribe({
+          next: () => this.loadConfigData(),
+        });
+      });
+  }
+
+  // ── XLSX import (UC-A02 upgrade) ──────────────────────────────────────────
+
+  xlsxPreview: XlsxParseResult | null = null;
+  xlsxLoading = false;
+
+  onXlsxFileSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.xlsxLoading = true;
+    this.xlsxPreview = null;
+    this.drawerError = '';
+    this.api.parseXlsxFile(file).subscribe({
+      next: (result) => { this.xlsxPreview = result; this.xlsxLoading = false; },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur lors du parsing XLSX.'; this.xlsxLoading = false; },
+    });
+  }
+
+  submitXlsxImport() {
+    if (!this.xlsxPreview || this.xlsxPreview.rows.length === 0) return;
+    const {offerId, groupId} = this.importForm.value as any;
+    if (!offerId || !groupId) { this.drawerError = 'Sélectionnez une offre et un groupe.'; return; }
+    this.drawerLoading = true;
+    this.api.importStudents(offerId, groupId, this.xlsxPreview.rows).subscribe({
+      next: (result) => { this.importResult = result; this.xlsxPreview = null; this.drawerLoading = false; },
+      error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur lors de l\'import.'; this.drawerLoading = false; },
+    });
   }
 
   // ── Init ────────────────────────────────────────────────────────────────────
