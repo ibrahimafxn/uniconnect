@@ -189,12 +189,18 @@
       <table>
         <thead>
           <tr>
-            <th>Email</th><th>Rôle</th><th>État</th><th>Créé le</th><th class="actions-th">Actions</th>
+            <th>Nom</th><th>Email</th><th>Rôle</th><th>État</th><th>Créé le</th><th class="actions-th">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="userLoading"><td colspan="5" class="empty-row">Chargement…</td></tr>
+          <tr *ngIf="userLoading"><td colspan="6" class="empty-row">Chargement…</td></tr>
           <tr *ngFor="let u of users" [class.row-suspended]="u.suspended">
+            <td>
+              <span *ngIf="u.firstName || u.lastName" class="user-fullname">
+                {{ u.lastName }} {{ u.firstName }}
+              </span>
+              <span *ngIf="!u.firstName && !u.lastName" class="muted">—</span>
+            </td>
             <td><span class="email-cell">{{ u.email }}</span></td>
             <td><span class="role-badge" [class]="roleBadgeClass(u.role)">{{ roleLabel(u.role) }}</span></td>
             <td>
@@ -212,7 +218,7 @@
               </button>
             </td>
           </tr>
-          <tr *ngIf="!userLoading && users.length === 0"><td colspan="5" class="empty-row">Aucun utilisateur.</td></tr>
+          <tr *ngIf="!userLoading && users.length === 0"><td colspan="6" class="empty-row">Aucun utilisateur.</td></tr>
         </tbody>
       </table>
     </div>
@@ -542,16 +548,42 @@
               <option *ngFor="let g of groups" [value]="g._id">{{ g.name }}</option>
             </select>
           </div>
+          <!-- XLSX upload section -->
           <div class="field">
-            <label>Données CSV</label>
-            <p class="hint">Format : NOM,PRÉNOM,GENRE(m/f),DATE_NAISSANCE(AAAA-MM-JJ),EMAIL,TÉLÉPHONE</p>
-            <p class="hint">Première ligne = en-tête (ignorée automatiquement)</p>
-            <textarea formControlName="csvText" rows="10" placeholder="nom,prenom,genre,date_naissance,email&#10;Koné,Aya,f,2000-05-15,aya@email.com&#10;Diallo,Ibrahim,m,1999-11-20,"></textarea>
+            <label>Fichier Excel (.xlsx)</label>
+            <p class="hint">Colonnes attendues : <code>firstName, lastName, gender, birthDate</code> (+ email, phone, address optionnels)</p>
+            <input type="file" accept=".xlsx,.xls" (change)="onXlsxFileSelected($event)" />
+            <div *ngIf="xlsxLoading" class="hint">Analyse du fichier…</div>
           </div>
-          <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
-          <button type="submit" [disabled]="importForm.invalid || drawerLoading">
-            {{ drawerLoading ? 'Import en cours…' : '⬆ Importer' }}
-          </button>
+
+          <!-- XLSX preview -->
+          <ng-container *ngIf="xlsxPreview">
+            <div class="xlsx-preview">
+              <div class="result-stat ok" *ngIf="xlsxPreview.rows.length > 0">✔ {{ xlsxPreview.rows.length }} lignes valides</div>
+              <div class="result-stat err" *ngIf="xlsxPreview.errors.length > 0">✕ {{ xlsxPreview.errors.length }} erreur(s)</div>
+              <div class="error-list" *ngIf="xlsxPreview.errors.length > 0">
+                <div class="error-row" *ngFor="let e of xlsxPreview.errors">Ligne {{ e.row }} : {{ e.message }}</div>
+              </div>
+            </div>
+            <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+            <button type="button" [disabled]="xlsxPreview.rows.length === 0 || drawerLoading || importForm.invalid"
+              (click)="submitXlsxImport()">
+              {{ drawerLoading ? 'Import en cours…' : '⬆ Importer ' + xlsxPreview.rows.length + ' étudiants' }}
+            </button>
+          </ng-container>
+
+          <!-- Fallback CSV -->
+          <details style="margin-top:16px">
+            <summary class="hint" style="cursor:pointer">Utiliser la saisie manuelle CSV à la place</summary>
+            <div class="field" style="margin-top:8px">
+              <p class="hint">Format : NOM,PRÉNOM,GENRE(m/f),DATE_NAISSANCE(AAAA-MM-JJ),EMAIL,TÉLÉPHONE</p>
+              <textarea formControlName="csvText" rows="8" placeholder="nom,prenom,genre,date_naissance,email&#10;Koné,Aya,f,2000-05-15,aya@email.com"></textarea>
+            </div>
+            <div class="error-msg" *ngIf="drawerError && !xlsxPreview">{{ drawerError }}</div>
+            <button type="submit" [disabled]="!importForm.value.csvText || importForm.controls['offerId'].invalid || importForm.controls['groupId'].invalid || drawerLoading">
+              {{ drawerLoading ? 'Import en cours…' : '⬆ Importer (CSV)' }}
+            </button>
+          </details>
         </form>
       </ng-container>
 
@@ -837,5 +869,165 @@
       </div>
     </ng-container>
 
+    <!-- SMTP Config -->
+    <ng-container *ngIf="drawerMode === 'smtp-config'">
+      <form [formGroup]="smtpForm" (ngSubmit)="submitSmtpConfig()">
+        <div class="field">
+          <label>Hôte SMTP</label>
+          <input formControlName="host" placeholder="smtp.example.com" />
+        </div>
+        <div class="field">
+          <label>Port</label>
+          <input type="number" formControlName="port" placeholder="587" />
+        </div>
+        <div class="field">
+          <label>Utilisateur</label>
+          <input formControlName="user" placeholder="no-reply@example.com" />
+        </div>
+        <div class="field">
+          <label>Adresse expéditeur (From)</label>
+          <input formControlName="from" placeholder="no-reply@uniconnect.local" />
+        </div>
+        <div class="field">
+          <label class="checkbox-row">
+            <input type="checkbox" formControlName="secure" /> Connexion sécurisée (TLS port 465)
+          </label>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="smtpForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : '✔ Sauvegarder la config SMTP' }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- System Params -->
+    <ng-container *ngIf="drawerMode === 'system-params'">
+      <form [formGroup]="systemParamsForm" (ngSubmit)="submitSystemParams()">
+        <div class="field">
+          <label>Capacité max par groupe (étudiants)</label>
+          <input type="number" formControlName="maxStudentsPerGroup" min="1" />
+        </div>
+        <div class="field">
+          <label>Jours de grâce paiement</label>
+          <input type="number" formControlName="paymentGraceDays" min="0" />
+        </div>
+        <div class="field">
+          <label>Email support</label>
+          <input formControlName="supportEmail" placeholder="support@uniconnect.local" />
+        </div>
+        <div class="field">
+          <label>Taille max upload (Mo)</label>
+          <input type="number" formControlName="maxUploadSizeMb" min="1" />
+        </div>
+        <div class="field">
+          <label class="checkbox-row">
+            <input type="checkbox" formControlName="maintenanceMode" /> Mode maintenance (bloque les accès)
+          </label>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="systemParamsForm.invalid || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : '✔ Sauvegarder les paramètres' }}
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Email Template -->
+    <ng-container *ngIf="drawerMode === 'email-template'">
+      <div class="field">
+        <label>Clé du template</label>
+        <input [(ngModel)]="selectedTemplateKey" placeholder="ex: welcome, payment-reminder…" />
+      </div>
+      <form [formGroup]="emailTemplateForm" (ngSubmit)="submitEmailTemplate()">
+        <div class="field">
+          <label>Sujet</label>
+          <input formControlName="subject" placeholder="Objet de l'email" />
+        </div>
+        <div class="field">
+          <label>Corps (supporte {{'{{'}}name{{'}}'}}, {{'{{'}}email{{'}}'}}…)</label>
+          <textarea formControlName="body" rows="8" placeholder="Bonjour {{'{{'}}name{{'}}'}},&#10;Votre compte a été créé…"></textarea>
+        </div>
+        <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
+        <button type="submit" [disabled]="emailTemplateForm.invalid || !selectedTemplateKey || drawerLoading">
+          {{ drawerLoading ? 'Enregistrement…' : '✔ Sauvegarder le template' }}
+        </button>
+      </form>
+    </ng-container>
+
   </div>
 </div>
+
+<!-- ========== CONFIG ========== -->
+<ng-container *ngIf="activeTab === 'config'">
+  <div *ngIf="configLoading" class="loading-state">Chargement de la configuration…</div>
+
+  <ng-container *ngIf="!configLoading">
+    <div class="section-header">
+      <h2>⚙️ Configuration globale</h2>
+      <p class="muted">Paramètres système réservés au Super Administrateur.</p>
+    </div>
+
+    <!-- SMTP -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <h3>📧 Configuration SMTP</h3>
+        <button class="ghost" (click)="openSmtpDrawer()">Modifier</button>
+      </div>
+      <div *ngIf="smtpConfig; else noSmtp" class="config-grid">
+        <div><span class="label">Hôte</span><span>{{ smtpConfig.host }}</span></div>
+        <div><span class="label">Port</span><span>{{ smtpConfig.port }}</span></div>
+        <div><span class="label">Utilisateur</span><span>{{ smtpConfig.user }}</span></div>
+        <div><span class="label">Expéditeur</span><span>{{ smtpConfig.from }}</span></div>
+        <div><span class="label">TLS</span><span>{{ smtpConfig.secure ? 'Oui' : 'Non' }}</span></div>
+      </div>
+      <ng-template #noSmtp>
+        <p class="muted">Aucune configuration SMTP définie. L'envoi d'emails utilise les variables d'environnement.</p>
+      </ng-template>
+    </div>
+
+    <!-- System params -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <h3>🔧 Paramètres système</h3>
+        <button class="ghost" (click)="openSystemParamsDrawer()">Modifier</button>
+      </div>
+      <div *ngIf="systemParams" class="config-grid">
+        <div><span class="label">Capacité max / groupe</span><span>{{ systemParams.maxStudentsPerGroup }} étudiants</span></div>
+        <div><span class="label">Jours de grâce paiement</span><span>{{ systemParams.paymentGraceDays }} jours</span></div>
+        <div><span class="label">Email support</span><span>{{ systemParams.supportEmail }}</span></div>
+        <div><span class="label">Taille max upload</span><span>{{ systemParams.maxUploadSizeMb }} Mo</span></div>
+        <div>
+          <span class="label">Mode maintenance</span>
+          <span [class]="systemParams.maintenanceMode ? 'badge danger' : 'badge ok'">
+            {{ systemParams.maintenanceMode ? 'ACTIVÉ' : 'Désactivé' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email templates -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📄 Templates d'emails</h3>
+        <button (click)="openEmailTemplateDrawer()">+ Nouveau template</button>
+      </div>
+      <div *ngIf="emailTemplates.length === 0" class="empty-state">
+        Aucun template configuré. Les emails utilisent les textes par défaut.
+      </div>
+      <table *ngIf="emailTemplates.length > 0" class="data-table">
+        <thead>
+          <tr><th>Clé</th><th>Sujet</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tmpl of emailTemplates">
+            <td><code>{{ tmpl.key }}</code></td>
+            <td>{{ tmpl.subject }}</td>
+            <td>
+              <button class="ghost small" (click)="openEmailTemplateDrawer(tmpl)">Modifier</button>
+              <button class="ghost small danger" (click)="deleteEmailTemplate(tmpl.key)">Supprimer</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</ng-container>

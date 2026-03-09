@@ -20,6 +20,7 @@ import { ResourcesModule } from './resources/resources.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { DocumentRequestsModule } from './document-requests/document-requests.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { GlobalConfigModule } from './global-config/global-config.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     AssignmentsModule,
     DocumentRequestsModule,
     AnnouncementsModule,
+    GlobalConfigModule,
   ],
   controllers: [AppController],
   providers: [],
