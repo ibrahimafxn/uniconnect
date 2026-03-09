@@ -45,6 +45,12 @@ describe('StudentsService extra', () => {
       }),
     }),
   } as any;
+  const userModel = {
+    findOne: jest.fn().mockReturnValue({
+      lean: () => ({ exec: jest.fn().mockResolvedValue(null) }),
+    }),
+    create: jest.fn().mockResolvedValue({}),
+  } as any;
 
   it('createEnrollment calls model', async () => {
     const enrollmentModel = { ...mockModel() } as any;
@@ -70,7 +76,7 @@ describe('StudentsService extra', () => {
 
   it('createStudent and getStudent call model', async () => {
     const studentModel = { ...mockModel() } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any, userModel);
     const year = 2025;
     await service.createStudent({
       firstName: 'John',
@@ -212,7 +218,7 @@ describe('StudentsService extra', () => {
         }),
       }),
     } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any, userModel);
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
@@ -230,7 +236,7 @@ describe('StudentsService extra', () => {
   it('createStudent accepts matricule suffix', async () => {
     const create = jest.fn().mockResolvedValue({});
     const studentModel = { ...mockModel(), create } as any;
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModel, groupModel, {} as any, userModel);
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
@@ -330,7 +336,7 @@ describe('StudentsService extra', () => {
       }),
     } as any;
 
-    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModelLocal, groupModelLocal, {} as any);
+    const service = new StudentsService(studentModel, {} as any, {} as any, academicYearModel, offerModelLocal, groupModelLocal, {} as any, userModel);
     await service.createStudent({
       firstName: 'John',
       lastName: 'Doe',
