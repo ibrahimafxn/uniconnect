@@ -6,6 +6,7 @@ import {TeacherNotesComponent} from './notes/teacher-notes.component';
 import {TeacherPresenceComponent} from './presence/teacher-presence.component';
 import {TeacherProfilePageComponent} from './profile/teacher-profile-page.component';
 import {TeacherStatsComponent} from './stats/teacher-stats.component';
+import {TeacherAnnouncementsComponent} from './announcements/teacher-announcements.component';
 
 export const TEACHER_ROUTES: Routes = [
   {
@@ -16,6 +17,7 @@ export const TEACHER_ROUTES: Routes = [
       {path: 'planning', component: TeacherPlanningComponent},
       {path: 'notes', component: TeacherNotesComponent},
       {path: 'presence', component: TeacherPresenceComponent},
+      {path: 'announcements', component: TeacherAnnouncementsComponent},
       {path: 'profile', component: TeacherProfilePageComponent},
       {path: 'stats', component: TeacherStatsComponent},
     ]

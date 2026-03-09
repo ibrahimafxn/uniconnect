@@ -26,4 +26,12 @@ export class AnnouncementsApi {
   create(payload: { title: string; body: string; scope?: string; category?: string; groupId?: string }) {
     return this.http.post<Announcement>(`${this.baseUrl}`, payload);
   }
+
+  update(id: string, payload: { title?: string; body?: string; scope?: string; category?: string; groupId?: string }) {
+    return this.http.patch<Announcement>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  remove(id: string) {
+    return this.http.delete<{success: boolean}>(`${this.baseUrl}/${id}`);
+  }
 }
