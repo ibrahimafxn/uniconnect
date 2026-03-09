@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../users/user.schema';
 import { Role } from '../common/roles.enum';
 import { StudentProfile, StudentGender } from '../students/student-profile.schema';
+import { TeacherProfile } from '../teacher-profile/teacher-profile.schema';
 import { AuditLog } from '../audit/audit-log.schema';
 import { AuditLogService, AuditActor } from '../audit/audit-log.service';
 import { BulkImportJob } from './schemas/bulk-import-job.schema';
@@ -46,6 +47,8 @@ export class AdminUsersService {
     private readonly userModel: Model<User>,
     @InjectModel(StudentProfile.name)
     private readonly studentModel: Model<StudentProfile>,
+    @InjectModel(TeacherProfile.name)
+    private readonly teacherModel: Model<TeacherProfile>,
     @InjectModel(AuditLog.name)
     private readonly auditLogModel: Model<AuditLog>,
     @InjectModel(BulkImportJob.name)
@@ -75,16 +78,39 @@ export class AdminUsersService {
       filter.email = { $regex: params.q, $options: 'i' };
     }
 
-    const [items, total] = await Promise.all([
+    const [users, total] = await Promise.all([
       this.userModel
         .find(filter)
         .select('-passwordHash -refreshTokenHash')
         .sort({ createdAt: -1 })
         .skip(params.skip)
         .limit(params.limit)
+        .lean()
         .exec(),
       this.userModel.countDocuments(filter).exec(),
     ]);
+
+    // Enrich with names from profiles
+    const userIds = users.map((u) => u._id);
+    const emails = users.map((u) => u.email);
+
+    const [studentProfiles, teacherProfiles] = await Promise.all([
+      this.studentModel.find({ email: { $in: emails } }).select('email firstName lastName').lean().exec(),
+      this.teacherModel.find({ userId: { $in: userIds } }).select('userId firstName lastName').lean().exec(),
+    ]);
+
+    const studentByEmail = new Map(studentProfiles.map((p) => [p.email, p]));
+    const teacherByUserId = new Map(teacherProfiles.map((p) => [String(p.userId), p]));
+
+    const items = users.map((u) => {
+      const sp = studentByEmail.get(u.email);
+      const tp = teacherByUserId.get(String(u._id));
+      return {
+        ...u,
+        firstName: sp?.firstName ?? tp?.firstName ?? null,
+        lastName: sp?.lastName ?? tp?.lastName ?? null,
+      };
+    });
 
     return { items, total };
   }

@@ -9,6 +9,8 @@ export interface AdminUser {
   role: string;
   suspended: boolean;
   createdAt: string;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 export interface ImportStudentRow {
