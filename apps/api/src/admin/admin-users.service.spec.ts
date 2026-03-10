@@ -88,11 +88,11 @@ describe('AdminUsersService', () => {
         exec: jest.fn().mockResolvedValue([user]),
       });
       userModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
-      // Student profile join
+      // Student profile join (by userId)
       studentModel.find = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnThis(),
         lean: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([{ email: 'a@b.com', firstName: 'Aya', lastName: 'Koné' }]),
+        exec: jest.fn().mockResolvedValue([{ userId, firstName: 'Aya', lastName: 'Koné' }]),
       });
       // Teacher profile join
       teacherModel.find = jest.fn().mockReturnValue({
