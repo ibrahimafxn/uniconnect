@@ -38,7 +38,7 @@ export class PlanningController {
   constructor(private readonly planningService: PlanningService) {}
 
   @Get('rooms')
-  @Roles(Role.Admin, Role.SuperAdmin)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Lister les salles' })
   @ApiResponse({ status: 200, description: 'Liste des salles' })
   listRooms() {

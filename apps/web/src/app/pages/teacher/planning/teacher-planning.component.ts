@@ -22,12 +22,25 @@ export class TeacherPlanningComponent {
   private readonly fb = inject(FormBuilder);
 
   sessions$ = this.planning.listSessions();
-  groups$ = this.academic.listGroups();
-  rooms$ = this.planning.listRooms();
+
+  // Stored locally so a 403 / network error never blocks session rendering
+  groups: Array<{_id: string; name: string; [k: string]: any}> = [];
+  rooms: Array<{_id: string; name: string}> = [];
 
   viewMode: 'list' | 'calendar' = 'list';
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
+
+  constructor() {
+    this.academic.listGroups().subscribe({
+      next: (r: any) => { this.groups = r?.items ?? r ?? []; },
+      error: () => { /* teacher may lack permission — degrade gracefully */ },
+    });
+    this.planning.listRooms().subscribe({
+      next: (r) => { this.rooms = r ?? []; },
+      error: () => { /* degrade gracefully */ },
+    });
+  }
 
   // Cahier de texte
   editingSessionId: string | null = null;
@@ -202,14 +215,14 @@ export class TeacherPlanningComponent {
     });
   }
 
-  groupName(groups: Array<{_id: string; name: string}> | null, groupId: string): string {
-    if (!groups || !groupId) return groupId;
-    return groups.find((g) => g._id === groupId)?.name ?? groupId;
+  groupName(groupId: string): string {
+    if (!groupId) return '—';
+    return this.groups.find((g) => g._id === groupId)?.name ?? groupId;
   }
 
-  roomName(rooms: Array<{_id: string; name: string}> | null, roomId: string): string {
-    if (!rooms || !roomId) return roomId;
-    return rooms.find((r) => r._id === roomId)?.name ?? roomId;
+  roomName(roomId: string): string {
+    if (!roomId) return '—';
+    return this.rooms.find((r) => r._id === roomId)?.name ?? roomId;
   }
 
   formatDate(date: string | Date): string {
