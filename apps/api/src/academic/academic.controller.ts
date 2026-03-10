@@ -206,6 +206,7 @@ export class AcademicController {
   }
 
   @Get('groups')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
   async listGroups(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
