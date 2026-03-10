@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
 import { StudentProfile, StudentGender } from './student-profile.schema';
 import { Enrollment, EnrollmentStatus } from './enrollment.schema';
 import { StudentStatus } from './student-profile.schema';
@@ -9,6 +10,8 @@ import { ProgramOffer } from '../academic/program-offer.schema';
 import { Group } from '../academic/group.schema';
 import { AcademicYear } from '../academic/academic-year.schema';
 import { AcademicCalendarEvent, CalendarEventType } from '../admin/schemas/academic-calendar-event.schema';
+import { User } from '../users/user.schema';
+import { Role } from '../common/roles.enum';
 import {
   buildStudentNumber,
   normalizeStudentNumber,
@@ -32,6 +35,8 @@ export class StudentsService {
     private readonly groupModel: Model<Group>,
     @InjectModel(AcademicCalendarEvent.name)
     private readonly calendarEventModel: Model<AcademicCalendarEvent>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<User>,
   ) {}
 
   async listStudents(params: { skip: number; limit: number; q?: string }) {
@@ -176,10 +181,12 @@ export class StudentsService {
       baseNumber,
     });
 
-    return this.studentModel
+    const assignedEmail = normalizedEmail ?? `${studentNumber.toLowerCase()}@uniconnect.local`;
+
+    const profile = await this.studentModel
       .create({
         ...data,
-        email: normalizedEmail,
+        email: assignedEmail,
         studentNumber,
         birthDate,
       })
@@ -188,11 +195,23 @@ export class StudentsService {
         const next = await this.nextAvailableStudentNumber(baseNumber);
         return this.studentModel.create({
           ...data,
-          email: normalizedEmail,
+          email: assignedEmail,
           studentNumber: next,
           birthDate,
         });
       });
+
+    let user = await this.userModel.findOne({ email: assignedEmail }).lean().exec();
+    let tempPassword: string | undefined;
+    if (!user) {
+      tempPassword = Math.random().toString(36).slice(2, 12);
+      const passwordHash = await bcrypt.hash(tempPassword, 10);
+      user = await this.userModel.create({ email: assignedEmail, passwordHash, role: Role.Student });
+    }
+
+    await this.studentModel.findByIdAndUpdate(profile._id, { userId: user._id }).exec();
+
+    return { profile, email: assignedEmail, tempPassword };
   }
 
   async listEnrollments(params: { skip: number; limit: number }) {
