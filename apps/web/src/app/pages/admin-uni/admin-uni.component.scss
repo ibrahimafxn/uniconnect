@@ -310,7 +310,9 @@ button[type='submit'], button:not(.icon-btn):not(.ghost):not(.close-btn):not(.bt
 }
 
 .ghost { background: transparent; border: 1px solid var(--border); color: var(--ink); border-radius: 10px; padding: 0 14px; height: 38px; font-family: inherit; font-size: 14px; cursor: pointer; &.small { height: 28px; font-size: 12px; } }
-.checkbox-row { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 8px; &:hover { background: rgba(239,111,58,.05); } input { width: 16px; height: 16px; margin: 0; } }
+.checkbox-row { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 8px; &:hover { background: rgba(239,111,58,.05); } input { width: 16px; height: 16px; margin: 0; flex-shrink: 0; } }
+.student-selector-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; .select-all { font-weight: 600; } .selected-count { font-size: 12px; color: var(--accent); font-weight: 600; } }
+.student-selector-list { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: 10px; padding: 6px; margin-bottom: 12px; .student-name { flex: 1; } .student-number { font-size: 12px; color: var(--muted); font-family: monospace; } }
 .hint { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
 .error-msg { color: #991b1b; font-size: 13px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-left: 3px solid #dc2626; border-radius: 8px; }
 .red-text { color: #dc2626; font-weight: 700; }
