@@ -745,7 +745,7 @@
         <input formControlName="password" type="password" placeholder="Min. 6 caractères" />
       </div>
       <div class="field"><label>Rôle *</label>
-        <select formControlName="role">
+        <select formControlName="role" (change)="onRoleChange($any($event.target).value)">
           <option value="teacher">Enseignant</option>
           <option value="external">Vacataire</option>
           <option value="admin">Admin</option>
@@ -753,6 +753,44 @@
           <option value="student">Étudiant</option>
         </select>
       </div>
+
+      <!-- Liaison à un profil existant (student / teacher / external) -->
+      <ng-container *ngIf="!editingUserId && (userForm.get('role')?.value === 'student' || userForm.get('role')?.value === 'teacher' || userForm.get('role')?.value === 'external')">
+        <div class="field">
+          <label>Lier à un profil existant <span class="muted">(optionnel)</span></label>
+
+          <!-- Profil sélectionné -->
+          <div *ngIf="selectedProfile" class="profile-selected">
+            <span>{{ selectedProfile.lastName }} {{ selectedProfile.firstName }}<span *ngIf="selectedProfile.studentNumber"> — {{ selectedProfile.studentNumber }}</span><span *ngIf="selectedProfile.specialty"> — {{ selectedProfile.specialty }}</span></span>
+            <button type="button" class="btn-clear-profile" (click)="clearProfileSelection()">✕</button>
+          </div>
+
+          <!-- Recherche -->
+          <ng-container *ngIf="!selectedProfile">
+            <input
+              type="text"
+              [ngModel]="profileSearchQuery"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="searchProfiles($event)"
+              placeholder="Rechercher par nom{{ userForm.get('role')?.value === 'student' ? ', matricule' : '' }}…"
+            />
+            <div class="profile-list" *ngIf="unlinkedProfiles.length > 0">
+              <div
+                class="profile-item"
+                *ngFor="let p of unlinkedProfiles"
+                (click)="selectProfile(p)"
+              >
+                <strong>{{ p.lastName }} {{ p.firstName }}</strong>
+                <span *ngIf="p.studentNumber" class="muted"> — {{ p.studentNumber }}</span>
+                <span *ngIf="p.specialty" class="muted"> — {{ p.specialty }}</span>
+                <span *ngIf="p.email" class="muted"> · {{ p.email }}</span>
+              </div>
+            </div>
+            <p class="muted" *ngIf="unlinkedProfiles.length === 0 && profileSearchQuery">Aucun profil trouvé.</p>
+          </ng-container>
+        </div>
+      </ng-container>
+
       <div class="error-msg" *ngIf="userCreateError">{{ userCreateError }}</div>
       <button type="submit" [disabled]="userForm.invalid">{{ editingUserId ? 'Enregistrer' : 'Créer le compte' }}</button>
     </form>

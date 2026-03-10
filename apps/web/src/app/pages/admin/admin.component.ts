@@ -7,7 +7,7 @@ import {Observable, of, tap, take, combineLatest, map, distinctUntilChanged, swi
 import {AcademicApi} from '../../core/api/academic.api';
 import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
-import {UsersApi} from '../../core/api/users.api';
+import {UnlinkedProfile, UsersApi} from '../../core/api/users.api';
 import {Paginated, StudentDocument} from '../../core/api/students.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
 
@@ -835,10 +835,15 @@ export class AdminComponent implements OnInit {
   userCreateSuccess = false;
   editingUserId: string | null = null;
 
+  unlinkedProfiles: UnlinkedProfile[] = [];
+  profileSearchQuery = '';
+  selectedProfile: UnlinkedProfile | null = null;
+
   userForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     role: ['teacher', Validators.required],
+    profileId: [null as string | null],
   });
 
   openCreateUser() {
@@ -847,7 +852,48 @@ export class AdminComponent implements OnInit {
     this.userForm.reset({role: 'teacher'});
     this.userCreateError = null;
     this.userCreateSuccess = false;
+    this.unlinkedProfiles = [];
+    this.profileSearchQuery = '';
+    this.selectedProfile = null;
+    this.loadUnlinkedProfiles('teacher', '');
     this.openDrawer('user', 'Créer un utilisateur');
+  }
+
+  onRoleChange(role: string) {
+    this.unlinkedProfiles = [];
+    this.profileSearchQuery = '';
+    this.selectedProfile = null;
+    this.userForm.patchValue({ profileId: null });
+    if (role === 'student' || role === 'teacher' || role === 'external') {
+      this.loadUnlinkedProfiles(role, '');
+    }
+  }
+
+  loadUnlinkedProfiles(role: string, q: string) {
+    if (role === 'student') {
+      this.usersApi.listUnlinkedStudents(q || undefined).subscribe(list => { this.unlinkedProfiles = list; });
+    } else if (role === 'teacher' || role === 'external') {
+      this.usersApi.listUnlinkedTeachers(q || undefined).subscribe(list => { this.unlinkedProfiles = list; });
+    }
+  }
+
+  searchProfiles(q: string) {
+    this.profileSearchQuery = q;
+    const role = this.userForm.get('role')?.value ?? '';
+    this.loadUnlinkedProfiles(role, q);
+  }
+
+  selectProfile(p: UnlinkedProfile) {
+    this.selectedProfile = p;
+    this.userForm.patchValue({ profileId: p._id });
+    if (!this.userForm.get('email')?.value && p.email) {
+      this.userForm.patchValue({ email: p.email });
+    }
+  }
+
+  clearProfileSelection() {
+    this.selectedProfile = null;
+    this.userForm.patchValue({ profileId: null });
   }
 
   selectUserForEdit(u: any) {
@@ -891,10 +937,14 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    this.usersApi.createUser(raw).subscribe({
+    const payload: any = { email: raw.email, password: raw.password, role: raw.role };
+    if (raw.profileId) payload.profileId = raw.profileId;
+    this.usersApi.createUser(payload).subscribe({
       next: () => {
         this.userCreateSuccess = true;
         this.userForm.reset({role: 'teacher'});
+        this.selectedProfile = null;
+        this.unlinkedProfiles = [];
         this.users$ = this.usersApi.listAll();
         this.closeDrawer();
       },

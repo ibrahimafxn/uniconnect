@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +24,16 @@ export class UsersController {
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
     }));
+  }
+
+  @Get('unlinked-students')
+  listUnlinkedStudents(@Query('q') q?: string) {
+    return this.usersService.listUnlinkedStudents(q);
+  }
+
+  @Get('unlinked-teachers')
+  listUnlinkedTeachers(@Query('q') q?: string) {
+    return this.usersService.listUnlinkedTeachers(q);
   }
 
   @Get('teachers')
@@ -60,6 +70,7 @@ export class UsersController {
       dto.email,
       passwordHash,
       dto.role,
+      dto.profileId,
     );
     return {
       id: user.id,

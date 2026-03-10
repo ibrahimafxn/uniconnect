@@ -9,10 +9,20 @@ export type UserSummary = {
   createdAt?: string;
 };
 
+export type UnlinkedProfile = {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  studentNumber?: string;
+  specialty?: string;
+  email?: string;
+};
+
 export type CreateUserPayload = {
   email: string;
   password: string;
   role: 'admin' | 'superadmin' | 'teacher' | 'external' | 'student';
+  profileId?: string;
 };
 export type UpdateUserPayload = {
   email?: string;
@@ -32,6 +42,14 @@ export class UsersApi {
 
   listTeachers(): Observable<UserSummary[]> {
     return this.http.get<UserSummary[]>(`${this.baseUrl}/teachers`);
+  }
+
+  listUnlinkedStudents(q?: string): Observable<UnlinkedProfile[]> {
+    return this.http.get<UnlinkedProfile[]>(`${this.baseUrl}/unlinked-students`, { params: q ? { q } : {} });
+  }
+
+  listUnlinkedTeachers(q?: string): Observable<UnlinkedProfile[]> {
+    return this.http.get<UnlinkedProfile[]>(`${this.baseUrl}/unlinked-teachers`, { params: q ? { q } : {} });
   }
 
   createUser(payload: CreateUserPayload): Observable<UserSummary> {
