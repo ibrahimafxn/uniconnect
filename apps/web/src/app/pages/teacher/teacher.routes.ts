@@ -7,6 +7,8 @@ import {TeacherPresenceComponent} from './presence/teacher-presence.component';
 import {TeacherProfilePageComponent} from './profile/teacher-profile-page.component';
 import {TeacherStatsComponent} from './stats/teacher-stats.component';
 import {TeacherAnnouncementsComponent} from './announcements/teacher-announcements.component';
+import {TeacherAssignmentsComponent} from './assignments/teacher-assignments.component';
+import {TeacherResourcesComponent} from './resources/teacher-resources.component';
 
 export const TEACHER_ROUTES: Routes = [
   {
@@ -18,6 +20,8 @@ export const TEACHER_ROUTES: Routes = [
       {path: 'notes', component: TeacherNotesComponent},
       {path: 'presence', component: TeacherPresenceComponent},
       {path: 'announcements', component: TeacherAnnouncementsComponent},
+      {path: 'assignments', component: TeacherAssignmentsComponent},
+      {path: 'resources', component: TeacherResourcesComponent},
       {path: 'profile', component: TeacherProfilePageComponent},
       {path: 'stats', component: TeacherStatsComponent},
     ]

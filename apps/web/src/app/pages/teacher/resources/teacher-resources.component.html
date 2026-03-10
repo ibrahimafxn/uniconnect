@@ -1,0 +1,103 @@
+<div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>Ressources pédagogiques</h1>
+      <p class="subtitle">Déposez vos supports de cours, TD et documents pour vos étudiants.</p>
+    </div>
+    <div class="header-actions">
+      <label class="toggle"><input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" /> Compact</label>
+      <label class="toggle"><input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" /> Ultra</label>
+    </div>
+  </div>
+
+  <!-- Filtres + upload -->
+  <div class="toolbar">
+    <div class="filters">
+      <select [(ngModel)]="filterGroupId" (change)="load()">
+        <option value="">Tous les groupes</option>
+        <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+      </select>
+      <select [(ngModel)]="filterSubjectId" (change)="load()">
+        <option value="">Toutes les matières</option>
+        <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
+      </select>
+      <button class="btn-ghost" (click)="load()">Rafraîchir</button>
+    </div>
+    <button class="btn-primary" (click)="openUpload()">+ Déposer une ressource</button>
+  </div>
+
+  <!-- Grille des ressources -->
+  <ng-container *ngIf="!loading; else loadingTpl">
+    <div class="resources-grid" *ngIf="resources.length > 0; else empty">
+      <div class="resource-card" *ngFor="let r of resources">
+        <div class="resource-icon">{{ mimeIcon(r.mimeType) }}</div>
+        <div class="resource-body">
+          <div class="resource-title">{{ r.title }}</div>
+          <div class="resource-meta" *ngIf="r.description">{{ r.description }}</div>
+          <div class="resource-meta muted">
+            {{ r.originalName }} · {{ formatSize(r.size) }}
+            <span *ngIf="r.createdAt"> · {{ r.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+        <div class="resource-actions">
+          <a [href]="downloadUrl(r._id)" target="_blank" class="btn-download" title="Télécharger">⬇️</a>
+          <button class="btn-delete" (click)="delete(r._id)" title="Supprimer">🗑</button>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #empty>
+      <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <p>Aucune ressource déposée.</p>
+        <p class="muted">Cliquez sur « Déposer une ressource » pour en ajouter.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <p class="loading-text">Chargement…</p>
+  </ng-template>
+
+</div>
+
+<!-- Drawer upload -->
+<div class="overlay" *ngIf="drawerOpen" (click)="drawerOpen = false"></div>
+<div class="drawer" *ngIf="drawerOpen">
+  <div class="drawer-header">
+    <h3>Déposer une ressource</h3>
+    <button class="btn-icon" (click)="drawerOpen = false">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="form" (ngSubmit)="upload()">
+      <div class="field"><label>Titre *</label><input formControlName="title" placeholder="Ex. Cours Chapitre 3 — Récursivité" /></div>
+      <div class="field"><label>Description</label><textarea formControlName="description" rows="2" placeholder="Description courte…"></textarea></div>
+      <div class="field"><label>Groupe *</label>
+        <select formControlName="groupId">
+          <option value="">— Sélectionner —</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div class="field"><label>Matière</label>
+        <select formControlName="subjectId">
+          <option value="">— Toutes —</option>
+          <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Fichier *</label>
+        <input type="file" (change)="onFileChange($event)" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.mp4" />
+        <div class="file-preview" *ngIf="uploadFile">
+          <span>{{ uploadFile.name }}</span>
+          <span class="muted">({{ formatSize(uploadFile.size) }})</span>
+        </div>
+      </div>
+      <div class="error-msg" *ngIf="saveError">{{ saveError }}</div>
+      <button type="submit" class="btn-primary full" [disabled]="form.invalid || !uploadFile || uploading">
+        {{ uploading ? 'Upload en cours…' : 'Déposer' }}
+      </button>
+    </form>
+  </div>
+</div>
