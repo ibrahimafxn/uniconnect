@@ -19,7 +19,7 @@ import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
 import { GlobalConfigService } from './global-config.service';
-import { SmtpConfig, SystemParams } from './system-config.schema';
+import type { SmtpConfig, SystemParams } from './system-config.schema';
 
 @ApiTags('admin/config')
 @ApiBearerAuth()

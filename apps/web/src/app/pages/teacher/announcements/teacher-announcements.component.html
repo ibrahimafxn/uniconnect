@@ -1,0 +1,36 @@
+<div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
+  <div class="header">
+    <div>
+      <h1>Annonces officielles</h1>
+      <p class="subtitle">Communications de l'université et informations pédagogiques.</p>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
+      Mode compact
+    </label>
+    <label class="toggle">
+      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
+      Ultra-compact
+    </label>
+  </div>
+
+  <ng-container *ngIf="(announcements$ | async) as announcements; else loading">
+    <div *ngIf="announcements.length === 0" class="empty">Aucune annonce publiée.</div>
+    <div class="list">
+      <article class="card" *ngFor="let ann of announcements; trackBy: trackById">
+        <div class="card-head">
+          <div>
+            <h2>{{ ann.title }}</h2>
+            <p class="muted">{{ formatDate(ann.createdAt) }} • {{ scopeLabel(ann.scope) }}</p>
+          </div>
+          <span class="badge">{{ categoryLabel(ann.category) }}</span>
+        </div>
+        <p class="body">{{ ann.body }}</p>
+      </article>
+    </div>
+  </ng-container>
+
+  <ng-template #loading>
+    <p class="muted">Chargement des annonces…</p>
+  </ng-template>
+</div>

@@ -473,14 +473,18 @@
           <h3>Historique des annonces</h3>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Titre</th><th>Destinataires</th><th>Date</th></tr></thead>
+              <thead><tr><th>Titre</th><th>Destinataires</th><th>Date</th><th class="actions-th">Actions</th></tr></thead>
               <tbody>
-                <tr *ngFor="let log of announceHistory">
-                  <td><strong>{{ log.metadata?.title }}</strong></td>
-                  <td class="muted">{{ log.metadata?.recipientCount }} utilisateurs ({{ log.metadata?.targetRoles?.join(', ') }})</td>
-                  <td class="muted">{{ formatDate(log.createdAt) }}</td>
+                <tr *ngFor="let ann of announcements">
+                  <td><strong>{{ ann.title }}</strong></td>
+                  <td class="muted">{{ announcementScopeLabel(ann.scope) }}</td>
+                  <td class="muted">{{ formatDate(ann.createdAt || '') }}</td>
+                  <td class="actions">
+                    <button class="icon-btn" title="Modifier" (click)="editAnnouncement(ann)">✏️</button>
+                    <button class="icon-btn danger" title="Supprimer" (click)="deleteAnnouncement(ann)">🗑️</button>
+                  </td>
                 </tr>
-                <tr *ngIf="announceHistory.length === 0"><td colspan="3" class="empty-row">Aucune annonce envoyée.</td></tr>
+                <tr *ngIf="announcements.length === 0"><td colspan="4" class="empty-row">Aucune annonce envoyée.</td></tr>
               </tbody>
             </table>
           </div>
@@ -852,22 +856,34 @@
           </div>
           <div class="field">
             <label>Destinataires</label>
-            <label class="checkbox-row"><input type="checkbox" formControlName="targetAll" /> Toute la communauté</label>
+            <label class="checkbox-row">
+              <input type="checkbox" formControlName="targetAll" [disabled]="isEditingAnnouncement" />
+              Toute la communauté
+            </label>
             <ng-container *ngIf="!announceForm.value.targetAll">
-              <label class="checkbox-row"><input type="checkbox" formControlName="targetStudent" /> Étudiants</label>
-              <label class="checkbox-row"><input type="checkbox" formControlName="targetTeacher" /> Enseignants</label>
-              <label class="checkbox-row"><input type="checkbox" formControlName="targetAdmin" /> Administrateurs</label>
+              <label class="checkbox-row">
+                <input type="checkbox" formControlName="targetStudent" [disabled]="isEditingAnnouncement" />
+                Étudiants
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" formControlName="targetTeacher" [disabled]="isEditingAnnouncement" />
+                Enseignants
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" formControlName="targetAdmin" [disabled]="isEditingAnnouncement" />
+                Administrateurs
+              </label>
             </ng-container>
           </div>
           <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
           <button type="submit" [disabled]="announceForm.invalid || drawerLoading">
-            {{ drawerLoading ? 'Envoi…' : '📢 Diffuser l\'annonce' }}
+            {{ drawerLoading ? 'Enregistrement…' : (isEditingAnnouncement ? 'Enregistrer les modifications' : '📢 Publier l\'annonce') }}
           </button>
         </form>
       </ng-container>
       <div class="announce-result" *ngIf="announcementResult">
-        <div class="result-stat ok">✔ Annonce diffusée à {{ announcementResult.recipientCount }} utilisateurs</div>
-        <div class="muted" style="font-size:13px;margin-top:8px">{{ formatDate(announcementResult.sentAt) }}</div>
+        <div class="result-stat ok">✔ {{ announcementResult.message }}</div>
+        <div class="muted" style="font-size:13px;margin-top:8px">{{ formatDate(announcementResult.savedAt) }}</div>
         <button class="ghost" style="margin-top:12px" (click)="closeDrawer()">Fermer</button>
       </div>
     </ng-container>

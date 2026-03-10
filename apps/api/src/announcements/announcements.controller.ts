@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto } from './dto/create-announcement.dto';
+import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 import { AnnouncementCategory } from './announcement.schema';
 
 @Controller('announcements')
@@ -43,5 +44,36 @@ export class AnnouncementsController {
         userAgent: req.headers?.['user-agent'],
       },
     );
+  }
+
+  @Patch(':id')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAnnouncementDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.service.updateAnnouncement(id, dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  @Delete(':id')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  remove(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.service.deleteAnnouncement(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 }

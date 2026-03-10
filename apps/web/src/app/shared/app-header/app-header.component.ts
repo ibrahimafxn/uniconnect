@@ -29,6 +29,7 @@ export class AppHeaderComponent {
     {label: 'Mon Planning', path: '/teacher/planning', icon: '📅'},
     {label: 'Mes Notes', path: '/teacher/notes', icon: '📊'},
     {label: 'Présences', path: '/teacher/presence', icon: '✅'},
+    {label: 'Annonces', path: '/teacher/announcements', icon: '📢'},
     {label: 'Statistiques', path: '/teacher/stats', icon: '📈'},
     {label: 'Messagerie', path: '/messages', icon: '💬'},
     {label: 'Mon Profil', path: '/teacher/profile', icon: '👤'},
