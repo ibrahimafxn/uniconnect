@@ -23,12 +23,113 @@
       class="tab"
       *ngFor="let t of tabs"
       [class.active]="activeTab === t.id"
-      (click)="activeTab = t.id"
+      (click)="onTabChange(t.id)"
     >
       <span class="tab-icon">{{ t.icon }}</span>
       {{ t.label }}
     </button>
   </div>
+
+  <!-- ================== TABLEAU DE BORD ================== -->
+  <ng-container *ngIf="activeTab === 'dashboard'">
+    <ng-container *ngIf="(dashboard$ | async) as dash">
+      <div class="payments-grid">
+        <!-- KPIs principaux -->
+        <div class="pay-card stat">
+          <div class="stat-label">Étudiants actifs</div>
+          <div class="stat-value">{{ dash.students?.active ?? 0 }}</div>
+          <div class="muted" style="font-size:0.78rem">Total : {{ dash.students?.total ?? 0 }}</div>
+        </div>
+        <div class="pay-card stat">
+          <div class="stat-label">Utilisateurs</div>
+          <div class="stat-value">{{ dash.users?.total ?? 0 }}</div>
+        </div>
+        <div class="pay-card stat">
+          <div class="stat-label">Filières</div>
+          <div class="stat-value">{{ dash.programs?.total ?? 0 }}</div>
+        </div>
+        <div class="pay-card stat">
+          <div class="stat-label">Offres de formation</div>
+          <div class="stat-value">{{ dash.offers?.total ?? 0 }}</div>
+        </div>
+
+        <!-- Rapport financier -->
+        <ng-container *ngIf="(financialReport$ | async) as fr">
+          <div class="pay-card stat">
+            <div class="stat-label">Collecté</div>
+            <div class="stat-value" style="color:#16a34a">{{ fr.totalCollected | number:'.0-0' }} {{ fr.currency }}</div>
+          </div>
+          <div class="pay-card stat">
+            <div class="stat-label">Solde restant</div>
+            <div class="stat-value" style="color:#dc2626">{{ fr.totalBalance | number:'.0-0' }} {{ fr.currency }}</div>
+          </div>
+          <div class="pay-card stat">
+            <div class="stat-label">Taux de recouvrement</div>
+            <div class="stat-value" style="color:#2563eb">{{ fr.recoveryRate | number:'1.1-1' }}%</div>
+          </div>
+          <div class="pay-card stat">
+            <div class="stat-label">Exemptions</div>
+            <div class="stat-value">{{ fr.exemptionCount }}</div>
+          </div>
+        </ng-container>
+
+        <!-- Année active -->
+        <div class="pay-card wide" *ngIf="dash.activeAcademicYear">
+          <h2>Année académique active</h2>
+          <div style="font-size:1.1rem;font-weight:600;margin-top:0.5rem">{{ dash.activeAcademicYear.name }}</div>
+        </div>
+
+        <!-- Activités récentes -->
+        <div class="pay-card wide" *ngIf="dash.recentActivity?.length">
+          <h2>Activités récentes</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Action</th><th>Entité</th><th>Date</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let a of dash.recentActivity">
+                  <td>{{ a.action }}</td>
+                  <td class="muted">{{ a.entity }}</td>
+                  <td class="muted">{{ a.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Logs d'audit -->
+    <div class="section-card" style="margin-top:1.5rem">
+      <div class="struct-head" style="margin-bottom:0.75rem">
+        <h2>Logs d'audit</h2>
+      </div>
+      <div class="filter-bar" style="margin-bottom:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <input class="search-input" placeholder="Filtrer par action..." [(ngModel)]="auditLogActionFilter" (input)="auditLogPage=1; loadAuditLogs()" />
+        <input class="search-input" placeholder="Filtrer par entité..." [(ngModel)]="auditLogEntityFilter" (input)="auditLogPage=1; loadAuditLogs()" />
+      </div>
+      <div class="table-wrap main-table">
+        <table>
+          <thead><tr><th>Action</th><th>Entité</th><th>Acteur</th><th>Date</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let log of auditLogs">
+              <td><code style="font-size:0.78rem">{{ log.action }}</code></td>
+              <td class="muted">{{ log.entity }}</td>
+              <td class="muted">{{ log.actor?.email ?? log.actor?.userId ?? '—' }}</td>
+              <td class="muted">{{ log.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+            <tr *ngIf="auditLogs.length === 0">
+              <td colspan="4" class="empty-row">Aucun log d'audit.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" *ngIf="auditLogsTotal > 20">
+        <button (click)="changeAuditLogPage(-1)" [disabled]="auditLogPage === 1">‹ Préc.</button>
+        <span class="muted">Page {{ auditLogPage }} / {{ (auditLogsTotal / 20) | number:'1.0-0' }}</span>
+        <button (click)="changeAuditLogPage(1)" [disabled]="auditLogPage * 20 >= auditLogsTotal">Suiv. ›</button>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- ================== STRUCTURE ACADÉMIQUE ================== -->
   <ng-container *ngIf="activeTab === 'structure'">
@@ -266,6 +367,7 @@
             <td><span class="role-badge role-teacher">Enseignant</span></td>
             <td class="muted">{{ t.createdAt | date:'dd/MM/yyyy' }}</td>
             <td class="actions">
+              <button class="icon-btn" (click)="selectTeacherForEdit(t)" title="Modifier">✏️</button>
               <button class="icon-btn danger" (click)="deleteTeacher(t._id)" title="Supprimer">🗑</button>
             </td>
           </tr>
@@ -461,6 +563,75 @@
       </table>
     </div>
   </ng-container>
+
+  <!-- ================== ANNONCES ================== -->
+  <ng-container *ngIf="activeTab === 'announcements'">
+    <div class="tab-toolbar">
+      <span class="muted">Gérez les annonces publiées sur la plateforme.</span>
+      <button class="btn-add" (click)="openCreateAnnouncement()">+ Nouvelle annonce</button>
+    </div>
+    <div class="table-wrap main-table">
+      <table>
+        <thead>
+          <tr><th>Titre</th><th>Portée</th><th>Catégorie</th><th>Publié le</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of (announcements$ | async)">
+            <td><strong>{{ a.title }}</strong></td>
+            <td><span class="role-badge">{{ a.scope }}</span></td>
+            <td class="muted">{{ a.category }}</td>
+            <td class="muted">{{ a.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="actions">
+              <button class="icon-btn" (click)="selectAnnouncementForEdit(a)" title="Modifier">✏️</button>
+              <button class="icon-btn danger" (click)="deleteAnnouncement(a._id)" title="Supprimer">🗑</button>
+            </td>
+          </tr>
+          <tr *ngIf="(announcements$ | async)?.length === 0">
+            <td colspan="5" class="empty-row">Aucune annonce publiée.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- ================== CONFIGURATION ================== -->
+  <ng-container *ngIf="activeTab === 'config'">
+    <div class="tab-toolbar">
+      <span class="muted">Paramètres système de la plateforme.</span>
+      <button class="btn-add ghost" (click)="loadConfig()">Recharger</button>
+    </div>
+    <div class="section-card" style="max-width:600px">
+      <form [formGroup]="configForm" (ngSubmit)="saveConfig()">
+        <div class="field">
+          <label>Nombre max d'étudiants par groupe</label>
+          <input type="number" formControlName="maxStudentsPerGroup" min="1" />
+        </div>
+        <div class="field">
+          <label>Délai de grâce paiement (jours)</label>
+          <input type="number" formControlName="paymentGraceDays" min="0" />
+        </div>
+        <div class="field">
+          <label>Email support</label>
+          <input type="email" formControlName="supportEmail" placeholder="support@ecole.ci" />
+        </div>
+        <div class="field">
+          <label>Taille max upload (Mo)</label>
+          <input type="number" formControlName="maxUploadSizeMb" min="1" />
+        </div>
+        <div class="field toggle-field">
+          <label>Mode maintenance</label>
+          <input type="checkbox" formControlName="maintenanceMode" />
+          <span class="muted" *ngIf="configForm.get('maintenanceMode')?.value" style="color:#dc2626">⚠️ Plateforme en maintenance</span>
+        </div>
+        <div class="error-msg" *ngIf="configSaveError">{{ configSaveError }}</div>
+        <div class="success-msg" *ngIf="configSaveSuccess">✅ Paramètres enregistrés.</div>
+        <button type="submit" [disabled]="configSaving || configForm.invalid">
+          {{ configSaving ? 'Sauvegarde…' : 'Enregistrer' }}
+        </button>
+      </form>
+    </div>
+  </ng-container>
+
 </div>
 
 <!-- ============ OVERLAY + DRAWER ============ -->
@@ -872,6 +1043,52 @@
 
       <div class="error-msg" *ngIf="userCreateError">{{ userCreateError }}</div>
       <button type="submit" [disabled]="userForm.invalid">{{ editingUserId ? 'Enregistrer' : 'Créer le compte' }}</button>
+    </form>
+
+    <!-- Modifier enseignant -->
+    <form *ngIf="drawerMode === 'teacher-edit'" [formGroup]="teacherEditForm" (ngSubmit)="saveTeacherEdit()">
+      <div class="field"><label>Prénom *</label><input formControlName="firstName" /></div>
+      <div class="field"><label>Nom *</label><input formControlName="lastName" /></div>
+      <div class="field"><label>Email *</label><input formControlName="email" type="email" /></div>
+      <div class="field"><label>Téléphone</label><input formControlName="phone" /></div>
+      <div class="field"><label>Spécialité</label><input formControlName="specialty" /></div>
+      <div class="field"><label>Grade</label>
+        <select formControlName="grade">
+          <option value="assistant">Assistant</option>
+          <option value="maitre_conferences">Maître de conférences</option>
+          <option value="professeur">Professeur</option>
+          <option value="vacataire">Vacataire</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field"><label>Bureau</label><input formControlName="office" /></div>
+      <div class="field"><label>Biographie</label><textarea formControlName="bio" rows="3"></textarea></div>
+      <div class="error-msg" *ngIf="teacherEditError">{{ teacherEditError }}</div>
+      <button type="submit" [disabled]="teacherEditForm.invalid">Enregistrer</button>
+    </form>
+
+    <!-- Annonce -->
+    <form *ngIf="drawerMode === 'announcement'" [formGroup]="announcementForm" (ngSubmit)="saveAnnouncement()">
+      <div class="field"><label>Titre *</label><input formControlName="title" placeholder="Titre de l'annonce" /></div>
+      <div class="field"><label>Contenu *</label><textarea formControlName="body" rows="5" placeholder="Rédigez votre annonce…"></textarea></div>
+      <div class="field"><label>Portée</label>
+        <select formControlName="scope">
+          <option value="global">Global</option>
+          <option value="students">Étudiants uniquement</option>
+          <option value="teachers">Enseignants uniquement</option>
+          <option value="admin">Administrateurs uniquement</option>
+        </select>
+      </div>
+      <div class="field"><label>Catégorie</label>
+        <select formControlName="category">
+          <option value="general">Général</option>
+          <option value="academic">Académique</option>
+          <option value="payment">Paiement</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="error-msg" *ngIf="announcementSaveError">{{ announcementSaveError }}</div>
+      <button type="submit" [disabled]="announcementForm.invalid">{{ editingAnnouncementId ? 'Enregistrer' : 'Publier' }}</button>
     </form>
 
   </div>

@@ -906,3 +906,19 @@ input[type='tel'] {
   .drawer { width: 100%; }
   .installment-row { grid-template-columns: 1fr 1fr; }
 }
+
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  label { margin-bottom: 0; }
+  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+}

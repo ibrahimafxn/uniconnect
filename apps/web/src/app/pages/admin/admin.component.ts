@@ -9,10 +9,11 @@ import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
 import {UnlinkedProfile, UsersApi} from '../../core/api/users.api';
 import {Paginated, StudentDocument} from '../../core/api/students.api';
-import {AdminApi, AdminUser} from '../../core/api/admin.api';
+import {AdminApi, AdminUser, ExecutiveDashboard, FinancialReport, SystemParams} from '../../core/api/admin.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
+import {AnnouncementsApi, Announcement} from '../../core/api/announcements.api';
 
-export type AdminTab = 'structure' | 'students' | 'teachers' | 'payments' | 'users' | 'documents';
+export type AdminTab = 'dashboard' | 'structure' | 'students' | 'teachers' | 'payments' | 'documents' | 'users' | 'announcements' | 'config';
 
 type PaymentView = Payment & {
   installmentDueDate?: string;
@@ -50,25 +51,29 @@ export class AdminComponent implements OnInit {
   private readonly usersApi = inject(UsersApi);
   private readonly adminApi = inject(AdminApi);
   private readonly confirm = inject(ConfirmService);
+  private readonly announcementsApi = inject(AnnouncementsApi);
 
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
 
   // === TABS ===
-  activeTab: AdminTab = 'structure';
+  activeTab: AdminTab = 'dashboard';
   tabs: Array<{id: AdminTab; label: string; icon: string}> = [
+    {id: 'dashboard', label: 'Tableau de bord', icon: '📊'},
     {id: 'structure', label: 'Structure', icon: '🏛️'},
     {id: 'students', label: 'Étudiants', icon: '🎓'},
     {id: 'teachers', label: 'Enseignants', icon: '👨‍🏫'},
     {id: 'payments', label: 'Paiements', icon: '💰'},
     {id: 'documents', label: 'Documents', icon: '📄'},
     {id: 'users', label: 'Comptes', icon: '👤'},
+    {id: 'announcements', label: 'Annonces', icon: '📢'},
+    {id: 'config', label: 'Configuration', icon: '⚙️'},
   ];
 
   // === DRAWER ===
   drawerOpen = false;
   drawerTitle = '';
-  drawerMode: 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group' | 'student' | 'plan' | 'payment' | 'user' | 'document' | 'teacher' | null = null;
+  drawerMode: 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group' | 'student' | 'plan' | 'payment' | 'user' | 'document' | 'teacher' | 'teacher-edit' | 'announcement' | null = null;
 
   openDrawer(mode: typeof this.drawerMode, title: string) {
     this.drawerMode = mode;
@@ -123,6 +128,7 @@ export class AdminComponent implements OnInit {
     this.cancelEditYear(); this.cancelEditProgram(); this.cancelEditLevel();
     this.cancelEditSemester(); this.cancelEditOffer(); this.cancelEditGroup(); this.cancelEditStudent(); this.cancelEditPlan();
     this.cancelEditPayment(); this.cancelEditDocument(); this.cancelEditUser();
+    this.cancelEditAnnouncement(); this.cancelEditTeacher();
   }
 
   // === ACADEMIC ===
@@ -734,6 +740,7 @@ export class AdminComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.loadDashboard();
     this.paymentForm.get('planId')?.valueChanges.subscribe((planId) => {
       const installmentCtrl = this.paymentForm.get('installmentId');
       if (!installmentCtrl) return;
@@ -881,6 +888,217 @@ export class AdminComponent implements OnInit {
     this.teacherCreateResult = null;
     this.teacherForm.reset();
     this.openDrawer('teacher', 'Ajouter un enseignant');
+  }
+
+  editingTeacherId: string | null = null;
+  teacherEditForm = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName:  ['', Validators.required],
+    email:     ['', [Validators.required, Validators.email]],
+    phone:     [''],
+    specialty: [''],
+    grade:     ['autre'],
+    bio:       [''],
+    office:    [''],
+  });
+  teacherEditError: string | null = null;
+
+  selectTeacherForEdit(t: AdminUser) {
+    this.editingTeacherId = t._id;
+    this.teacherEditError = null;
+    this.teacherEditForm.setValue({
+      firstName: t.firstName ?? '',
+      lastName:  t.lastName ?? '',
+      email:     t.email ?? '',
+      phone:     '',
+      specialty: '',
+      grade:     'autre',
+      bio:       '',
+      office:    '',
+    });
+    this.openDrawer('teacher-edit', 'Modifier l\'enseignant');
+  }
+
+  saveTeacherEdit() {
+    if (!this.editingTeacherId || this.teacherEditForm.invalid) return;
+    this.teacherEditError = null;
+    const v = this.teacherEditForm.value as any;
+    this.confirmAndRun(
+      {title: 'Modifier enseignant', message: 'Confirmer la modification de cet enseignant ?'},
+      () => this.usersApi.updateUser(this.editingTeacherId as string, {email: v.email}).subscribe({
+        next: () => {
+          this.editingTeacherId = null;
+          this.teachers$ = this.loadTeachers();
+          this.closeDrawer();
+        },
+        error: (err) => { this.teacherEditError = err?.error?.message ?? 'Erreur lors de la modification.'; },
+      }),
+    );
+  }
+
+  cancelEditTeacher() {
+    this.editingTeacherId = null;
+    this.teacherEditForm.reset({grade: 'autre'});
+    this.teacherEditError = null;
+  }
+
+  // === DASHBOARD ===
+  dashboard$: Observable<ExecutiveDashboard | null> = of(null);
+  financialReport$: Observable<FinancialReport | null> = of(null);
+  auditLogs: any[] = [];
+  auditLogsTotal = 0;
+  auditLogPage = 1;
+  auditLogActionFilter = '';
+  auditLogEntityFilter = '';
+
+  loadDashboard() {
+    this.dashboard$ = this.adminApi.getExecutiveDashboard();
+    this.financialReport$ = this.adminApi.getFinancialReport();
+    this.loadAuditLogs();
+  }
+
+  loadAuditLogs() {
+    const skip = (this.auditLogPage - 1) * 20;
+    this.adminApi.listAuditLogs({
+      skip,
+      limit: 20,
+      action: this.auditLogActionFilter || undefined,
+      entity: this.auditLogEntityFilter || undefined,
+    }).subscribe(r => {
+      this.auditLogs = r.items;
+      this.auditLogsTotal = r.total;
+    });
+  }
+
+  changeAuditLogPage(delta: number) {
+    const next = this.auditLogPage + delta;
+    if (next < 1) return;
+    const max = Math.max(1, Math.ceil(this.auditLogsTotal / 20));
+    if (next > max) return;
+    this.auditLogPage = next;
+    this.loadAuditLogs();
+  }
+
+  onTabChange(tab: AdminTab) {
+    this.activeTab = tab;
+    if (tab === 'dashboard') this.loadDashboard();
+    if (tab === 'config') this.loadConfig();
+    if (tab === 'announcements') this.loadAnnouncements();
+  }
+
+  // === ANNOUNCEMENTS ===
+  announcements$: Observable<Announcement[]> = this.announcementsApi.list();
+  editingAnnouncementId: string | null = null;
+  announcementSaveError: string | null = null;
+
+  announcementForm = this.fb.group({
+    title:    ['', Validators.required],
+    body:     ['', Validators.required],
+    scope:    ['global'],
+    category: ['general'],
+  });
+
+  loadAnnouncements() {
+    this.announcements$ = this.announcementsApi.list();
+  }
+
+  openCreateAnnouncement() {
+    this.editingAnnouncementId = null;
+    this.announcementSaveError = null;
+    this.announcementForm.reset({scope: 'global', category: 'general'});
+    this.openDrawer('announcement', 'Nouvelle annonce');
+  }
+
+  selectAnnouncementForEdit(a: Announcement) {
+    this.editingAnnouncementId = a._id;
+    this.announcementSaveError = null;
+    this.announcementForm.setValue({
+      title:    a.title,
+      body:     a.body,
+      scope:    a.scope ?? 'global',
+      category: a.category ?? 'general',
+    });
+    this.openDrawer('announcement', 'Modifier l\'annonce');
+  }
+
+  saveAnnouncement() {
+    if (this.announcementForm.invalid) return;
+    this.announcementSaveError = null;
+    const v = this.announcementForm.value as any;
+    const obs = this.editingAnnouncementId
+      ? this.announcementsApi.update(this.editingAnnouncementId, v)
+      : this.announcementsApi.create(v);
+    obs.subscribe({
+      next: () => {
+        this.editingAnnouncementId = null;
+        this.announcementForm.reset({scope: 'global', category: 'general'});
+        this.loadAnnouncements();
+        this.closeDrawer();
+      },
+      error: (err) => { this.announcementSaveError = err?.error?.message ?? 'Erreur lors de la sauvegarde.'; },
+    });
+  }
+
+  deleteAnnouncement(id: string) {
+    this.confirmAndRun(
+      {title: 'Supprimer annonce', message: 'Confirmer la suppression de cette annonce ?', danger: true, confirmLabel: 'Supprimer'},
+      () => this.announcementsApi.remove(id).subscribe(() => this.loadAnnouncements()),
+    );
+  }
+
+  cancelEditAnnouncement() {
+    this.editingAnnouncementId = null;
+    this.announcementForm.reset({scope: 'global', category: 'general'});
+    this.announcementSaveError = null;
+  }
+
+  // === CONFIG ===
+  systemParams: SystemParams | null = null;
+  configSaving = false;
+  configSaveSuccess = false;
+  configSaveError: string | null = null;
+
+  configForm = this.fb.group({
+    maxStudentsPerGroup: [30, Validators.required],
+    paymentGraceDays:    [7,  Validators.required],
+    supportEmail:        ['', Validators.email],
+    maintenanceMode:     [false],
+    maxUploadSizeMb:     [10, Validators.required],
+  });
+
+  loadConfig() {
+    this.adminApi.getSystemParams().subscribe({
+      next: (p) => {
+        this.systemParams = p;
+        this.configForm.setValue({
+          maxStudentsPerGroup: p.maxStudentsPerGroup ?? 30,
+          paymentGraceDays:    p.paymentGraceDays ?? 7,
+          supportEmail:        p.supportEmail ?? '',
+          maintenanceMode:     p.maintenanceMode ?? false,
+          maxUploadSizeMb:     p.maxUploadSizeMb ?? 10,
+        });
+      },
+      error: () => { /* params may not exist yet */ },
+    });
+  }
+
+  saveConfig() {
+    if (this.configForm.invalid) return;
+    this.configSaving = true;
+    this.configSaveSuccess = false;
+    this.configSaveError = null;
+    this.adminApi.updateSystemParams(this.configForm.value as any).subscribe({
+      next: (p) => {
+        this.systemParams = p;
+        this.configSaving = false;
+        this.configSaveSuccess = true;
+        setTimeout(() => { this.configSaveSuccess = false; }, 3000);
+      },
+      error: (err) => {
+        this.configSaving = false;
+        this.configSaveError = err?.error?.message ?? 'Erreur lors de la sauvegarde.';
+      },
+    });
   }
 
   // === USERS ===
@@ -1050,6 +1268,9 @@ export class AdminComponent implements OnInit {
     this.refreshPayments();
     this.loadDocuments();
     this.users$ = this.usersApi.listAll();
+    this.loadAnnouncements();
+    if (this.activeTab === 'dashboard') this.loadDashboard();
+    if (this.activeTab === 'config') this.loadConfig();
   }
 
   private fmtDate(value: string | Date | undefined): string {
