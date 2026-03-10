@@ -1,4 +1,4 @@
-<div class="page">
+<div class="page" [class.drawer-open]="drawerOpen">
   <div class="page-header">
     <div>
       <h1>Notes &amp; Évaluations</h1>
@@ -218,7 +218,60 @@
       <!-- Summary display -->
       <ng-container *ngIf="summary$ | async as summary">
         <ng-container *ngIf="summary">
-          <div class="summary-card">
+          <!-- Étudiant: mobile-first cards -->
+          <div class="summary-card student-summary" *ngIf="isStudent">
+            <div class="summary-header">
+              <div>
+                <h2 class="summary-name">{{ summary.student.lastName }} {{ summary.student.firstName }}</h2>
+                <p class="muted">Récapitulatif académique</p>
+              </div>
+              <div class="overall-avg" [ngClass]="averageClass(summary.overallAverage)">
+                <span class="avg-label">Moy. générale</span>
+                <span class="avg-value">{{ summary.overallAverage | number:'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="summary-kpis">
+              <div class="kpi-card">
+                <div class="kpi-value">{{ summary.subjects?.length || 0 }}</div>
+                <div class="muted">Matières</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-value">{{ summary.overallAverage | number:'1.1-2' }}</div>
+                <div class="muted">Moyenne</div>
+              </div>
+            </div>
+
+            <div class="filter-row student-filter">
+              <input
+                type="text"
+                placeholder="Filtrer une matière"
+                [(ngModel)]="studentSubjectFilter"
+                [ngModelOptions]="{standalone: true}"
+              />
+            </div>
+
+            <div class="student-subjects">
+              <div class="subject-card" *ngFor="let s of filteredSubjects(summary.subjects)">
+                <div class="subject-name">{{ s.name }}</div>
+                <div class="subject-meta">
+                  <span class="subject-avg">
+                    {{ s.average !== null && s.average !== undefined ? (s.average | number:'1.2-2') : 'N/A' }}
+                  </span>
+                  <span class="avg-badge" [ngClass]="averageClass(s.average ?? null)" *ngIf="averageStatus(s.average) as label">
+                    {{ label }}
+                  </span>
+                  <span class="muted" *ngIf="averageStatus(s.average) === null">—</span>
+                </div>
+              </div>
+              <div class="empty-row" *ngIf="filteredSubjects(summary.subjects).length === 0">
+                Aucune note disponible.
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin / Teacher: table view -->
+          <div class="summary-card" *ngIf="!isStudent">
             <div class="summary-header">
               <div>
                 <h2 class="summary-name">{{ summary.student.lastName }} {{ summary.student.firstName }}</h2>
@@ -302,7 +355,7 @@
         <button type="submit" [disabled]="claimForm.invalid">Soumettre</button>
       </form>
 
-      <div class="table-wrap main-table">
+      <div class="table-wrap main-table student-claims-table">
         <table>
           <thead>
             <tr>
@@ -326,6 +379,20 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="student-claims-cards">
+        <div class="claim-card" *ngFor="let c of (myClaims$ | async)">
+          <div class="claim-title">{{ claimEvaluationTitle(c) }}</div>
+          <div class="claim-row">
+            <span class="status-badge">{{ c.status }}</span>
+            <span class="muted" [class.overdue]="isOverdue(c.deadlineAt, c.status)">
+              {{ c.deadlineAt | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+          <div class="muted">Décision : {{ c.decisionNote || '—' }}</div>
+        </div>
+        <div class="empty-row" *ngIf="(myClaims$ | async)?.length === 0">Aucune réclamation.</div>
       </div>
     </ng-container>
 

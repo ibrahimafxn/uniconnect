@@ -73,6 +73,9 @@ export class StudentComponent implements OnInit, OnDestroy {
     groupId: [''],
   });
 
+  planningFiltersOpen = false;
+  planningExportsOpen = false;
+
   calendarFilterForm = this.fb.group({
     type: [''],
   });
@@ -145,7 +148,7 @@ export class StudentComponent implements OnInit, OnDestroy {
 
   selectedSession: any | null = null;
 
-  activeTab: 'dashboard' | 'scolarite' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile' = 'dashboard';
+  activeTab: 'dashboard' | 'scolarite' | 'planning' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile' = 'dashboard';
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
   toastMessage: string | null = null;
@@ -295,7 +298,7 @@ export class StudentComponent implements OnInit, OnDestroy {
     }).subscribe();
   }
 
-  setActiveTab(tab: 'dashboard' | 'scolarite' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile') {
+  setActiveTab(tab: 'dashboard' | 'scolarite' | 'planning' | 'pedagogie' | 'finance' | 'services' | 'vie' | 'profile') {
     this.activeTab = tab;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -453,7 +456,7 @@ export class StudentComponent implements OnInit, OnDestroy {
   private dateShift(days: number) {
     const d = new Date();
     d.setDate(d.getDate() + days);
-    return d.toISOString().slice(0, 10);
+    return this.toLocalDateString(d);
   }
 
   private loadCompactMode(): boolean {
@@ -489,14 +492,14 @@ export class StudentComponent implements OnInit, OnDestroy {
   }
 
   isToday(date: string) {
-    const d = new Date(date);
+    const d = this.parseDate(date);
     const t = this.today();
     return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
   }
 
   isSameDate(dateA: string, dateB: string) {
-    const a = new Date(dateA);
-    const b = new Date(dateB);
+    const a = this.parseDate(dateA);
+    const b = this.parseDate(dateB);
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
@@ -601,9 +604,24 @@ export class StudentComponent implements OnInit, OnDestroy {
     for (let i = 0; i < 6; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      days.push(d.toISOString().slice(0, 10));
+      days.push(this.toLocalDateString(d));
     }
     return days;
+  }
+
+  private parseDate(value: string) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map((v) => Number(v));
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+    return new Date(value);
+  }
+
+  private toLocalDateString(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   sessionKind(label?: string) {

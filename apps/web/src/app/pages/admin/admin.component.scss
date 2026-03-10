@@ -241,7 +241,7 @@ tbody tr {
 /* Structure grid */
 .struct-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
   gap: 16px;
 }
 
@@ -256,6 +256,42 @@ tbody tr {
   gap: 10px; margin-bottom: 12px;
   button { height: 32px; padding: 0 12px; border: none; border-radius: 8px;
     background: var(--accent); color: #fff; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+}
+
+@media (max-width: 1100px) {
+  .struct-grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .struct-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .struct-card {
+    padding: 14px;
+  }
+  .struct-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .struct-head button {
+    width: 100%;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap table {
+    min-width: 520px;
+  }
+}
+
+@media (max-width: 520px) {
+  .table-wrap table {
+    min-width: 480px;
+  }
 }
 
 /* Payments */

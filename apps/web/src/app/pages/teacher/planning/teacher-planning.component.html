@@ -69,7 +69,10 @@
                 <div *ngIf="s.homework"><strong>Devoirs :</strong> {{ s.homework }}</div>
               </div>
             </div>
-            <button class="edit-btn" (click)="openContentEditor(s)" title="Cahier de texte">✏</button>
+            <div class="session-actions">
+              <button class="presence-btn" (click)="openAttendance(s)" title="Feuille de présence">✅ Présences</button>
+              <button class="edit-btn" (click)="openContentEditor(s)" title="Cahier de texte">✏</button>
+            </div>
           </div>
         </div>
       </div>
@@ -106,7 +109,10 @@
                 <div class="cal-s-time">{{ s.startTime }}-{{ s.endTime }}</div>
                 <div class="cal-s-group">{{ groupName(s.groupId) }}</div>
                 <div class="cal-s-room" *ngIf="s.roomId">{{ roomName(s.roomId) }}</div>
-                <button class="cal-edit-btn" (click)="openContentEditor(s)">✏</button>
+                <div class="cal-actions">
+                  <button class="cal-presence-btn" (click)="openAttendance(s)" title="Feuille de présence">✅</button>
+                  <button class="cal-edit-btn" (click)="openContentEditor(s)">✏</button>
+                </div>
               </div>
             </div>
           </ng-container>

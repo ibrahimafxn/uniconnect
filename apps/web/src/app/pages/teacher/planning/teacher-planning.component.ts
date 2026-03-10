@@ -4,6 +4,7 @@ import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {PlanningApi, Session} from '../../../core/api/planning.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {HttpClient} from '@angular/common/http';
+import {Router} from '@angular/router';
 
 type CalendarSlot = {hour: number; sessions: any[]};
 type CalendarDay = {date: string; label: string; isToday: boolean; slots: Map<number, any[]>};
@@ -19,6 +20,7 @@ export class TeacherPlanningComponent {
   private readonly planning = inject(PlanningApi);
   private readonly academic = inject(AcademicApi);
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   sessions$ = this.planning.listSessions();
@@ -135,11 +137,11 @@ export class TeacherPlanningComponent {
 
   getWeekDays(): CalendarDay[] {
     const days: CalendarDay[] = [];
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.toLocalDateString(new Date());
     for (let i = 0; i < 5; i++) {
       const d = new Date(this.currentWeekStart);
       d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = this.toLocalDateString(d);
       days.push({
         date: dateStr,
         label: d.toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'}),
@@ -165,7 +167,7 @@ export class TeacherPlanningComponent {
       day.slots = new Map();
     }
     for (const s of sessions) {
-      const dateStr = new Date(s.date).toISOString().slice(0, 10);
+      const dateStr = this.toLocalDateString(new Date(s.date));
       const day = days.find((d) => d.date === dateStr);
       if (!day) continue;
       const [h] = (s.startTime ?? '08:00').split(':').map(Number);
@@ -215,6 +217,12 @@ export class TeacherPlanningComponent {
     });
   }
 
+  openAttendance(session: Session) {
+    this.router.navigate(['/teacher/presence'], {
+      queryParams: { sessionId: session._id },
+    });
+  }
+
   groupName(groupId: string): string {
     if (!groupId) return '—';
     return this.groups.find((g) => g._id === groupId)?.name ?? groupId;
@@ -232,7 +240,7 @@ export class TeacherPlanningComponent {
   groupSessionsByDate(sessions: any[]): Array<{date: string; sessions: any[]}> {
     const map = new Map<string, any[]>();
     for (const s of sessions) {
-      const key = new Date(s.date).toISOString().slice(0, 10);
+      const key = this.toLocalDateString(new Date(s.date));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }
@@ -240,11 +248,11 @@ export class TeacherPlanningComponent {
   }
 
   isToday(dateStr: string): boolean {
-    return dateStr === new Date().toISOString().slice(0, 10);
+    return dateStr === this.toLocalDateString(new Date());
   }
 
   isPast(dateStr: string): boolean {
-    return dateStr < new Date().toISOString().slice(0, 10);
+    return dateStr < this.toLocalDateString(new Date());
   }
 
   private getMonday(date: Date): Date {
@@ -254,5 +262,12 @@ export class TeacherPlanningComponent {
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
     return d;
+  }
+
+  private toLocalDateString(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

@@ -81,7 +81,7 @@ export class DashboardComponent {
   }
 
   private loadKpis() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.toLocalDateString(new Date());
     forkJoin({
       students: this.students.listStudents('', 1, 1),
       teachers: this.users.listTeachers(),
@@ -107,6 +107,13 @@ export class DashboardComponent {
 
   formatDate(date: string | Date): string {
     return new Date(date).toLocaleDateString('fr-FR', {day: 'numeric', month: 'short'});
+  }
+
+  private toLocalDateString(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   private loadCompactMode(): boolean {

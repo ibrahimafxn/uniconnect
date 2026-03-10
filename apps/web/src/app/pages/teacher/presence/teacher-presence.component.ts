@@ -1,9 +1,11 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {PlanningApi, Session} from '../../../core/api/planning.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {AttendanceApi, AttendanceEntry, AttendanceStatus} from '../../../core/api/attendance.api';
+import {ActivatedRoute} from '@angular/router';
+import {filter, map, switchMap} from 'rxjs';
 
 @Component({
   selector: 'app-teacher-presence',
@@ -12,11 +14,12 @@ import {AttendanceApi, AttendanceEntry, AttendanceStatus} from '../../../core/ap
   templateUrl: './teacher-presence.component.html',
   styleUrls: ['./teacher-presence.component.scss'],
 })
-export class TeacherPresenceComponent {
+export class TeacherPresenceComponent implements OnInit {
   private readonly planning = inject(PlanningApi);
   private readonly academic = inject(AcademicApi);
   private readonly attendance = inject(AttendanceApi);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   sessions$ = this.planning.listSessions();
   groups$ = this.academic.listGroups();
@@ -35,6 +38,17 @@ export class TeacherPresenceComponent {
     dateFrom: [''],
     dateTo: [''],
   });
+
+  ngOnInit() {
+    this.route.queryParamMap.pipe(
+      map((params) => params.get('sessionId')),
+      filter((id): id is string => !!id),
+      switchMap((id) => this.sessions$.pipe(map((list) => ({id, list})))),
+    ).subscribe(({id, list}) => {
+      const session = list.find((s) => s._id === id);
+      if (session) this.selectSession(session);
+    });
+  }
 
   applyFilters() {
     const {dateFrom, dateTo} = this.filterForm.value;
@@ -75,12 +89,12 @@ export class TeacherPresenceComponent {
   }
 
   sortedSessions(sessions: Session[]): Session[] {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.toLocalDateString(new Date());
     const upcoming = sessions
-      .filter((s) => new Date(s.date).toISOString().slice(0, 10) >= today)
+      .filter((s) => this.toLocalDateString(new Date(s.date)) >= today)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const past = sessions
-      .filter((s) => new Date(s.date).toISOString().slice(0, 10) < today)
+      .filter((s) => this.toLocalDateString(new Date(s.date)) < today)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return [...upcoming, ...past];
   }
@@ -101,6 +115,13 @@ export class TeacherPresenceComponent {
 
   markAll(status: AttendanceStatus) {
     this.attendanceEntries.forEach((e) => (e.status = status));
+  }
+
+  private toLocalDateString(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   save() {

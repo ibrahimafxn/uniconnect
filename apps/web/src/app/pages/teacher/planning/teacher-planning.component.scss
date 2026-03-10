@@ -242,6 +242,13 @@ button {
   }
 }
 
+.session-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
 .time-block {
   display: flex;
   flex-direction: column;
@@ -357,6 +364,20 @@ button {
   &:hover { background: #fff6f0; border-color: rgba(239,111,58,.4); }
 }
 
+.presence-btn {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ecfdf3;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover { background: #dcfce7; border-color: rgba(16,185,129,.4); }
+}
+
 /* Journal preview */
 .journal-preview {
   font-size: 12px;
@@ -465,6 +486,22 @@ button {
 
 .cal-session.has-content {
   border-left: 3px solid rgba(255, 255, 255, 0.6);
+}
+
+.cal-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.cal-presence-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 1px 4px;
 }
 
 .cal-edit-btn {

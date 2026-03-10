@@ -161,6 +161,7 @@
 .portal-layout {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .pole-nav {
@@ -169,8 +170,10 @@
   z-index: 10;
   display: flex;
   gap: 8px;
+  flex-wrap: nowrap;
   padding: 10px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(10px);
   border-radius: 16px;
@@ -185,6 +188,7 @@
   border-radius: 999px;
   font-weight: 600;
   font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
 }
@@ -198,6 +202,19 @@
 .portal-main {
   display: grid;
   gap: 16px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.student-page {
+  overflow-x: hidden;
+  overflow-y: visible;
+  min-height: 100vh;
+}
+
+.pole-section {
+  min-width: 0;
+  overflow: visible;
 }
 
 .dashboard {
@@ -455,6 +472,30 @@
   margin-bottom: 14px;
 }
 
+.planning-filters.closed {
+  display: none;
+}
+
+.action-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.planning-exports.closed {
+  display: none;
+}
+
+.planning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-head {
+  overflow: visible;
+}
+
 .calendar-filters {
   display: grid;
   gap: 6px;
@@ -470,6 +511,14 @@
   background: #fff;
   overflow: hidden;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.agenda-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .agenda-head {
@@ -783,6 +832,38 @@ textarea {
     width: 100%;
   }
 
+  .planning-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+
+  .planning-actions .pill {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .action-group {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+  }
+
+  .planning-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .planning-filters input,
+  .planning-filters select,
+  .planning-filters button {
+    max-width: 260px;
+  }
+
   .today-strip {
     padding: 10px;
   }
@@ -796,11 +877,12 @@ textarea {
   }
 
   .panel {
-    padding: 14px;
+    padding: 12px;
   }
 
   .agenda {
-    overflow-x: auto;
+    overflow: hidden;
+    border-radius: 12px;
   }
 
   .agenda-head,

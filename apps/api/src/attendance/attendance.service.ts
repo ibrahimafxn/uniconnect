@@ -30,13 +30,24 @@ export class AttendanceService {
       .sort({ lastName: 1, firstName: 1 })
       .lean()
       .exec();
+    let resolvedStudents = students;
+    if (!resolvedStudents.length && session.groupId) {
+      const groupIdStr = String(session.groupId);
+      resolvedStudents = await this.studentModel
+        .aggregate([
+          { $addFields: { groupIdStr: { $toString: '$groupId' } } },
+          { $match: { groupIdStr: groupIdStr } },
+          { $sort: { lastName: 1, firstName: 1 } },
+        ])
+        .exec();
+    }
 
     const records = await this.attendanceModel
       .find({ sessionId: new Types.ObjectId(sessionId) })
       .lean()
       .exec();
 
-    return students.map((s) => {
+    return resolvedStudents.map((s: any) => {
       const record = records.find((r) => String(r.studentId) === String(s._id));
       return {
         studentId: String(s._id),

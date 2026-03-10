@@ -52,6 +52,9 @@
       <button class="pole-btn" type="button" [class.active]="activeTab==='scolarite'" (click)="setActiveTab('scolarite')">
         Scolarité
       </button>
+      <button class="pole-btn" type="button" [class.active]="activeTab==='planning'" (click)="setActiveTab('planning')">
+        Emploi du temps
+      </button>
       <button class="pole-btn" type="button" [class.active]="activeTab==='pedagogie'" (click)="setActiveTab('pedagogie')">
         Pédagogie
       </button>
@@ -85,11 +88,19 @@
         <div class="dash-grid">
           <div class="card pole-card">
             <div class="pole-title">Scolarité</div>
-            <div class="pole-meta">Emploi du temps, assiduite, justificatifs.</div>
+            <div class="pole-meta">Assiduité, justificatifs, suivi administratif.</div>
             <ng-container *ngIf="(todaySessions$ | async) as sessions">
               <div class="mini">Aujourd’hui : {{ sessions.length }} séance(s)</div>
             </ng-container>
             <button class="pill small" type="button" (click)="setActiveTab('scolarite')">Ouvrir</button>
+          </div>
+          <div class="card pole-card">
+            <div class="pole-title">Emploi du temps</div>
+            <div class="pole-meta">Agenda hebdo et séances à venir.</div>
+            <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
+              <div class="mini">{{ sessions.length }} séance(s) à venir</div>
+            </ng-container>
+            <button class="pill small" type="button" (click)="setActiveTab('planning')">Ouvrir</button>
           </div>
           <div class="card pole-card">
             <div class="pole-title">Pédagogie</div>
@@ -212,7 +223,7 @@
             <ng-container *ngIf="(attendanceSummary$ | async) as att">
               <div class="stat-value">{{ att?.rate ?? '—' }}<span *ngIf="att?.rate !== null">%</span></div>
               <div class="muted">Présent : {{ att?.present || 0 }} | Absences : {{ att?.absent || 0 }}</div>
-              <a class="pill ghost small" href="#student-justif-form">Justifier une absence</a>
+              <a class="pill ghost small" href="#scolarite-attendance">Voir le suivi</a>
             </ng-container>
           </div>
           <div class="card stat-card">
@@ -239,99 +250,6 @@
           <ng-template #noTodayStrip>
             <div class="empty">Aucune séance aujourd’hui.</div>
           </ng-template>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Emploi du temps</h2>
-            <div class="actions">
-              <a class="pill" routerLink="/planning">Voir la semaine</a>
-              <a class="pill ghost small" [href]="planningExportUrl('pdf')">Exporter PDF</a>
-              <a class="pill ghost small" [href]="planningExportUrl('ics')">Exporter iCal</a>
-              <button class="pill ghost small" type="button" (click)="copyPlanningLink()">Partager iCal</button>
-            </div>
-          </div>
-          <div class="planning-filters">
-            <input type="text" placeholder="Rechercher un cours" [formControl]="planningFilterForm.controls.query" />
-            <input type="date" [formControl]="planningFilterForm.controls.dateFrom" />
-            <input type="date" [formControl]="planningFilterForm.controls.dateTo" />
-            <select [formControl]="planningFilterForm.controls.groupId">
-              <option value="">Tous les groupes</option>
-              <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
-            </select>
-            <button class="pill small" type="button" (click)="planningFilterForm.reset({query: '', dateFrom: '', dateTo: '', groupId: ''})">Réinitialiser</button>
-          </div>
-
-          <div
-            class="agenda"
-            [style.--hour-h.px]="agendaHourHeight"
-            [style.--start-h]="agendaStartHour"
-            [style.--end-h]="agendaEndHour"
-            [style.--days]="(weekSessions$ | async)?.length || 6"
-          >
-            <div class="agenda-head">
-              <div class="agenda-time-col"></div>
-              <div class="agenda-day-head" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
-                <div class="day-name">{{ day.date | date:'EEE' }}</div>
-              <div class="day-date">{{ day.date | date:'dd/MM' }}</div>
-            </div>
-          </div>
-          <div class="agenda-body">
-            <div class="agenda-time-col">
-              <div class="agenda-time" *ngFor="let h of agendaHours">{{ h }}:00</div>
-            </div>
-            <div class="agenda-day" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
-              <div class="agenda-track">
-                <div
-                  class="agenda-now"
-                  *ngIf="isToday(day.date) && showNowLine"
-                  [style.top.px]="nowLineOffset"
-                >
-                  <span class="agenda-now-dot"></span>
-                </div>
-                <div
-                  class="agenda-event"
-                  *ngFor="let s of day.sessions"
-                  [ngClass]="'kind-' + sessionKind(s.label)"
-                  [style.top.px]="agendaTop(s.startTime)"
-                  [style.height.px]="agendaHeight(s.startTime, s.endTime)"
-                  (click)="openSessionDetails(s)"
-                  (keydown.enter)="openSessionDetails(s)"
-                  (keydown.space)="openSessionDetails(s)"
-                  tabindex="0"
-                  role="button"
-                  aria-label="Voir les détails de la séance"
-                >
-                  <div class="agenda-title">{{ s.label || 'Séance' }}</div>
-                  <div class="agenda-meta">{{ s.startTime }}–{{ s.endTime }}</div>
-                  <div class="agenda-kind">{{ sessionKindLabel(sessionKind(s.label)) }}</div>
-                </div>
-                  <div class="agenda-empty" *ngIf="!day.sessions.length">—</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="agenda-list-head">Agenda (liste)</div>
-          <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
-            <div class="list" *ngIf="sessions.length; else emptyPlan">
-              <div class="list-item"
-                   *ngFor="let s of sessions; trackBy: trackById"
-                   (click)="openSessionDetails(s)"
-                   (keydown.enter)="openSessionDetails(s)"
-                   (keydown.space)="openSessionDetails(s)"
-                   tabindex="0"
-                   role="button"
-                   aria-label="Voir les détails de la séance">
-                <div class="list-title">{{ s.label || 'Séance' }}</div>
-                <div class="list-meta">{{ s.date | date:'dd/MM/yyyy' }} — {{ s.startTime }}–{{ s.endTime }}</div>
-                <div class="list-body" *ngIf="s.content">Cahier de texte : {{ s.content }}</div>
-                <div class="list-body" *ngIf="s.homework">Devoirs : {{ s.homework }}</div>
-              </div>
-            </div>
-            <ng-template #emptyPlan>
-              <div class="empty">Aucune séance dans les 2 prochaines semaines.</div>
-            </ng-template>
-          </ng-container>
         </div>
 
         <div class="panel">
@@ -439,6 +357,108 @@
               <a class="pill small" *ngIf="j.originalName" [href]="downloadJustificationUrl(j._id)">Télécharger</a>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab==='planning'" class="pole-section">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Emploi du temps</h2>
+            <div class="actions planning-actions">
+              <a class="pill" routerLink="/planning">Voir la semaine</a>
+              <button class="pill ghost small" type="button" (click)="planningFiltersOpen = !planningFiltersOpen">
+                {{ planningFiltersOpen ? 'Masquer filtres' : 'Filtres' }}
+              </button>
+              <button class="pill ghost small" type="button" (click)="planningExportsOpen = !planningExportsOpen">
+                {{ planningExportsOpen ? 'Masquer export' : 'Exporter' }}
+              </button>
+            </div>
+            <div class="action-group planning-exports" [class.closed]="!planningExportsOpen">
+              <a class="pill ghost small" [href]="planningExportUrl('pdf')">Exporter PDF</a>
+              <a class="pill ghost small" [href]="planningExportUrl('ics')">Exporter iCal</a>
+              <button class="pill ghost small" type="button" (click)="copyPlanningLink()">Partager iCal</button>
+            </div>
+          </div>
+          <div class="planning-filters" [class.closed]="!planningFiltersOpen">
+            <input type="text" placeholder="Rechercher un cours" [formControl]="planningFilterForm.controls.query" />
+            <input type="date" [formControl]="planningFilterForm.controls.dateFrom" />
+            <input type="date" [formControl]="planningFilterForm.controls.dateTo" />
+            <button class="pill small" type="button" (click)="planningFilterForm.reset({query: '', dateFrom: '', dateTo: '', groupId: ''})">Réinitialiser</button>
+          </div>
+
+          <div class="agenda-scroll">
+            <div
+              class="agenda"
+              [style.--hour-h.px]="agendaHourHeight"
+              [style.--start-h]="agendaStartHour"
+              [style.--end-h]="agendaEndHour"
+              [style.--days]="(weekSessions$ | async)?.length || 6"
+            >
+              <div class="agenda-head">
+                <div class="agenda-time-col"></div>
+                <div class="agenda-day-head" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
+                  <div class="day-name">{{ day.date | date:'EEE' }}</div>
+                  <div class="day-date">{{ day.date | date:'dd/MM' }}</div>
+                </div>
+              </div>
+              <div class="agenda-body">
+                <div class="agenda-time-col">
+                  <div class="agenda-time" *ngFor="let h of agendaHours">{{ h }}:00</div>
+                </div>
+                <div class="agenda-day" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
+                  <div class="agenda-track">
+                    <div
+                      class="agenda-now"
+                      *ngIf="isToday(day.date) && showNowLine"
+                      [style.top.px]="nowLineOffset"
+                    >
+                      <span class="agenda-now-dot"></span>
+                    </div>
+                    <div
+                      class="agenda-event"
+                      *ngFor="let s of day.sessions"
+                      [ngClass]="'kind-' + sessionKind(s.label)"
+                      [style.top.px]="agendaTop(s.startTime)"
+                      [style.height.px]="agendaHeight(s.startTime, s.endTime)"
+                      (click)="openSessionDetails(s)"
+                      (keydown.enter)="openSessionDetails(s)"
+                      (keydown.space)="openSessionDetails(s)"
+                      tabindex="0"
+                      role="button"
+                      aria-label="Voir les détails de la séance"
+                    >
+                      <div class="agenda-title">{{ s.label || 'Séance' }}</div>
+                      <div class="agenda-meta">{{ s.startTime }}–{{ s.endTime }}</div>
+                      <div class="agenda-kind">{{ sessionKindLabel(sessionKind(s.label)) }}</div>
+                    </div>
+                    <div class="agenda-empty" *ngIf="!day.sessions.length">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="agenda-list-head">Agenda (liste)</div>
+          <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
+            <div class="list" *ngIf="sessions.length; else emptyPlan">
+              <div class="list-item"
+                   *ngFor="let s of sessions; trackBy: trackById"
+                   (click)="openSessionDetails(s)"
+                   (keydown.enter)="openSessionDetails(s)"
+                   (keydown.space)="openSessionDetails(s)"
+                   tabindex="0"
+                   role="button"
+                   aria-label="Voir les détails de la séance">
+                <div class="list-title">{{ s.label || 'Séance' }}</div>
+                <div class="list-meta">{{ s.date | date:'dd/MM/yyyy' }} — {{ s.startTime }}–{{ s.endTime }}</div>
+                <div class="list-body" *ngIf="s.content">Cahier de texte : {{ s.content }}</div>
+                <div class="list-body" *ngIf="s.homework">Devoirs : {{ s.homework }}</div>
+              </div>
+            </div>
+            <ng-template #emptyPlan>
+              <div class="empty">Aucune séance dans les 2 prochaines semaines.</div>
+            </ng-template>
+          </ng-container>
         </div>
       </section>
 

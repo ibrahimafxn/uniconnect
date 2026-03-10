@@ -98,10 +98,19 @@ export class PlanningService {
     ) {
       filter.teacherId = params.user.userId;
     } else if (params.user.role === Role.Student) {
-      const profile = await this.studentModel
-        .findOne({ email: params.user.email?.toLowerCase().trim() })
-        .lean()
-        .exec();
+      let profile = null as any;
+      if (params.user.userId && Types.ObjectId.isValid(params.user.userId)) {
+        profile = await this.studentModel
+          .findOne({ userId: new Types.ObjectId(params.user.userId) })
+          .lean()
+          .exec();
+      }
+      if (!profile && params.user.email) {
+        profile = await this.studentModel
+          .findOne({ email: params.user.email.toLowerCase().trim() })
+          .lean()
+          .exec();
+      }
       if (!profile?.groupId) return [];
       filter.groupId = profile.groupId;
     } else {
@@ -110,10 +119,42 @@ export class PlanningService {
       if (params.roomId) filter.roomId = params.roomId;
     }
 
-    return this.sessionModel
+    const sessions = await this.sessionModel
       .find(filter)
       .sort({ date: 1, startMinutes: 1 })
       .exec();
+    if (sessions.length > 0 || params.user.role !== Role.Student) {
+      return sessions;
+    }
+
+    // Fallback for mixed types (groupId stored as string vs ObjectId)
+    const groupIdStr = String(filter.groupId ?? '');
+    if (!groupIdStr) return sessions;
+    const dateFromStr = params.dateFrom ?? '';
+    const dateToStr = params.dateTo ?? '';
+    const match: any = { groupIdStr };
+    if (dateFromStr || dateToStr) {
+      match.dateStr = {};
+      if (dateFromStr) match.dateStr.$gte = dateFromStr;
+      if (dateToStr) match.dateStr.$lte = dateToStr;
+    }
+
+    const fallback = await this.sessionModel
+      .aggregate([
+        {
+          $addFields: {
+            groupIdStr: { $toString: '$groupId' },
+            dateStr: {
+              $dateToString: { format: '%Y-%m-%d', date: '$date' },
+            },
+          },
+        },
+        { $match: match },
+        { $sort: { date: 1, startMinutes: 1 } },
+      ])
+      .exec();
+
+    return fallback;
   }
 
   async createSession(

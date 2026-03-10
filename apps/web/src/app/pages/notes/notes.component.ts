@@ -173,6 +173,7 @@ export class NotesComponent {
   // === RESULTS ===
   summary$ = this.isAdmin || this.isTeacher ? of(null) : this.notes.mySummary();
   studentSearchId = '';
+  studentSubjectFilter = '';
 
   loadSummary(studentId: string) {
     if (!studentId) return;
@@ -267,6 +268,18 @@ export class NotesComponent {
     return avg >= 10 ? 'avg-pass' : 'avg-fail';
   }
 
+  averageStatus(avg: number | null | undefined) {
+    if (avg === null || avg === undefined) return null;
+    return avg >= 10 ? 'Validé' : 'À repasser';
+  }
+
+  filteredSubjects(subjects: Array<{ name?: string; average?: number | null }> | null | undefined) {
+    if (!subjects?.length) return [];
+    const q = this.studentSubjectFilter.trim().toLowerCase();
+    if (!q) return subjects;
+    return subjects.filter((s) => (s.name ?? '').toLowerCase().includes(q));
+  }
+
   claimStudentName(claim: any): string {
     const student = claim?.studentId;
     if (student && typeof student === 'object') {
@@ -301,6 +314,13 @@ export class NotesComponent {
   private fmtDate(value: string | Date | undefined): string {
     if (!value) return '';
     const d = value instanceof Date ? value : new Date(value);
-    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+    return isNaN(d.getTime()) ? '' : this.toLocalDateString(d);
+  }
+
+  private toLocalDateString(date: Date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }
