@@ -769,10 +769,43 @@
 
     <!-- Enseignant -->
     <form *ngIf="drawerMode === 'teacher'" [formGroup]="teacherForm" (ngSubmit)="createTeacher()">
-      <div class="field"><label>Prénom *</label><input formControlName="firstName" /></div>
-      <div class="field"><label>Nom *</label><input formControlName="lastName" /></div>
+
+      <p class="form-section-title">Identité</p>
+      <div class="field-row">
+        <div class="field"><label>Prénom *</label><input formControlName="firstName" placeholder="Jean" /></div>
+        <div class="field"><label>Nom *</label><input formControlName="lastName" placeholder="DUPONT" /></div>
+      </div>
+
+      <p class="form-section-title">Compte &amp; contact</p>
       <div class="field"><label>Email *</label><input formControlName="email" type="email" placeholder="prof@ecole.ci" /></div>
+      <div class="field"><label>Téléphone</label><input formControlName="phone" placeholder="+225 07 00 00 00" /></div>
+
+      <p class="form-section-title">Profil académique</p>
+      <div class="field">
+        <label>Spécialité</label>
+        <input formControlName="specialty" placeholder="Mathématiques, Informatique…" />
+      </div>
+      <div class="field">
+        <label>Grade</label>
+        <select formControlName="grade">
+          <option value="assistant">Assistant</option>
+          <option value="maitre_conferences">Maître de conférences</option>
+          <option value="professeur">Professeur</option>
+          <option value="vacataire">Vacataire</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Bureau / Salle</label>
+        <input formControlName="office" placeholder="Bâtiment A, Bureau 12" />
+      </div>
+      <div class="field">
+        <label>Biographie</label>
+        <textarea formControlName="bio" rows="3" placeholder="Présentation courte de l'enseignant…"></textarea>
+      </div>
+
       <button type="submit" [disabled]="teacherForm.invalid">Créer le compte enseignant</button>
+
       <div class="teacher-result" *ngIf="teacherCreateResult">
         <p class="success-msg">✅ Compte créé avec succès !</p>
         <div class="credentials-box">

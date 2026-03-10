@@ -133,7 +133,16 @@ export class AdminUsersController {
   @ApiOperation({ summary: 'Créer un compte enseignant avec profil' })
   @ApiResponse({ status: 201, description: 'Compte enseignant créé' })
   createTeacher(
-    @Body() body: { firstName: string; lastName: string; email: string },
+    @Body() body: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      specialty?: string;
+      grade?: string;
+      bio?: string;
+      phone?: string;
+      office?: string;
+    },
     @Request() req: any,
   ) {
     return this.service.createTeacher(body, this.buildActor(req));

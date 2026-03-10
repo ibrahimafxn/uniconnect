@@ -214,7 +214,16 @@ export class AdminUsersService {
   // ─── Teacher creation ────────────────────────────────────────────────────────
 
   async createTeacher(
-    data: { firstName: string; lastName: string; email: string },
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      specialty?: string;
+      grade?: string;
+      bio?: string;
+      phone?: string;
+      office?: string;
+    },
     actor: AuditActor,
   ) {
     const email = data.email.trim().toLowerCase();
@@ -226,9 +235,20 @@ export class AdminUsersService {
 
     const user = await this.userModel.create({ email, passwordHash, role: Role.Teacher });
 
+    const profileFields: Record<string, unknown> = {
+      userId: user._id,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+    };
+    if (data.specialty) profileFields['specialty'] = data.specialty.trim();
+    if (data.grade)     profileFields['grade']     = data.grade;
+    if (data.bio)       profileFields['bio']        = data.bio.trim();
+    if (data.phone)     profileFields['phone']      = data.phone.trim();
+    if (data.office)    profileFields['office']     = data.office.trim();
+
     await this.teacherModel.findOneAndUpdate(
       { userId: user._id },
-      { $set: { userId: user._id, firstName: data.firstName.trim(), lastName: data.lastName.trim() } },
+      { $set: profileFields },
       { upsert: true },
     ).exec();
 
