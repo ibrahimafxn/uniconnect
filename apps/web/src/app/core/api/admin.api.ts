@@ -310,6 +310,12 @@ export class AdminApi {
 
   // ── XLSX import preview (UC-A02) ──────────────────────────────────────────
 
+  createTeacher(body: {firstName: string; lastName: string; email: string}) {
+    return this.http.post<{userId: string; email: string; tempPassword: string}>(
+      `${BASE}/admin/users/create-teacher`, body
+    );
+  }
+
   parseXlsxFile(file: File) {
     const fd = new FormData();
     fd.append('file', file);

@@ -607,7 +607,33 @@ input[type='tel'] {
   display: block;
 }
 
-.error-msg { 
+.success-msg {
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.credentials-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  code {
+    background: #dcfce7;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 13px;
+    letter-spacing: .04em;
+  }
+}
+
+.error-msg {
   color: #991b1b;
   font-size: 13px; 
   padding: 12px; 
