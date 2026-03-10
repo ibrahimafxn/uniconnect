@@ -61,6 +61,9 @@ export class StudentProfile extends Document {
   @Prop({ required: true, type: Types.ObjectId, ref: AcademicYear.name })
   academicYearId!: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  userId?: Types.ObjectId;
+
   @Prop({
     type: {
       email: { type: Boolean, default: true },

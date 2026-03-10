@@ -129,6 +129,16 @@ export class AdminUsersController {
     return this.service.assignRole(id, body.role, this.buildActor(req));
   }
 
+  @Post('create-teacher')
+  @ApiOperation({ summary: 'Créer un compte enseignant avec profil' })
+  @ApiResponse({ status: 201, description: 'Compte enseignant créé' })
+  createTeacher(
+    @Body() body: { firstName: string; lastName: string; email: string },
+    @Request() req: any,
+  ) {
+    return this.service.createTeacher(body, this.buildActor(req));
+  }
+
   @Post('import-students')
   @ApiOperation({
     summary: 'Import en masse d\'étudiants (UC-A02)',

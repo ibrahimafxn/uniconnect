@@ -88,12 +88,10 @@ describe('AdminUsersService', () => {
         exec: jest.fn().mockResolvedValue([user]),
       });
       userModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
-      // Student profile join
-      studentModel.find = jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([{ email: 'a@b.com', firstName: 'Aya', lastName: 'Koné' }]),
-      });
+      // Student profile join: first call by userId, second call by email (fallback)
+      studentModel.find = jest.fn()
+        .mockReturnValueOnce({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ userId, firstName: 'Aya', lastName: 'Koné' }]) })
+        .mockReturnValueOnce({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) });
       // Teacher profile join
       teacherModel.find = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -119,11 +117,8 @@ describe('AdminUsersService', () => {
         exec: jest.fn().mockResolvedValue([user]),
       });
       userModel.countDocuments = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(1) });
-      studentModel.find = jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([]),
-      });
+      const emptyStudentFind = { select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) };
+      studentModel.find = jest.fn().mockReturnValue(emptyStudentFind);
       teacherModel.find = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnThis(),
         lean: jest.fn().mockReturnThis(),

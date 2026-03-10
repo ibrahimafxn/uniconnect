@@ -94,16 +94,18 @@ export class AdminUsersService {
     const userIds = users.map((u) => u._id);
     const emails = users.map((u) => u.email);
 
-    const [studentProfiles, teacherProfiles] = await Promise.all([
-      this.studentModel.find({ email: { $in: emails } }).select('email firstName lastName').lean().exec(),
+    const [studentsByUserId, studentsByEmail, teacherProfiles] = await Promise.all([
+      this.studentModel.find({ userId: { $in: userIds } }).select('userId firstName lastName').lean().exec(),
+      this.studentModel.find({ email: { $in: emails }, userId: { $exists: false } }).select('email firstName lastName').lean().exec(),
       this.teacherModel.find({ userId: { $in: userIds } }).select('userId firstName lastName').lean().exec(),
     ]);
 
-    const studentByEmail = new Map(studentProfiles.map((p) => [p.email, p]));
+    const studentByUserId = new Map(studentsByUserId.map((p) => [String(p.userId), p]));
+    const studentByEmail = new Map(studentsByEmail.map((p) => [p.email, p]));
     const teacherByUserId = new Map(teacherProfiles.map((p) => [String(p.userId), p]));
 
     const items = users.map((u) => {
-      const sp = studentByEmail.get(u.email);
+      const sp = studentByUserId.get(String(u._id)) ?? studentByEmail.get(u.email);
       const tp = teacherByUserId.get(String(u._id));
       return {
         ...u,
@@ -209,6 +211,38 @@ export class AdminUsersService {
     return { success: true };
   }
 
+  // ─── Teacher creation ────────────────────────────────────────────────────────
+
+  async createTeacher(
+    data: { firstName: string; lastName: string; email: string },
+    actor: AuditActor,
+  ) {
+    const email = data.email.trim().toLowerCase();
+    const existing = await this.userModel.findOne({ email }).lean().exec();
+    if (existing) throw new BadRequestException('Email déjà utilisé.');
+
+    const tempPassword = this.generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    const user = await this.userModel.create({ email, passwordHash, role: Role.Teacher });
+
+    await this.teacherModel.findOneAndUpdate(
+      { userId: user._id },
+      { $set: { userId: user._id, firstName: data.firstName.trim(), lastName: data.lastName.trim() } },
+      { upsert: true },
+    ).exec();
+
+    await this.auditLogService.log({
+      action: 'CREATE_TEACHER',
+      entity: 'User',
+      entityId: String(user._id),
+      actor,
+      metadata: { email, firstName: data.firstName, lastName: data.lastName },
+    });
+
+    return { userId: String(user._id), email, tempPassword };
+  }
+
   // ─── Bulk student import ─────────────────────────────────────────────────────
 
   async importStudents(params: {
@@ -296,6 +330,7 @@ export class AdminUsersService {
           offerId,
           programId: String(offer.programId),
           academicYearId: String(offer.academicYearId),
+          userId: user._id,
         });
 
         credentials.push({
