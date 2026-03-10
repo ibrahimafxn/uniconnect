@@ -9,9 +9,10 @@ import {StudentsApi} from '../../core/api/students.api';
 import {Payment, PaymentPlan, PaymentsApi} from '../../core/api/payments.api';
 import {UnlinkedProfile, UsersApi} from '../../core/api/users.api';
 import {Paginated, StudentDocument} from '../../core/api/students.api';
+import {AdminApi, AdminUser} from '../../core/api/admin.api';
 import {ConfirmService, ConfirmOptions} from '../../core/confirm.service';
 
-export type AdminTab = 'structure' | 'students' | 'payments' | 'users' | 'documents';
+export type AdminTab = 'structure' | 'students' | 'teachers' | 'payments' | 'users' | 'documents';
 
 type PaymentView = Payment & {
   installmentDueDate?: string;
@@ -47,6 +48,7 @@ export class AdminComponent implements OnInit {
   private readonly students = inject(StudentsApi);
   private readonly payments = inject(PaymentsApi);
   private readonly usersApi = inject(UsersApi);
+  private readonly adminApi = inject(AdminApi);
   private readonly confirm = inject(ConfirmService);
 
   compactMode = this.loadCompactMode();
@@ -57,6 +59,7 @@ export class AdminComponent implements OnInit {
   tabs: Array<{id: AdminTab; label: string; icon: string}> = [
     {id: 'structure', label: 'Structure', icon: '🏛️'},
     {id: 'students', label: 'Étudiants', icon: '🎓'},
+    {id: 'teachers', label: 'Enseignants', icon: '👨‍🏫'},
     {id: 'payments', label: 'Paiements', icon: '💰'},
     {id: 'documents', label: 'Documents', icon: '📄'},
     {id: 'users', label: 'Comptes', icon: '👤'},
@@ -65,7 +68,7 @@ export class AdminComponent implements OnInit {
   // === DRAWER ===
   drawerOpen = false;
   drawerTitle = '';
-  drawerMode: 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group' | 'student' | 'plan' | 'payment' | 'user' | 'document' | null = null;
+  drawerMode: 'year' | 'semester' | 'program' | 'level' | 'offer' | 'group' | 'student' | 'plan' | 'payment' | 'user' | 'document' | 'teacher' | null = null;
 
   openDrawer(mode: typeof this.drawerMode, title: string) {
     this.drawerMode = mode;
@@ -829,6 +832,46 @@ export class AdminComponent implements OnInit {
     );
   }
 
+  // === TEACHERS ===
+  teachers$: Observable<AdminUser[]> = this.loadTeachers();
+  teacherCreateResult: {email: string; tempPassword: string} | null = null;
+
+  teacherForm = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+  });
+
+  private loadTeachers(): Observable<AdminUser[]> {
+    return this.adminApi.listUsers({role: 'teacher', limit: 200}).pipe(map(r => r.items));
+  }
+
+  createTeacher() {
+    if (this.teacherForm.invalid) return;
+    const {firstName, lastName, email} = this.teacherForm.value as {firstName: string; lastName: string; email: string};
+    this.adminApi.createTeacher({firstName, lastName, email}).subscribe({
+      next: (res) => {
+        this.teacherCreateResult = {email: res.email, tempPassword: res.tempPassword};
+        this.teacherForm.reset();
+        this.teachers$ = this.loadTeachers();
+      },
+      error: (err) => alert('❌ Erreur: ' + (err?.error?.message ?? 'Création échouée')),
+    });
+  }
+
+  deleteTeacher(id: string) {
+    this.confirmAndRun(
+      {title: 'Supprimer enseignant', message: "Confirmer la suppression de cet enseignant ?", danger: true, confirmLabel: 'Supprimer'},
+      () => this.usersApi.deleteUser(id).subscribe(() => { this.teachers$ = this.loadTeachers(); }),
+    );
+  }
+
+  openCreateTeacher() {
+    this.teacherCreateResult = null;
+    this.teacherForm.reset();
+    this.openDrawer('teacher', 'Ajouter un enseignant');
+  }
+
   // === USERS ===
   users$ = this.usersApi.listAll();
   userCreateError: string | null = null;
@@ -992,6 +1035,7 @@ export class AdminComponent implements OnInit {
   refresh() {
     this.refreshAcademic();
     this.students$ = this.loadStudents();
+    this.teachers$ = this.loadTeachers();
     this.refreshPayments();
     this.loadDocuments();
     this.users$ = this.usersApi.listAll();
