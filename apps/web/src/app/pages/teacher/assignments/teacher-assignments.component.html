@@ -1,0 +1,210 @@
+<div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>Devoirs</h1>
+      <p class="subtitle">Créez des devoirs et corrigez les soumissions de vos étudiants.</p>
+    </div>
+    <div class="header-actions">
+      <label class="toggle"><input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" /> Compact</label>
+      <label class="toggle"><input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" /> Ultra</label>
+    </div>
+  </div>
+
+  <!-- ── Liste des devoirs ──────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!selectedAssignment">
+
+    <!-- Filtres + bouton créer -->
+    <div class="toolbar">
+      <div class="filters">
+        <select [(ngModel)]="filterGroupId" (change)="loadAssignments()">
+          <option value="">Tous les groupes</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+        <select [(ngModel)]="filterSubjectId" (change)="loadAssignments()">
+          <option value="">Toutes les matières</option>
+          <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
+        </select>
+      </div>
+      <button class="btn-primary" (click)="openCreate()">+ Nouveau devoir</button>
+    </div>
+
+    <!-- Tableau -->
+    <div class="table-wrap" *ngIf="!loadingAssignments; else loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Titre</th>
+            <th>Groupe</th>
+            <th>Date limite</th>
+            <th>Pièce jointe</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of assignments" [class.overdue]="isPast(a.dueDate)">
+            <td><strong>{{ a.title }}</strong>
+              <div class="sub-text" *ngIf="a.description">{{ a.description }}</div>
+            </td>
+            <td class="muted">{{ a.groupId }}</td>
+            <td>
+              <span [class.text-red]="isPast(a.dueDate)">{{ a.dueDate | date:'dd/MM/yyyy' }}</span>
+              <span class="badge badge-red" *ngIf="isPast(a.dueDate)">Expiré</span>
+            </td>
+            <td>
+              <a *ngIf="a.originalName" [href]="assignmentDownloadUrl(a._id)" target="_blank" class="link">
+                📎 {{ a.originalName }}
+              </a>
+              <span *ngIf="!a.originalName" class="muted">—</span>
+            </td>
+            <td class="actions">
+              <button class="btn-outline" (click)="selectAssignment(a)">Soumissions →</button>
+            </td>
+          </tr>
+          <tr *ngIf="assignments.length === 0">
+            <td colspan="5" class="empty">Aucun devoir. Créez-en un avec le bouton ci-dessus.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #loading>
+      <p class="loading-text">Chargement…</p>
+    </ng-template>
+
+  </ng-container>
+
+  <!-- ── Soumissions d'un devoir ───────────────────────────────────────────── -->
+  <ng-container *ngIf="selectedAssignment">
+
+    <div class="back-bar">
+      <button class="btn-back" (click)="back()">← Retour aux devoirs</button>
+      <div class="assignment-info">
+        <h2>{{ selectedAssignment.title }}</h2>
+        <span class="muted">Date limite : {{ selectedAssignment.dueDate | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-chip">
+        <span class="stat-val">{{ submissions.length }}</span>
+        <span class="stat-label">Soumissions</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-val">{{ countByStatus('reviewed') }}</span>
+        <span class="stat-label">Corrigées</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-val">{{ countByStatus('submitted') }}</span>
+        <span class="stat-label">En attente</span>
+      </div>
+    </div>
+
+    <div class="table-wrap" *ngIf="!loadingSubmissions; else loadingSubs">
+      <table>
+        <thead>
+          <tr><th>Étudiant</th><th>Fichier</th><th>Statut</th><th>Score</th><th>Feedback</th><th>Déposé le</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of submissions">
+            <td><strong>{{ s.studentId }}</strong></td>
+            <td>
+              <a [href]="downloadUrl(s._id)" target="_blank" class="link">
+                📎 {{ s.originalName }}
+                <span class="muted">({{ (s.size / 1024) | number:'1.0-0' }} Ko)</span>
+              </a>
+            </td>
+            <td><span class="badge" [class]="statusClass(s.status)">{{ statusLabel(s.status) }}</span></td>
+            <td>{{ s.score !== null && s.score !== undefined ? s.score + ' / 20' : '—' }}</td>
+            <td class="muted">{{ s.feedback || '—' }}</td>
+            <td class="muted">{{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="actions">
+              <button class="btn-outline" (click)="openReview(s)">✏️ Corriger</button>
+            </td>
+          </tr>
+          <tr *ngIf="submissions.length === 0">
+            <td colspan="7" class="empty">Aucune soumission pour ce devoir.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #loadingSubs>
+      <p class="loading-text">Chargement des soumissions…</p>
+    </ng-template>
+
+  </ng-container>
+
+</div>
+
+<!-- ── Drawer création ────────────────────────────────────────────────────── -->
+<div class="overlay" *ngIf="drawerOpen" (click)="drawerOpen = false"></div>
+<div class="drawer" *ngIf="drawerOpen">
+  <div class="drawer-header">
+    <h3>{{ drawerTitle }}</h3>
+    <button class="btn-icon" (click)="drawerOpen = false">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="field"><label>Titre *</label><input formControlName="title" placeholder="Ex. TD n°3 — Algorithmique" /></div>
+      <div class="field"><label>Description</label><textarea formControlName="description" rows="3" placeholder="Consignes du devoir…"></textarea></div>
+      <div class="field"><label>Groupe *</label>
+        <select formControlName="groupId">
+          <option value="">— Sélectionner —</option>
+          <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
+        </select>
+      </div>
+      <div class="field"><label>Matière</label>
+        <select formControlName="subjectId">
+          <option value="">— Toutes —</option>
+          <option *ngFor="let s of (subjects$ | async)" [value]="s._id">{{ s.name }}</option>
+        </select>
+      </div>
+      <div class="field"><label>Date limite *</label><input type="date" formControlName="dueDate" /></div>
+      <div class="field">
+        <label>Pièce jointe (optionnel)</label>
+        <input type="file" (change)="onFileChange($event)" accept=".pdf,.doc,.docx,.zip,.png,.jpg" />
+        <span class="hint" *ngIf="assignmentFile">{{ assignmentFile.name }}</span>
+      </div>
+      <div class="error-msg" *ngIf="saveError">{{ saveError }}</div>
+      <button type="submit" class="btn-primary full" [disabled]="form.invalid">Créer le devoir</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Drawer correction ──────────────────────────────────────────────────── -->
+<div class="overlay" *ngIf="reviewDrawerOpen" (click)="reviewDrawerOpen = false"></div>
+<div class="drawer" *ngIf="reviewDrawerOpen">
+  <div class="drawer-header">
+    <h3>Corriger la soumission</h3>
+    <button class="btn-icon" (click)="reviewDrawerOpen = false">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="submission-preview" *ngIf="reviewingSubmission">
+      <p class="muted">Fichier : <a [href]="downloadUrl(reviewingSubmission._id)" target="_blank" class="link">{{ reviewingSubmission.originalName }}</a></p>
+      <p class="muted" *ngIf="reviewingSubmission.comment">Commentaire étudiant : {{ reviewingSubmission.comment }}</p>
+    </div>
+    <form [formGroup]="reviewForm" (ngSubmit)="saveReview()">
+      <div class="field">
+        <label>Note (sur 20)</label>
+        <input type="number" formControlName="score" min="0" max="20" step="0.5" placeholder="ex. 14.5" />
+      </div>
+      <div class="field">
+        <label>Feedback</label>
+        <textarea formControlName="feedback" rows="4" placeholder="Commentaires sur le travail rendu…"></textarea>
+      </div>
+      <div class="field">
+        <label>Statut</label>
+        <select formControlName="status">
+          <option value="reviewed">Corrigé</option>
+          <option value="late">En retard</option>
+        </select>
+      </div>
+      <div class="error-msg" *ngIf="reviewSaveError">{{ reviewSaveError }}</div>
+      <button type="submit" class="btn-primary full" [disabled]="reviewSaving">
+        {{ reviewSaving ? 'Sauvegarde…' : 'Enregistrer la correction' }}
+      </button>
+    </form>
+  </div>
+</div>
