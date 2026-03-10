@@ -1,8 +1,8 @@
 <div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
   <div class="page-header">
     <div>
-      <h1>Administration</h1>
-      <p class="subtitle">Gestion complète de l'établissement</p>
+      <h1>Scolarité</h1>
+      <p class="subtitle">Gestion opérationnelle — étudiants, paiements, documents, structure académique</p>
     </div>
     <div class="header-actions">
       <label class="toggle">
@@ -245,6 +245,36 @@
         </table>
       </div>
     </ng-container>
+  </ng-container>
+
+  <!-- ================== ENSEIGNANTS ================== -->
+  <ng-container *ngIf="activeTab === 'teachers'">
+    <div class="tab-toolbar">
+      <span class="muted">Gérez les profils enseignants de l'établissement.</span>
+      <button class="btn-add" (click)="openCreateTeacher()">+ Ajouter</button>
+    </div>
+
+    <div class="table-wrap main-table">
+      <table>
+        <thead>
+          <tr><th>Nom complet</th><th>Email</th><th>Rôle</th><th>Créé le</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of (teachers$ | async)">
+            <td><strong>{{ t.lastName || '—' }} {{ t.firstName || '' }}</strong></td>
+            <td class="muted">{{ t.email }}</td>
+            <td><span class="role-badge role-teacher">Enseignant</span></td>
+            <td class="muted">{{ t.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td class="actions">
+              <button class="icon-btn danger" (click)="deleteTeacher(t._id)" title="Supprimer">🗑</button>
+            </td>
+          </tr>
+          <tr *ngIf="(teachers$ | async)?.length === 0">
+            <td colspan="5" class="empty-row">Aucun enseignant.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </ng-container>
 
   <!-- ================== PAIEMENTS ================== -->
@@ -735,6 +765,22 @@
     <form *ngIf="drawerMode === 'document' && editingDocumentId" [formGroup]="editDocumentForm" (ngSubmit)="saveDocumentEdit()">
       <div class="field"><label>Libellé</label><input formControlName="label" /></div>
       <button type="submit">Enregistrer</button>
+    </form>
+
+    <!-- Enseignant -->
+    <form *ngIf="drawerMode === 'teacher'" [formGroup]="teacherForm" (ngSubmit)="createTeacher()">
+      <div class="field"><label>Prénom *</label><input formControlName="firstName" /></div>
+      <div class="field"><label>Nom *</label><input formControlName="lastName" /></div>
+      <div class="field"><label>Email *</label><input formControlName="email" type="email" placeholder="prof@ecole.ci" /></div>
+      <button type="submit" [disabled]="teacherForm.invalid">Créer le compte enseignant</button>
+      <div class="teacher-result" *ngIf="teacherCreateResult">
+        <p class="success-msg">✅ Compte créé avec succès !</p>
+        <div class="credentials-box">
+          <div><strong>Email :</strong> {{ teacherCreateResult.email }}</div>
+          <div><strong>Mot de passe temporaire :</strong> <code>{{ teacherCreateResult.tempPassword }}</code></div>
+          <p class="hint">Communiquez ces identifiants à l'enseignant. Il pourra changer son mot de passe.</p>
+        </div>
+      </div>
     </form>
 
     <!-- Utilisateur -->

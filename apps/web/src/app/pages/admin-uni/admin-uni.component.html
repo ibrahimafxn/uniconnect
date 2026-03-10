@@ -2,8 +2,8 @@
   <!-- Header -->
   <div class="page-header">
     <div>
-      <h1>Espace Administrateur</h1>
-      <p class="subtitle">Gestion globale de l'université — Conforme MESRS Côte d'Ivoire</p>
+      <h1>Administration</h1>
+      <p class="subtitle">Pilotage & configuration — KPIs, imports, finances, communication, rapports MESRS</p>
     </div>
   </div>
 
@@ -770,14 +770,33 @@
     <!-- Apply fee template -->
     <ng-container *ngIf="drawerMode === 'apply-template'">
       <ng-container *ngIf="!applyTemplateResult">
-        <div class="field">
-          <label>IDs des étudiants (un par ligne)</label>
-          <textarea [(ngModel)]="applyTemplateStudentIds" rows="8" placeholder="67abc123def456...&#10;67abc456def789..."></textarea>
-          <p class="hint">Copiez les identifiants MongoDB des étudiants concernés.</p>
-        </div>
+        <div *ngIf="applyTemplateLoading" class="hint" style="padding:1rem 0;">Chargement des étudiants…</div>
+        <ng-container *ngIf="!applyTemplateLoading">
+          <div *ngIf="applyTemplateStudents.length === 0" class="hint" style="padding:1rem 0;">
+            Aucun étudiant trouvé pour cette offre.
+          </div>
+          <ng-container *ngIf="applyTemplateStudents.length > 0">
+            <div class="student-selector-header">
+              <label class="checkbox-row select-all">
+                <input type="checkbox" [checked]="applyTemplateAllSelected" (change)="toggleApplyTemplateAll()" />
+                <span>Tout sélectionner ({{ applyTemplateStudents.length }})</span>
+              </label>
+              <span class="selected-count">{{ applyTemplateSelectedIds.size }} sélectionné(s)</span>
+            </div>
+            <div class="student-selector-list">
+              <label class="checkbox-row" *ngFor="let s of applyTemplateStudents">
+                <input type="checkbox"
+                  [checked]="applyTemplateSelectedIds.has(s._id)"
+                  (change)="toggleApplyTemplateStudent(s._id)" />
+                <span class="student-name">{{ s.firstName }} {{ s.lastName }}</span>
+                <span class="student-number">{{ s.studentNumber }}</span>
+              </label>
+            </div>
+          </ng-container>
+        </ng-container>
         <div class="error-msg" *ngIf="drawerError">{{ drawerError }}</div>
-        <button (click)="submitApplyTemplate()" [disabled]="!applyTemplateStudentIds.trim() || drawerLoading">
-          {{ drawerLoading ? 'Application…' : '▶ Appliquer' }}
+        <button (click)="submitApplyTemplate()" [disabled]="applyTemplateSelectedIds.size === 0 || drawerLoading">
+          {{ drawerLoading ? 'Application…' : '▶ Appliquer (' + applyTemplateSelectedIds.size + ')' }}
         </button>
       </ng-container>
       <div class="apply-result" *ngIf="applyTemplateResult">
