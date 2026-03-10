@@ -201,13 +201,15 @@ export class StudentsService {
         });
       });
 
-    const existingUser = await this.userModel.findOne({ email: assignedEmail }).lean().exec();
+    let user = await this.userModel.findOne({ email: assignedEmail }).lean().exec();
     let tempPassword: string | undefined;
-    if (!existingUser) {
+    if (!user) {
       tempPassword = Math.random().toString(36).slice(2, 12);
       const passwordHash = await bcrypt.hash(tempPassword, 10);
-      await this.userModel.create({ email: assignedEmail, passwordHash, role: Role.Student });
+      user = await this.userModel.create({ email: assignedEmail, passwordHash, role: Role.Student });
     }
+
+    await this.studentModel.findByIdAndUpdate(profile._id, { userId: user._id }).exec();
 
     return { profile, email: assignedEmail, tempPassword };
   }
