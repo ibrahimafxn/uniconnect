@@ -837,9 +837,14 @@ export class AdminComponent implements OnInit {
   teacherCreateResult: {email: string; tempPassword: string} | null = null;
 
   teacherForm = this.fb.group({
-    firstName: ['', Validators.required],
-    lastName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+    firstName:  ['', Validators.required],
+    lastName:   ['', Validators.required],
+    email:      ['', [Validators.required, Validators.email]],
+    phone:      [''],
+    specialty:  [''],
+    grade:      ['autre'],
+    bio:        [''],
+    office:     [''],
   });
 
   private loadTeachers(): Observable<AdminUser[]> {
@@ -848,11 +853,17 @@ export class AdminComponent implements OnInit {
 
   createTeacher() {
     if (this.teacherForm.invalid) return;
-    const {firstName, lastName, email} = this.teacherForm.value as {firstName: string; lastName: string; email: string};
-    this.adminApi.createTeacher({firstName, lastName, email}).subscribe({
+    const v = this.teacherForm.value as any;
+    const body: any = {firstName: v.firstName, lastName: v.lastName, email: v.email};
+    if (v.phone)     body.phone     = v.phone;
+    if (v.specialty) body.specialty = v.specialty;
+    if (v.grade)     body.grade     = v.grade;
+    if (v.bio)       body.bio       = v.bio;
+    if (v.office)    body.office    = v.office;
+    this.adminApi.createTeacher(body).subscribe({
       next: (res) => {
         this.teacherCreateResult = {email: res.email, tempPassword: res.tempPassword};
-        this.teacherForm.reset();
+        this.teacherForm.reset({grade: 'autre'});
         this.teachers$ = this.loadTeachers();
       },
       error: (err) => alert('❌ Erreur: ' + (err?.error?.message ?? 'Création échouée')),

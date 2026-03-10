@@ -310,7 +310,7 @@ export class AdminApi {
 
   // ── XLSX import preview (UC-A02) ──────────────────────────────────────────
 
-  createTeacher(body: {firstName: string; lastName: string; email: string}) {
+  createTeacher(body: {firstName: string; lastName: string; email: string; specialty?: string; grade?: string; bio?: string; phone?: string; office?: string}) {
     return this.http.post<{userId: string; email: string; tempPassword: string}>(
       `${BASE}/admin/users/create-teacher`, body
     );
