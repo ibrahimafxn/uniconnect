@@ -13,6 +13,7 @@ import { MessagesModule } from './messages/messages.module';
 import { NotesModule } from './notes/notes.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { TeacherProfileModule } from './teacher-profile/teacher-profile.module';
+import { TeacherDocumentsModule } from './teacher-documents/teacher-documents.module';
 import { AdminModule } from './admin/admin.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { ResourcesModule } from './resources/resources.module';
@@ -38,6 +39,7 @@ import { GlobalConfigModule } from './global-config/global-config.module';
     NotesModule,
     AttendanceModule,
     TeacherProfileModule,
+    TeacherDocumentsModule,
     AdminModule,
     ApplicationsModule,
     ResourcesModule,

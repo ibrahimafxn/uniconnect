@@ -10,6 +10,7 @@ import {
 import {AcademicApi} from '../../core/api/academic.api';
 import {Student, StudentsApi} from '../../core/api/students.api';
 import {ConfirmService} from '../../core/confirm.service';
+import {Announcement, AnnouncementsApi} from '../../core/api/announcements.api';
 
 export type AdminUniTab = 'dashboard' | 'users' | 'academic' | 'finance' | 'communication' | 'config';
 
@@ -38,6 +39,7 @@ type DrawerMode =
 export class AdminUniComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(AdminApi);
+  private readonly announcementsApi = inject(AnnouncementsApi);
   private readonly academic = inject(AcademicApi);
   private readonly studentsApi = inject(StudentsApi);
   private readonly confirm = inject(ConfirmService);
@@ -87,6 +89,7 @@ export class AdminUniComponent implements OnInit {
     this.resetPasswordResult = '';
     this.applyTemplateResult = null;
     this.announcementResult = null;
+    this.editingAnnouncement = null;
     this.selectedUserId = '';
     this.selectedTemplateId = '';
   }
@@ -647,8 +650,9 @@ export class AdminUniComponent implements OnInit {
   // ── Communication tab ─────────────────────────────────────────────────────────
 
   announceResult: {success: boolean; recipientCount: number; sentAt: string} | null = null;
-  announcementResult: {success: boolean; recipientCount: number; sentAt: string} | null = null;
-  announceHistory: any[] = [];
+  announcementResult: {success: boolean; message: string; savedAt: string} | null = null;
+  announcements: Announcement[] = [];
+  editingAnnouncement: Announcement | null = null;
 
   announceForm = this.fb.group({
     title: ['', [Validators.required, Validators.maxLength(100)]],
@@ -659,7 +663,24 @@ export class AdminUniComponent implements OnInit {
     targetAdmin: [false],
   });
 
-  openAnnounceDrawer() {
+  get isEditingAnnouncement() {
+    return !!this.editingAnnouncement;
+  }
+
+  openAnnounceDrawer(announcement?: Announcement) {
+    if (announcement) {
+      this.editingAnnouncement = announcement;
+      this.announceForm.reset({
+        title: announcement.title,
+        content: announcement.body,
+        ...this.targetsFromScope(announcement.scope),
+      });
+      this.announcementResult = null;
+      this.openDrawer('announce', 'Modifier l\'annonce officielle');
+      return;
+    }
+
+    this.editingAnnouncement = null;
     this.announceForm.reset({targetAll: true});
     this.announcementResult = null;
     this.openDrawer('announce', 'Nouvelle annonce officielle');
@@ -668,27 +689,56 @@ export class AdminUniComponent implements OnInit {
   submitAnnounce() {
     if (this.announceForm.invalid) return;
     const v = this.announceForm.value as any;
-    const targetRoles: string[] = [];
-    if (v.targetAll) {
-      targetRoles.push('student', 'teacher', 'admin');
-    } else {
-      if (v.targetStudent) targetRoles.push('student');
-      if (v.targetTeacher) targetRoles.push('teacher');
-      if (v.targetAdmin) targetRoles.push('admin');
+    const scopeResult = this.resolveScope(v);
+    if (!scopeResult.ok) {
+      this.drawerError = scopeResult.error;
+      return;
     }
-    if (targetRoles.length === 0) { this.drawerError = 'Sélectionnez au moins un groupe cible.'; return; }
 
     this.drawerLoading = true;
-    this.api.broadcastAnnouncement({title: v.title, content: v.content, targetRoles}).subscribe({
-      next: (r) => { this.announcementResult = r; this.drawerLoading = false; this.loadAnnounceHistory(); },
+    const payload = {
+      title: v.title,
+      body: v.content,
+      scope: scopeResult.scope,
+      category: 'official',
+    };
+
+    const request$ = this.editingAnnouncement
+      ? this.announcementsApi.update(this.editingAnnouncement._id, payload)
+      : this.announcementsApi.create(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.announcementResult = {
+          success: true,
+          message: this.editingAnnouncement ? 'Annonce mise à jour.' : 'Annonce publiée.',
+          savedAt: new Date().toISOString(),
+        };
+        this.drawerLoading = false;
+        this.loadAnnouncements();
+      },
       error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
     });
   }
 
-  loadAnnounceHistory() {
-    this.api.listAuditLogs({action: 'BROADCAST_ANNOUNCEMENT', limit: 10}).subscribe({
-      next: ({items}) => { this.announceHistory = items; },
+  loadAnnouncements() {
+    this.announcementsApi.list('official').subscribe({
+      next: (items) => { this.announcements = items; },
     });
+  }
+
+  editAnnouncement(a: Announcement) {
+    this.openAnnounceDrawer(a);
+  }
+
+  deleteAnnouncement(a: Announcement) {
+    this.confirm.open({title: 'Supprimer cette annonce ?', message: 'Confirmer la suppression de cette annonce ?', danger: true})
+      .subscribe(ok => {
+        if (!ok) return;
+        this.announcementsApi.remove(a._id).subscribe({
+          next: () => this.loadAnnouncements(),
+        });
+      });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -698,7 +748,20 @@ export class AdminUniComponent implements OnInit {
   }
 
   formatDate(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'});
+    if (!d) return '—';
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('fr-FR', {day: '2-digit', month: 'short', year: 'numeric'});
+  }
+
+  announcementScopeLabel(scope?: string) {
+    const map: Record<string, string> = {
+      all: 'Toute la communauté',
+      students: 'Étudiants',
+      teachers: 'Enseignants',
+      group: 'Groupe',
+    };
+    return map[scope ?? 'all'] ?? scope ?? '—';
   }
 
   programName(id: string) {
@@ -874,6 +937,38 @@ export class AdminUniComponent implements OnInit {
 
   ngOnInit() {
     this.loadDashboard();
-    this.loadAnnounceHistory();
+    this.loadAnnouncements();
+  }
+
+  private resolveScope(v: any): {ok: true; scope: string} | {ok: false; error: string} {
+    if (this.editingAnnouncement) {
+      return { ok: true, scope: this.editingAnnouncement.scope ?? 'all' };
+    }
+
+    const targetAll = !!v.targetAll;
+    const targets = [
+      v.targetStudent ? 'student' : null,
+      v.targetTeacher ? 'teacher' : null,
+      v.targetAdmin ? 'admin' : null,
+    ].filter(Boolean) as string[];
+
+    if (targetAll) return { ok: true, scope: 'all' };
+    if (targets.length === 0) return { ok: false, error: 'Sélectionnez au moins un groupe cible.' };
+    if (targets.length === 1) {
+      if (targets[0] === 'student') return { ok: true, scope: 'students' };
+      if (targets[0] === 'teacher') return { ok: true, scope: 'teachers' };
+      return { ok: false, error: 'Les annonces du portail ne peuvent pas cibler uniquement les administrateurs.' };
+    }
+    return { ok: true, scope: 'all' };
+  }
+
+  private targetsFromScope(scope?: string) {
+    if (scope === 'students') {
+      return { targetAll: false, targetStudent: true, targetTeacher: false, targetAdmin: false };
+    }
+    if (scope === 'teachers') {
+      return { targetAll: false, targetStudent: false, targetTeacher: true, targetAdmin: false };
+    }
+    return { targetAll: true, targetStudent: false, targetTeacher: false, targetAdmin: false };
   }
 }
