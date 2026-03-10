@@ -1,14 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { combineLatest, map, of, startWith, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { StudentsApi } from '../../core/api/students.api';
 import { PlanningApi } from '../../core/api/planning.api';
 import { AcademicApi } from '../../core/api/academic.api';
 import { NotesApi } from '../../core/api/notes.api';
 import { AttendanceApi } from '../../core/api/attendance.api';
 import { PaymentsApi } from '../../core/api/payments.api';
+import type { PlanStats, PaymentInstallment } from '../../core/api/payments.api';
 import { ResourcesApi } from '../../core/api/resources.api';
 import { AssignmentsApi } from '../../core/api/assignments.api';
 import { DocumentRequestsApi } from '../../core/api/document-requests.api';
@@ -21,7 +22,7 @@ import { AnnouncementsApi } from '../../core/api/announcements.api';
   templateUrl: './student.component.html',
   styleUrls: ['./student.component.scss'],
 })
-export class StudentComponent {
+export class StudentComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly students = inject(StudentsApi);
   private readonly planning = inject(PlanningApi);
@@ -33,11 +34,16 @@ export class StudentComponent {
   private readonly assignments = inject(AssignmentsApi);
   private readonly docRequests = inject(DocumentRequestsApi);
   private readonly announcements = inject(AnnouncementsApi);
+  private readonly paymentsRefresh$ = new BehaviorSubject<void>(undefined);
 
   readonly me$ = this.students.getMe();
   readonly notesSummary$ = this.notes.mySummary();
-  readonly plan$ = this.payments.getMyPlan();
-  readonly payments$ = this.payments.listMyPayments();
+  readonly plan$ = this.paymentsRefresh$.pipe(
+    switchMap(() => this.payments.getMyPlan()),
+  );
+  readonly payments$ = this.paymentsRefresh$.pipe(
+    switchMap(() => this.payments.listMyPayments()),
+  );
   readonly resources$ = this.resources.list();
   readonly assignments$ = this.assignments.list();
   readonly announcements$ = this.announcements.list();
@@ -110,6 +116,16 @@ export class StudentComponent {
   );
 
   readonly weekDays = this.buildWeek();
+  readonly agendaStartHour = 7;
+  readonly agendaEndHour = 21;
+  readonly agendaHourHeight = 56;
+  readonly agendaHours = Array.from(
+    { length: this.agendaEndHour - this.agendaStartHour + 1 },
+    (_, i) => this.agendaStartHour + i,
+  );
+  showNowLine = false;
+  nowLineOffset = 0;
+  private nowLineTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly weekSessions$ = this.filteredSessions$.pipe(
     map((sessions) => {
@@ -169,6 +185,7 @@ export class StudentComponent {
   assignmentComment = new Map<string, string>();
 
   profileLoaded = false;
+  currentPlan: PlanStats | null = null;
 
   constructor() {
     this.me$.subscribe((me) => {
@@ -185,12 +202,47 @@ export class StudentComponent {
     });
 
     this.plan$.subscribe((plan) => {
-      if (!plan?.plan) return;
+      this.currentPlan = plan;
+      const hasPlan = !!plan?.plan;
+      const hasInstallments = !!plan?.plan?.installments?.length;
       this.paymentForm.patchValue({
-        planId: plan.plan._id,
-        currency: plan.plan.currency ?? 'XOF',
+        planId: plan?.plan?._id ?? '',
+        currency: plan?.plan?.currency ?? 'XOF',
+      }, { emitEvent: false });
+      this.updateInstallmentValidators(hasInstallments);
+      if (hasPlan && hasInstallments) {
+        const nextInst = (plan?.plan?.installments ?? []).find((inst) => {
+          const stat = this.installmentStat(plan, inst);
+          return stat.status !== 'paid';
+        }) ?? plan?.plan?.installments?.[0];
+        if (nextInst?._id) {
+          const remaining = this.installmentRemaining(plan, nextInst);
+          this.paymentForm.patchValue({
+            installmentId: String(nextInst._id),
+            amount: remaining > 0 ? remaining : nextInst.amount,
+          }, { emitEvent: false });
+        }
+      }
+    });
+
+    this.paymentForm.get('installmentId')?.valueChanges.subscribe((instId) => {
+      if (!instId || !this.currentPlan?.plan?.installments?.length) return;
+      const inst = this.currentPlan.plan.installments.find((i) => String(i._id) === String(instId));
+      if (!inst) return;
+      const remaining = this.installmentRemaining(this.currentPlan, inst);
+      this.paymentForm.patchValue({
+        amount: remaining > 0 ? remaining : inst.amount,
       }, { emitEvent: false });
     });
+  }
+
+  ngOnInit() {
+    this.updateNowLine();
+    this.nowLineTimer = setInterval(() => this.updateNowLine(), 60 * 1000);
+  }
+
+  ngOnDestroy() {
+    if (this.nowLineTimer) clearInterval(this.nowLineTimer);
   }
 
   saveCompactMode() {
@@ -259,6 +311,10 @@ export class StudentComponent {
   submitPayment() {
     if (this.paymentForm.invalid) return;
     const raw = this.paymentForm.value as any;
+    if (this.currentPlan?.plan?.installments?.length && !raw.installmentId) {
+      this.showToast('Veuillez sélectionner une échéance');
+      return;
+    }
     this.payments.createMyPayment({
       planId: raw.planId || undefined,
       installmentId: raw.installmentId || undefined,
@@ -268,6 +324,8 @@ export class StudentComponent {
       reference: raw.reference || undefined,
     }).subscribe(() => {
       this.paymentForm.patchValue({ amount: 0, reference: '' });
+      this.refreshPayments();
+      this.showToast('Paiement enregistré');
     });
   }
 
@@ -319,6 +377,7 @@ export class StudentComponent {
   downloadReceiptUrl(id: string) { return this.payments.receiptUrl(id); }
   downloadJustificationUrl(id: string) { return this.attendance.downloadJustificationUrl(id); }
   planningExportUrl(format: 'pdf' | 'ics') { return this.planning.exportSessionsUrl(format, { dateFrom: this.dateShift(-3), dateTo: this.dateShift(14) }); }
+  refreshPayments() { this.paymentsRefresh$.next(); }
 
   copyPlanningLink() {
     const url = this.planningExportUrl('ics');
@@ -447,6 +506,43 @@ export class StudentComponent {
     return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
   }
 
+  installmentStat(plan: PlanStats | null, inst: PaymentInstallment) {
+    const key = String(inst._id ?? '');
+    return plan?.installmentStats?.[key] ?? { paid: 0, status: 'unpaid' as const };
+  }
+
+  installmentRemaining(plan: PlanStats | null, inst: PaymentInstallment) {
+    const stat = this.installmentStat(plan, inst);
+    return Math.max(0, (inst.amount ?? 0) - (stat.paid ?? 0));
+  }
+
+  installmentStatusLabel(status: 'paid' | 'partial' | 'unpaid') {
+    if (status === 'paid') return 'Payée';
+    if (status === 'partial') return 'Partielle';
+    return 'Impayée';
+  }
+
+  totalPaid(payments: { amount?: number }[] | null | undefined) {
+    if (!payments?.length) return 0;
+    return payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  }
+
+  totalRemaining(plan: PlanStats | null, payments: { amount?: number }[] | null | undefined) {
+    const total = plan?.plan?.totalAmount || 0;
+    return Math.max(0, total - this.totalPaid(payments));
+  }
+
+  private updateInstallmentValidators(hasInstallments: boolean) {
+    const ctrl = this.paymentForm.get('installmentId');
+    if (!ctrl) return;
+    if (hasInstallments) {
+      ctrl.setValidators([Validators.required]);
+    } else {
+      ctrl.clearValidators();
+    }
+    ctrl.updateValueAndValidity({ emitEvent: false });
+  }
+
   timeToSession(date: string, startTime: string): string {
     const target = this.sessionDateTime({ date, startTime } as any);
     const diff = target.getTime() - Date.now();
@@ -465,14 +561,63 @@ export class StudentComponent {
     return new Date(`${s.date}T${time}:00`);
   }
 
+  agendaTop(time: string) {
+    const startMinutes = this.agendaStartHour * 60;
+    const minutes = this.timeToMinutes(time) - startMinutes;
+    return Math.max(0, (minutes / 60) * this.agendaHourHeight);
+  }
+
+  agendaHeight(startTime: string, endTime: string) {
+    const start = this.timeToMinutes(startTime);
+    const end = this.timeToMinutes(endTime);
+    const diff = Math.max(15, end - start);
+    return (diff / 60) * this.agendaHourHeight;
+  }
+
+  private timeToMinutes(time: string) {
+    const [h, m] = (time || '00:00').split(':').map((v) => Number(v));
+    return (h || 0) * 60 + (m || 0);
+  }
+
+  private updateNowLine() {
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = this.agendaStartHour * 60;
+    const endMinutes = this.agendaEndHour * 60;
+    if (minutes < startMinutes || minutes > endMinutes) {
+      this.showNowLine = false;
+      return;
+    }
+    this.showNowLine = true;
+    this.nowLineOffset = ((minutes - startMinutes) / 60) * this.agendaHourHeight;
+  }
+
   private buildWeek(): string[] {
     const start = this.today();
+    const day = start.getDay(); // 0=Sun, 1=Mon
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diff);
     const days: string[] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       days.push(d.toISOString().slice(0, 10));
     }
     return days;
+  }
+
+  sessionKind(label?: string) {
+    const text = (label || '').toLowerCase();
+    if (text.includes('exam') || text.includes('examen') || text.includes('éxamen')) return 'exam';
+    if (text.includes('tp')) return 'tp';
+    if (text.includes('td')) return 'td';
+    return 'cours';
+  }
+
+  sessionKindLabel(kind: string) {
+    if (kind === 'exam') return 'Exam';
+    if (kind === 'tp') return 'TP';
+    if (kind === 'td') return 'TD';
+    return 'Cours';
   }
 }

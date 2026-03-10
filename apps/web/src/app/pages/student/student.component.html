@@ -262,20 +262,56 @@
             <button class="pill small" type="button" (click)="planningFilterForm.reset({query: '', dateFrom: '', dateTo: '', groupId: ''})">Réinitialiser</button>
           </div>
 
-          <div class="week-grid">
-            <div class="week-day" *ngFor="let day of (weekSessions$ | async)">
-              <div class="week-date">{{ day.date | date:'EEE dd/MM' }}</div>
-              <div class="week-list" *ngIf="day.sessions.length; else emptyWeekDay">
-                <div class="week-item" *ngFor="let s of day.sessions">
-                  <div class="week-title">{{ s.label || 'Séance' }}</div>
-                  <div class="week-meta">{{ s.startTime }}–{{ s.endTime }}</div>
-                </div>
-              </div>
-              <ng-template #emptyWeekDay>
-                <div class="week-empty">—</div>
-              </ng-template>
+          <div
+            class="agenda"
+            [style.--hour-h.px]="agendaHourHeight"
+            [style.--start-h]="agendaStartHour"
+            [style.--end-h]="agendaEndHour"
+            [style.--days]="(weekSessions$ | async)?.length || 6"
+          >
+            <div class="agenda-head">
+              <div class="agenda-time-col"></div>
+              <div class="agenda-day-head" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
+                <div class="day-name">{{ day.date | date:'EEE' }}</div>
+              <div class="day-date">{{ day.date | date:'dd/MM' }}</div>
             </div>
           </div>
+          <div class="agenda-body">
+            <div class="agenda-time-col">
+              <div class="agenda-time" *ngFor="let h of agendaHours">{{ h }}:00</div>
+            </div>
+            <div class="agenda-day" *ngFor="let day of (weekSessions$ | async)" [class.today]="isToday(day.date)">
+              <div class="agenda-track">
+                <div
+                  class="agenda-now"
+                  *ngIf="isToday(day.date) && showNowLine"
+                  [style.top.px]="nowLineOffset"
+                >
+                  <span class="agenda-now-dot"></span>
+                </div>
+                <div
+                  class="agenda-event"
+                  *ngFor="let s of day.sessions"
+                  [ngClass]="'kind-' + sessionKind(s.label)"
+                  [style.top.px]="agendaTop(s.startTime)"
+                  [style.height.px]="agendaHeight(s.startTime, s.endTime)"
+                  (click)="openSessionDetails(s)"
+                  (keydown.enter)="openSessionDetails(s)"
+                  (keydown.space)="openSessionDetails(s)"
+                  tabindex="0"
+                  role="button"
+                  aria-label="Voir les détails de la séance"
+                >
+                  <div class="agenda-title">{{ s.label || 'Séance' }}</div>
+                  <div class="agenda-meta">{{ s.startTime }}–{{ s.endTime }}</div>
+                  <div class="agenda-kind">{{ sessionKindLabel(sessionKind(s.label)) }}</div>
+                </div>
+                  <div class="agenda-empty" *ngIf="!day.sessions.length">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="agenda-list-head">Agenda (liste)</div>
           <ng-container *ngIf="(upcomingSessions$ | async) as sessions">
             <div class="list" *ngIf="sessions.length; else emptyPlan">
               <div class="list-item"
@@ -498,10 +534,42 @@
               <ng-container *ngIf="(plan$ | async) as plan">
                 <div *ngIf="plan?.plan; else noPlan">
                   <div class="list">
+                    <div class="list-item">
+                      <div class="list-title">{{ plan.plan.label || 'Plan personnalisé' }}</div>
+                      <div class="list-meta">Total : {{ plan.plan.totalAmount }} {{ plan.plan.currency }}</div>
+                      <div class="list-meta">Échéances : {{ plan.plan.installments?.length || 0 }}</div>
+                    </div>
+                  </div>
+                  <ng-container *ngIf="(payments$ | async) as payments">
+                    <div class="list plan-summary">
+                      <div class="list-item">
+                        <div class="list-title">Total payé</div>
+                        <div class="pill">{{ totalPaid(payments) }} {{ plan.plan.currency }}</div>
+                      </div>
+                      <div class="list-item">
+                        <div class="list-title">Reste à payer</div>
+                        <div class="pill danger">
+                          {{ totalRemaining(plan, payments) }} {{ plan.plan.currency }}
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <div class="list">
                     <div class="list-item" *ngFor="let inst of (plan.plan.installments || [])">
                       <div class="list-title">{{ inst.label || 'Échéance' }}</div>
                       <div class="list-meta">{{ inst.amount }} {{ plan.plan.currency }} — {{ inst.dueDate | date:'dd/MM/yyyy' }}</div>
-                      <div class="pill small">{{ plan.installmentStats[inst._id || ''].status || 'unpaid' }}</div>
+                      <div class="list-meta">
+                        Payé : {{ installmentStat(plan, inst).paid }} {{ plan.plan.currency }} —
+                        Reste : {{ installmentRemaining(plan, inst) }} {{ plan.plan.currency }}
+                      </div>
+                      <div class="actions">
+                        <div class="pill small" [ngClass]="'status-' + installmentStat(plan, inst).status">
+                          {{ installmentStatusLabel(installmentStat(plan, inst).status) }}
+                        </div>
+                        <button class="pill small" type="button" (click)="paymentForm.patchValue({ installmentId: inst._id, amount: installmentRemaining(plan, inst) })">
+                          Régler
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -529,7 +597,9 @@
                   <option>Moov Money</option>
                 </select>
                 <input formControlName="reference" placeholder="Référence (optionnel)" />
-                <button class="pill" type="submit">Payer</button>
+                <ng-container *ngIf="(plan$ | async) as plan">
+                  <button class="pill" type="submit" [disabled]="!plan?.plan || paymentForm.invalid">Payer</button>
+                </ng-container>
               </form>
             </div>
           </div>
