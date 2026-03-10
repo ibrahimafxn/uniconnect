@@ -59,7 +59,7 @@ export class AdminComponent implements OnInit {
     {id: 'students', label: 'Étudiants', icon: '🎓'},
     {id: 'payments', label: 'Paiements', icon: '💰'},
     {id: 'documents', label: 'Documents', icon: '📄'},
-    {id: 'users', label: 'Utilisateurs', icon: '👤'},
+    {id: 'users', label: 'Comptes', icon: '👤'},
   ];
 
   // === DRAWER ===

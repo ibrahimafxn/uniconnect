@@ -17,8 +17,8 @@ export class AppHeaderComponent {
 
   private readonly adminNavItems: NavItem[] = [
     {label: 'Dashboard', path: '/dashboard', icon: '⊞'},
-    {label: 'Administration', path: '/admin', icon: '🏛'},
-    {label: 'Espace Admin', path: '/admin-uni', icon: '⚙️'},
+    {label: 'Scolarité', path: '/admin', icon: '🏛'},
+    {label: 'Administration', path: '/admin-uni', icon: '⚙️'},
     {label: 'Planning', path: '/planning', icon: '📅'},
     {label: 'Notes', path: '/notes', icon: '📊'},
     {label: 'Messagerie', path: '/messages', icon: '💬'},
