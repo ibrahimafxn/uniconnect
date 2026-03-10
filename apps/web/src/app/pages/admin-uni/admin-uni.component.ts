@@ -8,7 +8,7 @@ import {
   SmtpConfig, SystemParams, XlsxParseResult,
 } from '../../core/api/admin.api';
 import {AcademicApi} from '../../core/api/academic.api';
-import {StudentsApi} from '../../core/api/students.api';
+import {Student, StudentsApi} from '../../core/api/students.api';
 import {ConfirmService} from '../../core/confirm.service';
 
 export type AdminUniTab = 'dashboard' | 'users' | 'academic' | 'finance' | 'communication' | 'config';
@@ -554,21 +554,54 @@ export class AdminUniComponent implements OnInit {
   // Apply template ──────────────────────────────────────────────────────────────
 
   selectedTemplateId = '';
-  applyTemplateStudentIds = '';
+  applyTemplateOfferId = '';
+  applyTemplateStudents: Student[] = [];
+  applyTemplateSelectedIds = new Set<string>();
+  applyTemplateLoading = false;
   applyTemplateResult: {applied: number; skipped: number} | null = null;
 
   openApplyTemplate(template: FeeTemplate) {
     this.selectedTemplateId = template._id;
-    this.applyTemplateStudentIds = '';
+    this.applyTemplateOfferId = template.offerId;
+    this.applyTemplateStudents = [];
+    this.applyTemplateSelectedIds = new Set();
     this.applyTemplateResult = null;
+    this.applyTemplateLoading = true;
     this.openDrawer('apply-template', `Appliquer "${template.label}"`);
+    this.studentsApi.listStudents('', 1, 500).subscribe({
+      next: (r) => {
+        this.applyTemplateStudents = r.items.filter(s => s.offerId === template.offerId);
+        this.applyTemplateLoading = false;
+      },
+      error: () => { this.applyTemplateLoading = false; },
+    });
+  }
+
+  get applyTemplateAllSelected(): boolean {
+    return this.applyTemplateStudents.length > 0 &&
+      this.applyTemplateStudents.every(s => this.applyTemplateSelectedIds.has(s._id));
+  }
+
+  toggleApplyTemplateAll() {
+    if (this.applyTemplateAllSelected) {
+      this.applyTemplateSelectedIds = new Set();
+    } else {
+      this.applyTemplateSelectedIds = new Set(this.applyTemplateStudents.map(s => s._id));
+    }
+  }
+
+  toggleApplyTemplateStudent(id: string) {
+    if (this.applyTemplateSelectedIds.has(id)) {
+      this.applyTemplateSelectedIds.delete(id);
+    } else {
+      this.applyTemplateSelectedIds.add(id);
+    }
   }
 
   submitApplyTemplate() {
-    if (!this.selectedTemplateId || !this.applyTemplateStudentIds.trim()) return;
-    const ids = this.applyTemplateStudentIds.split('\n').map(s => s.trim()).filter(Boolean);
+    if (!this.selectedTemplateId || this.applyTemplateSelectedIds.size === 0) return;
     this.drawerLoading = true;
-    this.api.applyFeeTemplate(this.selectedTemplateId, ids).subscribe({
+    this.api.applyFeeTemplate(this.selectedTemplateId, [...this.applyTemplateSelectedIds]).subscribe({
       next: (r) => { this.applyTemplateResult = r; this.drawerLoading = false; },
       error: (e) => { this.drawerError = e?.error?.message ?? 'Erreur.'; this.drawerLoading = false; },
     });
