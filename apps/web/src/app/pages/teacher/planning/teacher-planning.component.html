@@ -1,142 +1,165 @@
 <div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
+
+  <!-- Header -->
   <div class="header">
     <div>
       <h1>Mon Planning</h1>
       <p class="subtitle">Vos séances de cours assignées.</p>
     </div>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
-      Mode compact
-    </label>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
-      Ultra-compact
-    </label>
-    <div class="view-toggle">
-      <button [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">Liste</button>
-      <button [class.active]="viewMode === 'calendar'" (click)="viewMode = 'calendar'">Calendrier</button>
+    <div class="header-right">
+      <label class="toggle"><input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" /> Compact</label>
+      <label class="toggle"><input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" /> Ultra</label>
+      <div class="view-toggle">
+        <button [class.active]="viewMode === 'list'"     (click)="viewMode = 'list'">Liste</button>
+        <button [class.active]="viewMode === 'calendar'" (click)="viewMode = 'calendar'">Calendrier</button>
+      </div>
     </div>
   </div>
 
+  <!-- Stats chips -->
+  <div class="stats" *ngIf="!loading && sessions.length > 0">
+    <div class="stat"><span class="stat-label">Total</span><span class="stat-value">{{ sessions.length }}</span></div>
+    <div class="stat accent" *ngIf="todayCount > 0"><span class="stat-label">Aujourd'hui</span><span class="stat-value">{{ todayCount }}</span></div>
+    <div class="stat"><span class="stat-label">Cette semaine</span><span class="stat-value">{{ weekCount }}</span></div>
+  </div>
+
+  <!-- Filter bar (list mode) -->
   <div class="filter-bar" *ngIf="viewMode === 'list'">
     <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
       <label>Du <input type="date" formControlName="dateFrom" /></label>
-      <label>Au <input type="date" formControlName="dateTo" /></label>
+      <label>Au <input type="date" formControlName="dateTo"   /></label>
       <button type="submit">Filtrer</button>
       <button type="button" class="ghost" (click)="resetFilters()">Réinitialiser</button>
     </form>
   </div>
 
-  <ng-container *ngIf="(sessions$ | async) as sessions">
+  <!-- Loading -->
+  <p class="loading-text" *ngIf="loading">Chargement…</p>
 
-    <ng-container *ngIf="viewMode === 'list'">
-      <p class="empty" *ngIf="sessions.length === 0">Aucune séance trouvée.</p>
+  <!-- ── LIST VIEW ─────────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!loading && viewMode === 'list'">
+    <p class="empty" *ngIf="sessions.length === 0">Aucune séance trouvée.</p>
 
-      <div class="stats" *ngIf="sessions.length > 0">
-        <div class="stat"><span class="stat-label">Total séances</span><span class="stat-value">{{ sessions.length }}</span></div>
+    <div
+      class="day-block"
+      *ngFor="let group of groupedSessions"
+      [class.today]="isToday(group.date)"
+      [class.past]="isPast(group.date)"
+    >
+      <div class="day-header">
+        <span class="day-label">{{ formatDate(group.date) }}</span>
+        <span class="today-badge" *ngIf="isToday(group.date)">Aujourd'hui</span>
+        <span class="past-badge"  *ngIf="isPast(group.date)">Passé</span>
       </div>
 
-      <div
-        class="day-block"
-        *ngFor="let group of groupSessionsByDate(sessions)"
-        [class.today]="isToday(group.date)"
-        [class.past]="isPast(group.date)"
-      >
-        <div class="day-header">
-          <span class="day-label">{{ formatDate(group.date) }}</span>
-          <span class="today-badge" *ngIf="isToday(group.date)">Aujourd'hui</span>
-          <span class="past-badge" *ngIf="isPast(group.date)">Passé</span>
-        </div>
-
-        <div class="sessions">
-          <div class="session-card" *ngFor="let s of group.sessions">
-            <div class="time-block">
-              <span class="start">{{ s.startTime }}</span>
-              <div class="time-line"></div>
-              <span class="end">{{ s.endTime }}</span>
-            </div>
-            <div class="session-body">
-              <div class="session-label-row">
-                <span class="session-label">{{ s.label || 'Séance' }}</span>
-                <span class="journal-badge" *ngIf="s.content || s.homework" title="Cahier de texte rempli">📓 Cahier de texte</span>
-              </div>
-              <div class="session-meta">
-                <span class="tag group">{{ groupName(s.groupId) }}</span>
-                <span class="tag room" *ngIf="s.roomId">{{ roomName(s.roomId) }}</span>
-              </div>
-              <div class="journal-preview" *ngIf="s.content || s.homework">
-                <div *ngIf="s.content"><strong>Contenu :</strong> {{ s.content }}</div>
-                <div *ngIf="s.homework"><strong>Devoirs :</strong> {{ s.homework }}</div>
-              </div>
-            </div>
-            <button class="edit-btn" (click)="openContentEditor(s)" title="Cahier de texte">✏</button>
+      <div class="sessions">
+        <div class="session-card" *ngFor="let s of group.sessions">
+          <div class="time-block">
+            <span class="start">{{ s.startTime }}</span>
+            <div class="time-line"></div>
+            <span class="end">{{ s.endTime }}</span>
           </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <ng-container *ngIf="viewMode === 'calendar'">
-      <div class="cal-nav">
-        <button class="ghost" (click)="prevWeek()">Semaine préc.</button>
-        <div class="cal-range">
-          <strong>{{ getWeekRange() }}</strong>
-          <button class="ghost small" (click)="goToCurrentWeek()">Aujourd'hui</button>
-        </div>
-        <button class="ghost" (click)="nextWeek()">Semaine suiv.</button>
-      </div>
-
-      <div class="calendar">
-        <div class="cal-grid">
-          <div class="cal-time-header"></div>
-          <div
-            class="cal-day-header"
-            *ngFor="let day of buildCalendar(sessions, getWeekDays())"
-            [class.today]="day.isToday"
-          >{{ day.label }}</div>
-
-          <ng-container *ngFor="let hour of hours">
-            <div class="cal-time">{{ hour }}h</div>
-            <div
-              class="cal-cell"
-              *ngFor="let day of buildCalendar(sessions, getWeekDays())"
-              [class.today]="day.isToday"
-            >
-              <div class="cal-session" *ngFor="let s of getSlotSessions(day, hour)" [class.has-content]="s.content || s.homework">
-                <div class="cal-s-label">{{ s.label || 'Séance' }}</div>
-                <div class="cal-s-time">{{ s.startTime }}-{{ s.endTime }}</div>
-                <div class="cal-s-group">{{ groupName(s.groupId) }}</div>
-                <div class="cal-s-room" *ngIf="s.roomId">{{ roomName(s.roomId) }}</div>
-                <button class="cal-edit-btn" (click)="openContentEditor(s)">✏</button>
-              </div>
+          <div class="session-body">
+            <div class="session-label-row">
+              <span class="session-label">{{ s.label || 'Séance' }}</span>
+              <span class="journal-badge" *ngIf="s.content || s.homework" title="Cahier de texte rempli">📓 Cahier de texte</span>
             </div>
-          </ng-container>
+            <div class="session-meta">
+              <span class="tag group">{{ groupName(s.groupId) }}</span>
+              <span class="tag room" *ngIf="s.roomId">{{ roomName(s.roomId) }}</span>
+            </div>
+            <div class="journal-preview" *ngIf="s.content || s.homework">
+              <div *ngIf="s.content"><strong>Contenu :</strong> {{ s.content }}</div>
+              <div *ngIf="s.homework"><strong>Devoirs :</strong> {{ s.homework }}</div>
+            </div>
+          </div>
+          <button class="edit-btn" (click)="openContentEditor(s)" title="Cahier de texte">✏</button>
         </div>
       </div>
-    </ng-container>
-
+    </div>
   </ng-container>
 
-  <div class="journal-overlay" *ngIf="editingSessionId" (click)="closeContentEditor()"></div>
-  <div class="journal-panel" *ngIf="editingSessionId">
-    <div class="journal-header">
-      <h3>Cahier de texte</h3>
-      <button class="ghost" (click)="closeContentEditor()">Fermer</button>
+  <!-- ── CALENDAR VIEW ─────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!loading && viewMode === 'calendar'">
+    <div class="cal-nav">
+      <button class="ghost" (click)="prevWeek()">← Semaine préc.</button>
+      <div class="cal-range">
+        <strong>{{ getWeekRange() }}</strong>
+        <button class="ghost small" (click)="goToCurrentWeek()">Aujourd'hui</button>
+      </div>
+      <button class="ghost" (click)="nextWeek()">Semaine suiv. →</button>
     </div>
-    <form [formGroup]="contentForm" (ngSubmit)="saveContent()">
-      <div class="field">
-        <label>Contenu effectué</label>
-        <textarea formControlName="content" rows="4" placeholder="Ex: Introduction aux dérivées, exercices 1 à 5…"></textarea>
+
+    <div class="calendar">
+      <div class="cal-grid">
+        <!-- Header row -->
+        <div class="cal-time-header"></div>
+        <div
+          class="cal-day-header"
+          *ngFor="let day of calendarDays"
+          [class.today]="day.isToday"
+        >
+          {{ day.label }}
+          <span class="cal-day-count" *ngIf="day.slots.size > 0">{{ day.slots.size }}</span>
+        </div>
+
+        <!-- Hour rows -->
+        <ng-container *ngFor="let hour of hours">
+          <div class="cal-time">{{ hour }}h</div>
+          <div
+            class="cal-cell"
+            *ngFor="let day of calendarDays"
+            [class.today]="day.isToday"
+          >
+            <div
+              class="cal-session"
+              *ngFor="let s of getSlotSessions(day, hour)"
+              [class.has-content]="s.content || s.homework"
+              (click)="openContentEditor(s)"
+              title="{{ s.label || 'Séance' }} — {{ groupName(s.groupId) }}"
+            >
+              <div class="cal-s-label">{{ s.label || 'Séance' }}</div>
+              <div class="cal-s-time">{{ s.startTime }}–{{ s.endTime }}</div>
+              <div class="cal-s-group">{{ groupName(s.groupId) }}</div>
+              <div class="cal-s-room" *ngIf="s.roomId">{{ roomName(s.roomId) }}</div>
+            </div>
+          </div>
+        </ng-container>
       </div>
-      <div class="field">
-        <label>Devoirs / Travail à faire</label>
-        <textarea formControlName="homework" rows="3" placeholder="Ex: Exercices 6 à 10, lire le chapitre 3…"></textarea>
-      </div>
-      <div class="journal-actions">
-        <button type="submit" class="btn-save" [disabled]="savingContent">
-          {{ savingContent ? 'Enregistrement…' : 'Enregistrer' }}
-        </button>
-        <span class="success-msg" *ngIf="contentSaved">Enregistré</span>
-      </div>
-    </form>
+    </div>
+
+    <p class="cal-empty" *ngIf="weekCount === 0">Aucune séance cette semaine.</p>
+  </ng-container>
+
+</div>
+
+<!-- ── JOURNAL OVERLAY ───────────────────────────────────────────────────── -->
+<div class="journal-overlay" *ngIf="editingSession" (click)="closeContentEditor()"></div>
+<div class="journal-panel" *ngIf="editingSession">
+  <div class="journal-header">
+    <div>
+      <h3>Cahier de texte</h3>
+      <p class="journal-session-info" *ngIf="editingSession">
+        {{ editingSession.label || 'Séance' }} · {{ groupName(editingSession.groupId) }}
+        <span *ngIf="editingSession.date"> · {{ editingSession.date | date:'dd/MM/yyyy' }}</span>
+      </p>
+    </div>
+    <button class="ghost" (click)="closeContentEditor()">✕</button>
   </div>
+  <form [formGroup]="contentForm" (ngSubmit)="saveContent()">
+    <div class="field">
+      <label>Contenu effectué</label>
+      <textarea formControlName="content" rows="4" placeholder="Ex : Introduction aux dérivées, exercices 1 à 5…"></textarea>
+    </div>
+    <div class="field">
+      <label>Devoirs / Travail à faire</label>
+      <textarea formControlName="homework" rows="3" placeholder="Ex : Exercices 6 à 10, lire le chapitre 3…"></textarea>
+    </div>
+    <div class="journal-actions">
+      <button type="submit" class="btn-save" [disabled]="savingContent">
+        {{ savingContent ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+      <span class="success-msg" *ngIf="contentSaved">✓ Enregistré</span>
+    </div>
+  </form>
 </div>
