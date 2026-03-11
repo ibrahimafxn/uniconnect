@@ -1,13 +1,13 @@
 
 :host {
-  --bg: #f5f2ea;
+  --bg: #f0f4f8;
   --card: #ffffff;
-  --ink: #1f2937;
-  --muted: #6b7280;
-  --accent: #ef6f3a;
-  --accent-2: #2b7a78;
-  --border: #e5e1d8;
-  --shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
+  --ink: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-2: #0891b2;
+  --border: #e2e8f0;
+  --shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
   --radius: 16px;
   font-family: 'Space Grotesk', sans-serif;
   color: var(--ink);
@@ -15,10 +15,7 @@
 
 .page {
   padding: 28px;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(239, 111, 58, 0.12), transparent),
-    radial-gradient(900px 500px at 110% 10%, rgba(43, 122, 120, 0.12), transparent),
-    var(--bg);
+  background: var(--bg);
   min-height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
@@ -159,7 +156,7 @@ h1 {
 
   &:hover {
     background: #fff6f0;
-    border-color: rgba(239, 111, 58, 0.4);
+    border-color: rgba(37, 99, 235, 0.4);
   }
 
   &.active {
@@ -195,7 +192,7 @@ h1 {
 /* Eval form */
 .eval-form {
   background: #f2faf9;
-  border: 1px dashed rgba(43, 122, 120, 0.35);
+  border: 1px dashed rgba(8, 145, 178, 0.35);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
@@ -278,13 +275,13 @@ button[type='submit'] {
 
   &:hover {
     background: #fff6f0;
-    border-color: rgba(239, 111, 58, 0.35);
+    border-color: rgba(37, 99, 235, 0.35);
   }
 
   &.selected {
     background: #fff6f0;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(239, 111, 58, 0.15);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
   }
 }
 
@@ -307,9 +304,9 @@ button[type='submit'] {
   font-size: 12px;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(43, 122, 120, 0.12);
+  background: rgba(8, 145, 178, 0.12);
   color: #1a5754;
-  border: 1px solid rgba(43, 122, 120, 0.3);
+  border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 .max-score {
@@ -383,7 +380,7 @@ button[type='submit'] {
   &:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(239, 111, 58, 0.15);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
   }
 }
 
@@ -440,7 +437,7 @@ button[type='submit'] {
 
   &:hover {
     background: #fff6f0;
-    border-color: rgba(239, 111, 58, 0.4);
+    border-color: rgba(37, 99, 235, 0.4);
   }
 }
 
@@ -455,9 +452,9 @@ button[type='submit'] {
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(43, 122, 120, 0.12);
+  background: rgba(8, 145, 178, 0.12);
   color: #1a5754;
-  border: 1px solid rgba(43, 122, 120, 0.3);
+  border: 1px solid rgba(8, 145, 178, 0.3);
 }
 
 .loading-msg {

@@ -65,6 +65,11 @@ export class AppHeaderComponent {
     return this.userEmail.slice(0, 1).toUpperCase();
   }
 
+  /** Sidebar handles navigation on all /teacher/* pages — hide header nav there */
+  get isTeacherRoute(): boolean {
+    return this.router.url.startsWith('/teacher');
+  }
+
   toggleMenu() { this.isMenuOpen = !this.isMenuOpen; }
   closeMenu() { this.isMenuOpen = false; }
 

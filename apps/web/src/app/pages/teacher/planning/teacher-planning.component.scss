@@ -1,13 +1,13 @@
 
 :host {
-  --bg: #f5f2ea;
+  --bg: #f0f4f8;
   --card: #ffffff;
-  --ink: #1f2937;
-  --muted: #6b7280;
-  --accent: #ef6f3a;
-  --accent-2: #2b7a78;
-  --border: #e5e1d8;
-  --shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
+  --ink: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-2: #0891b2;
+  --border: #e2e8f0;
+  --shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
   --radius: 16px;
   font-family: 'Space Grotesk', sans-serif;
   color: var(--ink);
@@ -15,10 +15,7 @@
 
 .page {
   padding: 28px;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(239, 111, 58, 0.12), transparent),
-    radial-gradient(900px 500px at 110% 10%, rgba(43, 122, 120, 0.12), transparent),
-    var(--bg);
+  background: var(--bg);
   min-height: calc(100vh - 80px);
 }
 
@@ -147,7 +144,7 @@ button {
 
 .stat {
   background: #fff6f0;
-  border: 1px solid rgba(239, 111, 58, 0.2);
+  border: 1px solid rgba(37, 99, 235, 0.2);
   border-radius: 14px;
   padding: 12px 16px;
   display: flex;
@@ -182,8 +179,8 @@ button {
   margin-bottom: 20px;
 
   &.today .day-header {
-    background: rgba(239, 111, 58, 0.08);
-    border-color: rgba(239, 111, 58, 0.3);
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.3);
   }
 
   &.past {
@@ -212,9 +209,9 @@ button {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(239, 111, 58, 0.15);
-  color: #b64b23;
-  border: 1px solid rgba(239, 111, 58, 0.35);
+  background: rgba(37, 99, 235, 0.15);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.35);
   font-weight: 600;
 }
 
@@ -244,7 +241,7 @@ button {
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fcfaf5;
+  background: #f8fafc;
 
   &:hover {
     box-shadow: 0 4px 12px rgba(31, 41, 55, 0.1);
@@ -267,7 +264,7 @@ button {
   .time-line {
     flex: 1;
     width: 2px;
-    background: rgba(239, 111, 58, 0.3);
+    background: rgba(37, 99, 235, 0.3);
     border-radius: 1px;
     min-height: 16px;
   }
@@ -297,9 +294,9 @@ button {
   font-size: 11px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(43, 122, 120, 0.12);
-  color: #1a5754;
-  border: 1px solid rgba(43, 122, 120, 0.3);
+  background: rgba(8, 145, 178, 0.12);
+  color: #0e7490;
+  border: 1px solid rgba(8, 145, 178, 0.3);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -317,9 +314,9 @@ button {
   font-weight: 500;
 
   &.group {
-    background: rgba(43, 122, 120, 0.12);
-    color: #1a5754;
-    border: 1px solid rgba(43, 122, 120, 0.3);
+    background: rgba(8, 145, 178, 0.12);
+    color: #0e7490;
+    border: 1px solid rgba(8, 145, 178, 0.3);
   }
 
   &.room {
@@ -351,7 +348,7 @@ button {
     cursor: pointer;
     box-shadow: none;
 
-    &:hover { background: #fcfaf5; }
+    &:hover { background: #f8fafc; }
     &.active { background: var(--ink); color: #fff; }
     &:first-child { border-radius: 9px 0 0 9px; }
     &:last-child { border-radius: 0 9px 9px 0; }
@@ -429,7 +426,7 @@ button {
   align-items: center;
   gap: 3px;
 
-  &.today { background: rgba(239,111,58,.08); color: #b64b23; }
+  &.today { background: rgba(239,111,58,.08); color: #1d4ed8; }
 }
 
 .cal-day-count {
