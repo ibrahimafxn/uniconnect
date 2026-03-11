@@ -1,0 +1,51 @@
+<div class="shell">
+
+  <!-- ── Barre latérale ─────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Tableau de bord -->
+    <a
+      class="nav-home"
+      routerLink="/teacher"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{exact: true}"
+    >
+      <span class="nav-icon">⊞</span>
+      <span>Tableau de bord</span>
+    </a>
+
+    <!-- Sections de navigation -->
+    <nav class="nav" role="navigation">
+      <div class="nav-section" *ngFor="let section of navSections">
+        <p class="nav-section-label">{{ section.label }}</p>
+        <a
+          class="nav-item"
+          *ngFor="let item of section.items"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Profil en bas -->
+    <div class="sidebar-footer">
+      <a class="nav-item profile-item" routerLink="/teacher/profile" routerLinkActive="active">
+        <div class="avatar-sm">{{ avatarLetter }}</div>
+        <div class="footer-meta">
+          <span class="footer-email">{{ email }}</span>
+          <span class="footer-role">{{ roleLabel }}</span>
+        </div>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── Contenu principal ─────────────────────────────────────────────── -->
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>

@@ -1,136 +1,108 @@
 <div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
-  <div class="header">
-    <div>
-      <h1>Espace Enseignant</h1>
-      <p class="subtitle">{{ today }}</p>
+
+  <!-- ── Bandeau de bienvenue ─────────────────────────────────────────── -->
+  <div class="welcome-bar">
+    <div class="welcome-left">
+      <p class="welcome-date">{{ today }}</p>
+      <h1 class="welcome-title">Espace {{ isExternal ? 'Vacataire' : 'Enseignant' }}</h1>
+      <p class="welcome-email">{{ email }}</p>
     </div>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
-      Mode compact
-    </label>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
-      Ultra-compact
-    </label>
-    <div class="user-chip">
-      <div class="avatar">{{ email.slice(0, 1).toUpperCase() }}</div>
-      <div class="meta">
-        <span class="email">{{ email }}</span>
-        <span class="badge">{{ role === 'external' ? 'Vacataire' : 'Enseignant' }}</span>
+    <div class="welcome-right">
+      <div class="kpi-chip" *ngIf="(sessions$ | async) as s">
+        <span class="kpi-val">{{ s.length }}</span>
+        <span class="kpi-lbl">Séances</span>
+      </div>
+      <div class="kpi-chip teal" *ngIf="(subjects$ | async) as s">
+        <span class="kpi-val">{{ s.length }}</span>
+        <span class="kpi-lbl">Matières</span>
+      </div>
+      <div class="kpi-chip blue" *ngIf="(evaluations$ | async) as e">
+        <span class="kpi-val">{{ e.length }}</span>
+        <span class="kpi-lbl">Évaluations</span>
+      </div>
+      <div class="compact-toggles">
+        <label class="toggle"><input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" /> Compact</label>
+        <label class="toggle"><input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" /> Ultra</label>
       </div>
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat orange">
-      <span class="stat-label">Séances</span>
-      <span class="stat-value">{{ (sessions$ | async)?.length ?? '—' }}</span>
-    </div>
-    <div class="stat teal">
-      <span class="stat-label">Matières</span>
-      <span class="stat-value">{{ (subjects$ | async)?.length ?? '—' }}</span>
-    </div>
-    <div class="stat blue">
-      <span class="stat-label">Évaluations</span>
-      <span class="stat-value">{{ (evaluations$ | async)?.length ?? '—' }}</span>
-    </div>
-  </div>
+  <!-- ── Layout deux colonnes ─────────────────────────────────────────── -->
+  <div class="two-col" *ngIf="(sessions$ | async) as sessions">
 
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">
-        <h2>Mon Planning</h2>
-        <span class="pill">Prochaines séances</span>
+    <!-- Colonne gauche : aujourd'hui -->
+    <div class="section-card">
+      <div class="sc-head">
+        <h2>Aujourd'hui</h2>
+        <a routerLink="/teacher/planning" class="sc-link">Planning complet →</a>
       </div>
-      <p class="muted">Consultez votre emploi du temps et vos séances assignées.</p>
-      <a routerLink="/teacher/planning" class="btn-link">Voir le planning →</a>
-    </div>
 
-    <div class="card">
-      <div class="card-title">
-        <h2>Saisie des Notes</h2>
-        <span class="pill teal">Évaluations</span>
-      </div>
-      <p class="muted">Créez des évaluations et saisissez les notes de vos étudiants.</p>
-      <a routerLink="/teacher/notes" class="btn-link">Accéder aux notes →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Présences</h2>
-        <span class="pill blue">Feuille de présence</span>
-      </div>
-      <p class="muted">Enregistrez les présences de vos étudiants pour chaque séance.</p>
-      <a routerLink="/teacher/presence" class="btn-link">Gérer les présences →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Statistiques</h2>
-        <span class="pill teal">Analyses</span>
-      </div>
-      <p class="muted">Consultez les moyennes, distributions et taux de présence par groupe.</p>
-      <a routerLink="/teacher/stats" class="btn-link">Voir les statistiques →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Messagerie</h2>
-        <span class="pill blue">Communication</span>
-      </div>
-      <p class="muted">Échangez avec vos étudiants et l'administration.</p>
-      <a routerLink="/messages" class="btn-link">Ouvrir la messagerie →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Annonces</h2>
-        <span class="pill">Communication</span>
-      </div>
-      <p class="muted">Consultez les annonces officielles de l'université.</p>
-      <a routerLink="/teacher/announcements" class="btn-link">Voir les annonces →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Devoirs</h2>
-        <span class="pill orange">Soumissions</span>
-      </div>
-      <p class="muted">Créez des devoirs et corrigez les travaux rendus par vos étudiants.</p>
-      <a routerLink="/teacher/assignments" class="btn-link">Gérer les devoirs →</a>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Ressources</h2>
-        <span class="pill teal">Supports</span>
-      </div>
-      <p class="muted">Déposez vos cours, TD et documents pour les mettre à disposition de vos groupes.</p>
-      <a routerLink="/teacher/resources" class="btn-link">Gérer les ressources →</a>
-    </div>
-  </div>
-
-  <div class="card full mt">
-    <div class="card-title">
-      <h2>Prochaines séances</h2>
-    </div>
-    <ul class="list" *ngIf="(sessions$ | async) as sessions; else loading">
-      <li *ngIf="sessions.length === 0" class="empty">Aucune séance planifiée.</li>
-      <li class="list-item" *ngFor="let s of sessions | slice:0:5">
-        <div class="session-date">
-          <span class="day">{{ s.date | date:'dd' }}</span>
-          <span class="month">{{ s.date | date:'MMM' }}</span>
+      <ng-container *ngIf="todaySessions(sessions) as today">
+        <p class="empty-sm" *ngIf="today.length === 0">Pas de séance planifiée aujourd'hui.</p>
+        <div class="today-item" *ngFor="let s of today">
+          <div class="today-time">
+            <span class="t-h">{{ s.startTime }}</span>
+            <div class="t-bar"></div>
+            <span class="t-h t-end">{{ s.endTime }}</span>
+          </div>
+          <div class="today-body">
+            <strong>{{ s.label || 'Séance' }}</strong>
+            <span class="muted">{{ s.startTime }} – {{ s.endTime }}</span>
+          </div>
+          <span class="session-dot"></span>
         </div>
-        <div class="session-info">
+      </ng-container>
+    </div>
+
+    <!-- Colonne droite : prochaines séances -->
+    <div class="section-card">
+      <div class="sc-head">
+        <h2>Prochaines séances</h2>
+        <a routerLink="/teacher/planning" class="sc-link">Voir tout →</a>
+      </div>
+
+      <p class="empty-sm" *ngIf="upcomingSessions(sessions).length === 0">Aucune séance à venir.</p>
+      <div class="upcoming-item" *ngFor="let s of upcomingSessions(sessions)">
+        <div class="up-date">
+          <span class="up-day">{{ s.date | date:'dd' }}</span>
+          <span class="up-month">{{ s.date | date:'MMM' }}</span>
+        </div>
+        <div class="up-body">
           <strong>{{ s.label || 'Séance' }}</strong>
           <span class="muted">{{ s.startTime }} – {{ s.endTime }}</span>
         </div>
-        <span class="time-badge">{{ s.startTime }}</span>
-      </li>
-    </ul>
-    <ng-template #loading>
-      <p class="muted">Chargement...</p>
-    </ng-template>
-    <a routerLink="/teacher/planning" class="see-all">Voir toutes les séances →</a>
+        <span class="up-time">{{ s.startTime }}</span>
+      </div>
+    </div>
+
   </div>
+
+  <!-- ── Accès rapides ─────────────────────────────────────────────────── -->
+  <div class="quick-grid">
+    <a class="quick-card" routerLink="/teacher/notes">
+      <span class="qc-icon">✏️</span>
+      <span class="qc-label">Saisir des notes</span>
+    </a>
+    <a class="quick-card" routerLink="/teacher/presence">
+      <span class="qc-icon">✅</span>
+      <span class="qc-label">Feuille de présence</span>
+    </a>
+    <a class="quick-card" routerLink="/teacher/assignments">
+      <span class="qc-icon">📝</span>
+      <span class="qc-label">Corriger des devoirs</span>
+    </a>
+    <a class="quick-card" routerLink="/teacher/resources">
+      <span class="qc-icon">📁</span>
+      <span class="qc-label">Déposer une ressource</span>
+    </a>
+    <a class="quick-card" routerLink="/teacher/stats">
+      <span class="qc-icon">📊</span>
+      <span class="qc-label">Statistiques</span>
+    </a>
+    <a class="quick-card" routerLink="/messages">
+      <span class="qc-icon">💬</span>
+      <span class="qc-label">Messagerie</span>
+    </a>
+  </div>
+
 </div>
