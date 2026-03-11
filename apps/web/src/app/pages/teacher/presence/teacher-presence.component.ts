@@ -1,6 +1,7 @@
 import {Component, inject} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormBuilder, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {map} from 'rxjs/operators';
 import {PlanningApi, Session} from '../../../core/api/planning.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {AttendanceApi, AttendanceEntry, AttendanceStatus} from '../../../core/api/attendance.api';
@@ -18,8 +19,9 @@ export class TeacherPresenceComponent {
   private readonly attendance = inject(AttendanceApi);
   private readonly fb = inject(FormBuilder);
 
-  sessions$ = this.planning.listSessions();
-  groups$ = this.academic.listGroups();
+  // sessions$ emits already-sorted list; groups loaded eagerly so no 403 ever blocks sessions
+  sessions$ = this.planning.listSessions().pipe(map(s => this.sortSessions(s)));
+  groups: Array<{_id: string; name: string; [k: string]: any}> = [];
 
   selectedSession: Session | null = null;
   attendanceEntries: AttendanceEntry[] = [];
@@ -31,6 +33,13 @@ export class TeacherPresenceComponent {
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
 
+  constructor() {
+    this.academic.listGroups().subscribe({
+      next: (r: any) => { this.groups = r?.items ?? r ?? []; },
+      error: () => {},
+    });
+  }
+
   filterForm = this.fb.group({
     dateFrom: [''],
     dateTo: [''],
@@ -41,12 +50,12 @@ export class TeacherPresenceComponent {
     this.sessions$ = this.planning.listSessions({
       dateFrom: dateFrom ?? undefined,
       dateTo: dateTo ?? undefined,
-    });
+    }).pipe(map(s => this.sortSessions(s)));
   }
 
   resetFilters() {
     this.filterForm.reset();
-    this.sessions$ = this.planning.listSessions();
+    this.sessions$ = this.planning.listSessions().pipe(map(s => this.sortSessions(s)));
   }
 
   selectSession(session: Session) {
@@ -74,7 +83,7 @@ export class TeacherPresenceComponent {
     });
   }
 
-  sortedSessions(sessions: Session[]): Session[] {
+  private sortSessions(sessions: Session[]): Session[] {
     const today = new Date().toISOString().slice(0, 10);
     const upcoming = sessions
       .filter((s) => new Date(s.date).toISOString().slice(0, 10) >= today)
@@ -129,9 +138,8 @@ export class TeacherPresenceComponent {
     });
   }
 
-  groupName(groups: Array<{_id: string; name: string}> | null, groupId: string): string {
-    if (!groups) return groupId;
-    return groups.find((g) => g._id === groupId)?.name ?? groupId;
+  groupName(groupId: string): string {
+    return this.groups.find((g) => g._id === groupId)?.name ?? groupId;
   }
 
   formatDate(date: string | Date): string {

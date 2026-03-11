@@ -23,6 +23,18 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   // ── Data ────────────────────────────────────────────────────────────────────
   groups$   = this.academic.listGroups();
+  groupsLocal: Array<{_id: string; name: string; [k: string]: any}> = [];
+
+  constructor() {
+    this.academic.listGroups().subscribe({
+      next: (r: any) => { this.groupsLocal = r?.items ?? r ?? []; },
+      error: () => {},
+    });
+  }
+
+  groupName(groupId: string): string {
+    return this.groupsLocal.find(g => g._id === groupId)?.name ?? groupId;
+  }
   subjects$ = this.notes.listSubjects();
 
   assignments: Assignment[] = [];
@@ -31,6 +43,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   selectedAssignment: Assignment | null = null;
   submissions: Submission[] = [];
   loadingSubmissions = false;
+  studentNames = new Map<string, string>(); // studentId → display name
 
   // ── Filters ─────────────────────────────────────────────────────────────────
   filterGroupId   = '';
@@ -81,6 +94,18 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   selectAssignment(a: Assignment) {
     this.selectedAssignment = a;
+    this.studentNames.clear();
+    // Pre-load student names for this group so we can display them in submissions
+    if (a.groupId) {
+      this.notes.listGroupStudents(a.groupId).subscribe({
+        next: (students) => {
+          for (const s of students) {
+            this.studentNames.set(s._id, `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || s._id);
+          }
+        },
+        error: () => {},
+      });
+    }
     this.loadSubmissions(a._id);
   }
 
@@ -91,6 +116,10 @@ export class TeacherAssignmentsComponent implements OnInit {
       next: (list) => { this.submissions = list; this.loadingSubmissions = false; },
       error: ()    => { this.loadingSubmissions = false; },
     });
+  }
+
+  studentName(studentId: string): string {
+    return this.studentNames.get(studentId) ?? studentId;
   }
 
   back() {

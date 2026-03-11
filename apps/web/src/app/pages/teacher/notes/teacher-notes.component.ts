@@ -20,7 +20,15 @@ export class TeacherNotesComponent {
   private readonly fb = inject(FormBuilder);
 
   groups$ = this.academic.listGroups();
+
+  constructor() {
+    this.academic.listGroups().subscribe({
+      next: (r: any) => { this.groups = r?.items ?? r ?? []; },
+      error: () => {},
+    });
+  }
   subjects$ = this.notes.listSubjects();
+  groups: Array<{_id: string; name: string; [k: string]: any}> = [];
 
   selectedGroupId: string | null = null;
   selectedSubjectId: string | null = null;
@@ -35,6 +43,9 @@ export class TeacherNotesComponent {
   saveError: string | null = null;
   showEvalForm = false;
   loadingGrades = false;
+  deletingEvalId: string | null = null;
+
+  scoreErrors: Record<string, string> = {};
 
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
@@ -168,9 +179,38 @@ export class TeacherNotesComponent {
     });
   }
 
+  groupName(groupId: string): string {
+    return this.groups.find(g => g._id === groupId)?.name ?? groupId;
+  }
+
+  deleteEvaluation(eval_: Evaluation) {
+    if (!confirm(`Supprimer l'évaluation "${eval_.title}" ? Cette action est irréversible.`)) return;
+    this.deletingEvalId = eval_._id;
+    this.notes.deleteEvaluation(eval_._id).subscribe({
+      next: () => {
+        this.deletingEvalId = null;
+        if (this.selectedEvaluation?._id === eval_._id) {
+          this.selectedEvaluation = null;
+          this.gradeEntries = [];
+        }
+        this.loadEvaluations();
+      },
+      error: () => { this.deletingEvalId = null; },
+    });
+  }
+
   updateScore(studentId: string, score: string) {
     const entry = this.gradeEntries.find((e) => e.studentId === studentId);
-    if (entry) entry.score = score === '' ? null : parseFloat(score);
+    if (!entry) return;
+    const parsed = score === '' ? null : parseFloat(score);
+    const maxScore = this.selectedEvaluation?.maxScore ?? 20;
+    if (parsed !== null && parsed > maxScore) {
+      this.scoreErrors[studentId] = `Max : ${maxScore}`;
+      entry.score = maxScore;
+    } else {
+      delete this.scoreErrors[studentId];
+      entry.score = parsed;
+    }
   }
 
   updateComment(studentId: string, comment: string) {

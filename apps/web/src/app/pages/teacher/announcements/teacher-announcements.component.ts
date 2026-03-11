@@ -13,9 +13,22 @@ import {AnnouncementsApi, Announcement} from '../../../core/api/announcements.ap
 export class TeacherAnnouncementsComponent {
   private readonly announcementsApi = inject(AnnouncementsApi);
 
-  announcements$ = this.announcementsApi.list('official');
+  readonly categories = [
+    {value: '', label: 'Toutes'},
+    {value: 'official', label: 'Officielles'},
+    {value: 'event', label: 'Événements'},
+    {value: 'internship', label: 'Stages'},
+    {value: 'service', label: 'Services'},
+  ];
+  selectedCategory = '';
+  announcements$ = this.announcementsApi.list();
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
+
+  filterCategory(cat: string) {
+    this.selectedCategory = cat;
+    this.announcements$ = this.announcementsApi.list(cat || undefined);
+  }
 
   saveCompactMode() {
     if (!this.compactMode) {

@@ -1,21 +1,27 @@
 <div class="page" [class.compact]="compactMode" [class.ultra-compact]="ultraCompactMode">
   <div class="header">
     <div>
-      <h1>Annonces officielles</h1>
+      <h1>Annonces</h1>
       <p class="subtitle">Communications de l'université et informations pédagogiques.</p>
     </div>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" />
-      Mode compact
-    </label>
-    <label class="toggle">
-      <input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" />
-      Ultra-compact
-    </label>
+    <div class="header-right">
+      <label class="toggle"><input type="checkbox" [(ngModel)]="compactMode" (change)="saveCompactMode()" /> Compact</label>
+      <label class="toggle"><input type="checkbox" [(ngModel)]="ultraCompactMode" (change)="saveUltraCompactMode()" /> Ultra</label>
+    </div>
+  </div>
+
+  <!-- Category filter tabs -->
+  <div class="cat-tabs">
+    <button
+      *ngFor="let c of categories"
+      class="cat-tab"
+      [class.active]="selectedCategory === c.value"
+      (click)="filterCategory(c.value)"
+    >{{ c.label }}</button>
   </div>
 
   <ng-container *ngIf="(announcements$ | async) as announcements; else loading">
-    <div *ngIf="announcements.length === 0" class="empty">Aucune annonce publiée.</div>
+    <div *ngIf="announcements.length === 0" class="empty">Aucune annonce pour cette catégorie.</div>
     <div class="list">
       <article class="card" *ngFor="let ann of announcements; trackBy: trackById">
         <div class="card-head">

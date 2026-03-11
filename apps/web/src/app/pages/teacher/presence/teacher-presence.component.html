@@ -28,26 +28,24 @@
 
       <ul class="session-list">
         <ng-container *ngIf="(sessions$ | async) as sessions">
-          <ng-container *ngIf="(groups$ | async) as groups">
-            <li *ngIf="sessions.length === 0" class="empty">Aucune séance.</li>
-            <li
-              class="session-item"
-              *ngFor="let s of sortedSessions(sessions)"
-              [class.active]="selectedSession?._id === s._id"
-              [class.done]="isCompleted(s._id)"
-              (click)="selectSession(s)"
-            >
-              <div class="s-date">{{ s.date | date:'dd/MM' }}</div>
-              <div class="s-info">
-                <div class="s-info-top">
-                  <strong>{{ s.label || 'Séance' }}</strong>
-                  <span class="done-badge" *ngIf="isCompleted(s._id)">✓</span>
-                </div>
-                <span class="muted">{{ s.startTime }}–{{ s.endTime }}</span>
-                <span class="tag">{{ groupName(groups.items, s.groupId) }}</span>
+          <li *ngIf="sessions.length === 0" class="empty">Aucune séance.</li>
+          <li
+            class="session-item"
+            *ngFor="let s of sessions"
+            [class.active]="selectedSession?._id === s._id"
+            [class.done]="isCompleted(s._id)"
+            (click)="selectSession(s)"
+          >
+            <div class="s-date">{{ s.date | date:'dd/MM' }}</div>
+            <div class="s-info">
+              <div class="s-info-top">
+                <strong>{{ s.label || 'Séance' }}</strong>
+                <span class="done-badge" *ngIf="isCompleted(s._id)">✓</span>
               </div>
-            </li>
-          </ng-container>
+              <span class="muted">{{ s.startTime }}–{{ s.endTime }}</span>
+              <span class="tag">{{ groupName(s.groupId) }}</span>
+            </div>
+          </li>
         </ng-container>
       </ul>
     </div>

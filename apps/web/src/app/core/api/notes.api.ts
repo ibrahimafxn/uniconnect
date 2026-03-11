@@ -83,6 +83,10 @@ export class NotesApi {
     return this.http.patch<Evaluation>(`${this.baseUrl}/evaluations/${id}`, payload);
   }
 
+  deleteEvaluation(id: string) {
+    return this.http.delete(`${this.baseUrl}/evaluations/${id}`);
+  }
+
   listGroupStudents(groupId: string) {
     return this.http.get<any[]>(`${this.baseUrl}/groups/${groupId}/students`);
   }

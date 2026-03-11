@@ -99,3 +99,32 @@ h2 { font-size: 16px; margin: 0 0 4px; }
   padding: 20px;
   border-radius: 12px;
 }
+
+.header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
+.header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.cat-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.cat-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background .12s, color .12s;
+
+  &:hover { background: #fcfaf5; }
+  &.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+}
