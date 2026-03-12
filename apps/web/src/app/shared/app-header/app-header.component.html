@@ -7,11 +7,11 @@
     </div>
   </div>
 
-  <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Menu" *ngIf="!isTeacherRoute">
+  <button class="menu-toggle" type="button" (click)="toggleMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
 
-  <nav class="nav-links" *ngIf="!isTeacherRoute">
+  <nav class="nav-links">
     <a *ngFor="let item of navItems" [routerLink]="item.path" routerLinkActive="active" (click)="closeMenu()">
       <span class="nav-icon">{{ item.icon }}</span>
       {{ item.label }}
@@ -31,8 +31,8 @@
   </div>
 </header>
 
-<div class="mobile-overlay" *ngIf="isMenuOpen && !isTeacherRoute" (click)="closeMenu()"></div>
-<div class="mobile-panel" *ngIf="isMenuOpen && !isTeacherRoute">
+<div class="mobile-overlay" *ngIf="isMenuOpen" (click)="closeMenu()"></div>
+<div class="mobile-panel" *ngIf="isMenuOpen">
   <div class="mobile-user">
     <div class="avatar lg">{{ avatarLetter }}</div>
     <div class="meta">
