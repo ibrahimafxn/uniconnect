@@ -1,25 +1,22 @@
 
 :host {
-  --bg: #f5f2ea;
-  --card: #ffffff;
-  --ink: #1f2937;
-  --muted: #6b7280;
-  --accent: #ef6f3a;
-  --accent-2: #2b7a78;
-  --border: #e5e1d8;
-  --shadow: 0 12px 30px rgba(31, 41, 55, 0.08);
-  --radius: 16px;
-  font-family: 'Space Grotesk', sans-serif;
+  --bg:      #F4F6FA;
+  --card:    #FFFFFF;
+  --ink:     #1a2338;
+  --muted:   #6B7280;
+  --accent:  #1B3A6B;
+  --accent-2: #B8972E;
+  --border:  #DDE2EE;
+  --shadow:  0 1px 3px rgba(26, 35, 56, 0.07), 0 4px 12px rgba(26, 35, 56, 0.04);
+  --radius:  10px;
+  font-family: 'Manrope', 'Sora', sans-serif;
   color: var(--ink);
 }
 
 .page {
   padding: 28px;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(239, 111, 58, 0.12), transparent),
-    radial-gradient(900px 500px at 110% 10%, rgba(43, 122, 120, 0.12), transparent),
-    var(--bg);
-  min-height: calc(100vh - 80px);
+  background: var(--bg);
+  min-height: calc(100vh - 104px);
   display: flex;
   flex-direction: column;
   gap: 24px;

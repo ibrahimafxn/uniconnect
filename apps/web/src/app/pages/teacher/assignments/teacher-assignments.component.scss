@@ -1,10 +1,10 @@
 :host {
-  --bg: #f5f2ea; --card: #fff; --ink: #1f2937; --muted: #6b7280;
-  --accent: #ef6f3a; --border: #e5e1d8; --radius: 12px;
-  font-family: 'Space Grotesk', sans-serif; color: var(--ink);
+  --bg: #F4F6FA; --card: #FFFFFF; --ink: #1a2338; --muted: #6B7280;
+  --accent: #1B3A6B; --border: #DDE2EE; --radius: 10px;
+  font-family: 'Manrope', 'Sora', sans-serif; color: var(--ink);
 }
 
-.page { padding: 28px; min-height: calc(100vh - 80px); background: var(--bg); }
+.page { padding: 28px; min-height: calc(100vh - 104px); background: var(--bg); }
 .page.compact { padding: 18px; }
 .page.ultra-compact { padding: 12px; }
 
