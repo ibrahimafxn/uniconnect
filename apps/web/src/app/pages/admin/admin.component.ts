@@ -1171,7 +1171,7 @@ export class AdminComponent implements OnInit {
   selectUserForEdit(u: any) {
     this.editingUserId = u.id;
     this.setUserFormMode('edit');
-    this.userForm.setValue({email: u.email ?? '', password: '', role: u.role ?? 'teacher'});
+    this.userForm.setValue({email: u.email ?? '', password: '', role: u.role ?? 'teacher', profileId: null});
     this.userCreateError = null;
     this.userCreateSuccess = false;
     this.openDrawer('user', 'Modifier l\'utilisateur');
