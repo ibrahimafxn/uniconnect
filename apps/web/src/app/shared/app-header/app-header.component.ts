@@ -42,6 +42,10 @@ export class AppHeaderComponent {
 
   constructor(private readonly auth: AuthService, private readonly router: Router) {}
 
+  get isTeacherRoute(): boolean {
+    return this.router.url.startsWith('/teacher');
+  }
+
   get navItems(): NavItem[] {
     const role = this.auth.getUserRole();
     if (role === 'teacher' || role === 'external') return this.teacherNavItems;

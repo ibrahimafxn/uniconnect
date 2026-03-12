@@ -115,8 +115,8 @@
       <h2>Prochaines séances</h2>
     </div>
     <ul class="list" *ngIf="(sessions$ | async) as sessions; else loading">
-      <li *ngIf="sessions.length === 0" class="empty">Aucune séance planifiée.</li>
-      <li class="list-item" *ngFor="let s of sessions | slice:0:5">
+      <li *ngIf="upcomingSessions(sessions).length === 0" class="empty">Aucune prochaine séance.</li>
+      <li class="list-item" *ngFor="let s of upcomingSessions(sessions)">
         <div class="session-date">
           <span class="day">{{ s.date | date:'dd' }}</span>
           <span class="month">{{ s.date | date:'MMM' }}</span>
