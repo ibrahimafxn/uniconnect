@@ -25,6 +25,7 @@ export class TeacherDashboardComponent {
   subjects$ = this.notes.listSubjects();
   evaluations$ = this.notes.listEvaluations();
 
+  /** YYYY-MM-DD en heure locale (évite le décalage UTC à minuit) */
   get todayISO(): string {
     const d = new Date();
     return d.getFullYear() + '-'
