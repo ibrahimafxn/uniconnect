@@ -84,14 +84,20 @@ export class TeacherPresenceComponent {
   }
 
   private sortSessions(sessions: Session[]): Session[] {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.localDateStr(new Date());
     const upcoming = sessions
-      .filter((s) => new Date(s.date).toISOString().slice(0, 10) >= today)
+      .filter((s) => this.localDateStr(new Date(s.date)) >= today)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const past = sessions
-      .filter((s) => new Date(s.date).toISOString().slice(0, 10) < today)
+      .filter((s) => this.localDateStr(new Date(s.date)) < today)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return [...upcoming, ...past];
+  }
+
+  private localDateStr(d: Date): string {
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
   }
 
   isCompleted(sessionId: string): boolean {

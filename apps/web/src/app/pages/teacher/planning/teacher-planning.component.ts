@@ -89,17 +89,17 @@ export class TeacherPlanningComponent implements OnInit {
   // ─── Stats ───────────────────────────────────────────────────────────────────
 
   get todayCount(): number {
-    const today = new Date().toISOString().slice(0, 10);
-    return this.sessions.filter(s => new Date(s.date).toISOString().slice(0, 10) === today).length;
+    const today = this.localDateStr(new Date());
+    return this.sessions.filter(s => this.localDateStr(new Date(s.date)) === today).length;
   }
 
   get weekCount(): number {
-    const start = this.currentWeekStart.toISOString().slice(0, 10);
+    const start = this.localDateStr(this.currentWeekStart);
     const end   = new Date(this.currentWeekStart);
     end.setDate(end.getDate() + 4);
-    const endStr = end.toISOString().slice(0, 10);
+    const endStr = this.localDateStr(end);
     return this.sessions.filter(s => {
-      const d = new Date(s.date).toISOString().slice(0, 10);
+      const d = this.localDateStr(new Date(s.date));
       return d >= start && d <= endStr;
     }).length;
   }
@@ -150,7 +150,7 @@ export class TeacherPlanningComponent implements OnInit {
   private buildGrouped(sessions: any[]): DayGroup[] {
     const map = new Map<string, any[]>();
     for (const s of sessions) {
-      const key = new Date(s.date).toISOString().slice(0, 10);
+      const key = this.localDateStr(new Date(s.date));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }
@@ -158,12 +158,12 @@ export class TeacherPlanningComponent implements OnInit {
   }
 
   private rebuildCalendar() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.localDateStr(new Date());
     const days: CalendarDay[] = [];
     for (let i = 0; i < 5; i++) {
       const d = new Date(this.currentWeekStart);
       d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = this.localDateStr(d);
       days.push({
         date:    dateStr,
         label:   d.toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'}),
@@ -172,7 +172,7 @@ export class TeacherPlanningComponent implements OnInit {
       });
     }
     for (const s of this.sessions) {
-      const dateStr = new Date(s.date).toISOString().slice(0, 10);
+      const dateStr = this.localDateStr(new Date(s.date));
       const day = days.find(d => d.date === dateStr);
       if (!day) continue;
       const [h] = (s.startTime ?? '08:00').split(':').map(Number);
@@ -242,11 +242,18 @@ export class TeacherPlanningComponent implements OnInit {
   }
 
   isToday(dateStr: string): boolean {
-    return dateStr === new Date().toISOString().slice(0, 10);
+    return dateStr === this.localDateStr(new Date());
   }
 
   isPast(dateStr: string): boolean {
-    return dateStr < new Date().toISOString().slice(0, 10);
+    return dateStr < this.localDateStr(new Date());
+  }
+
+  /** Returns YYYY-MM-DD in LOCAL timezone (avoids UTC-midnight timezone shift). */
+  private localDateStr(d: Date): string {
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
   }
 
   // ─── Compact-mode prefs ──────────────────────────────────────────────────────

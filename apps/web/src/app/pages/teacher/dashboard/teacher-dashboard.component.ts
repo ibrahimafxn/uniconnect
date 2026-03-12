@@ -39,7 +39,10 @@ export class TeacherDashboardComponent {
   }
 
   get todayISO(): string {
-    return new Date().toISOString().slice(0, 10);
+    const d = new Date();
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
   }
 
   // ── Session helpers ────────────────────────────────────────────────────────
@@ -58,7 +61,10 @@ export class TeacherDashboardComponent {
   }
 
   private dateStr(d: string | Date): string {
-    return new Date(d).toISOString().slice(0, 10);
+    const dt = new Date(d);
+    return dt.getFullYear() + '-'
+      + String(dt.getMonth() + 1).padStart(2, '0') + '-'
+      + String(dt.getDate()).padStart(2, '0');
   }
 
   // ── Compact mode ──────────────────────────────────────────────────────────
