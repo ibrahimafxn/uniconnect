@@ -16,6 +16,7 @@ This file provides AI assistants with the context needed to work effectively in 
 - **Testing**: Jest (backend), Karma + Jasmine (frontend)
 - **PDF Generation**: pdfkit (payment receipts)
 - **Email**: nodemailer
+- **Excel Import**: exceljs (bulk student import)
 
 ---
 
@@ -28,7 +29,9 @@ uniconnect/
 │   │   └── src/
 │   │       ├── academic/           # Academic years, programs, levels, groups, offers
 │   │       ├── admin/              # Admin module: academic, finance, users, dashboard
-│   │       ├── announcements/      # Platform-wide announcements
+│   │       │   └── schemas/        # fee-template, fee-exemption, bulk-import-job,
+│   │       │                       #   academic-calendar-event
+│   │       ├── announcements/      # Platform-wide announcements by role/group
 │   │       ├── applications/       # Student application submissions & documents
 │   │       ├── assignments/        # Assignment management & submissions
 │   │       ├── attendance/         # Attendance tracking with justifications
@@ -36,6 +39,7 @@ uniconnect/
 │   │       ├── auth/               # JWT auth, Passport, guards
 │   │       ├── common/             # Roles enum/guard/decorator, email service, pagination
 │   │       ├── document-requests/  # Student document request handling
+│   │       ├── global-config/      # System config (SMTP, email templates, system params)
 │   │       ├── messages/           # Conversations & messaging with attachments
 │   │       ├── migrations/         # Database migration scripts
 │   │       ├── notes/              # Grades, evaluations, subjects
@@ -43,19 +47,22 @@ uniconnect/
 │   │       ├── planning/           # Rooms & sessions scheduling
 │   │       ├── resources/          # Shared resource management
 │   │       ├── students/           # Student profiles, enrollment, documents
+│   │       ├── teacher-documents/  # Teacher document assignments
 │   │       ├── teacher-profile/    # Teacher info
 │   │       ├── users/              # User accounts
-│   │       ├── app.module.ts
+│   │       ├── app.module.ts       # Root module — 21 feature modules imported
 │   │       ├── main.ts
 │   │       ├── seed.ts             # Seed superadmin + basic data
 │   │       └── seed-academic.ts
 │   └── web/                        # Angular frontend
 │       └── src/app/
 │           ├── core/               # Auth service, guards, interceptors, API clients
-│           │   └── api/            # One service file per backend module (22 services)
+│           │   ├── api/            # One service file per backend module (16 services)
+│           │   └── services/       # Additional core services
 │           ├── pages/              # Page components
 │           │   ├── admin/          # Admin panel
-│           │   ├── admin-uni/      # University admin interface
+│           │   ├── admin-uni/      # University admin interface (tabs: Academic, Finance,
+│           │   │                   #   Users, Dashboard, Communication, Configuration)
 │           │   ├── apply/          # Student application form (public)
 │           │   ├── dashboard/      # Main dashboard
 │           │   ├── login/          # Authentication (public)
@@ -64,8 +71,17 @@ uniconnect/
 │           │   ├── planning/       # Scheduling interface
 │           │   ├── student/        # Student portal
 │           │   ├── support/        # Support/help center
-│           │   └── teacher/        # Teacher routes (dashboard, planning, notes,
-│           │                       #   presence, profile, stats)
+│           │   └── teacher/        # Teacher routes via TeacherShellComponent
+│           │       ├── announcements/
+│           │       ├── assignments/
+│           │       ├── dashboard/
+│           │       ├── notes/
+│           │       ├── planning/
+│           │       ├── presence/
+│           │       ├── profile/
+│           │       ├── resources/
+│           │       ├── shell/      # TeacherShellComponent (navy sidebar + horizontal nav)
+│           │       └── stats/
 │           └── shared/             # Reusable components (header, confirm modal)
 ├── docs/                           # Module documentation (use-cases, specs)
 │   ├── administration.md           # Full admin module use-cases & API specs
@@ -83,6 +99,7 @@ uniconnect/
 ├── SPRINT_7_GETTING_STARTED.md     # Developer quick start for Sprint 7
 ├── SPRINT_7_INDEX_DOCUMENTATION.md # Navigation guide for Sprint 7 docs
 ├── SPRINT_STATUS.md                # Global project status
+├── PWA_SETUP.md                    # Progressive Web App configuration
 ├── .env.example                    # Environment variable template
 ├── package.json                    # Root workspace config
 ├── CHANGELOG.md
@@ -143,7 +160,7 @@ npm run -w apps/api format      # Prettier format
 # Backend
 npm run -w apps/api test            # Jest watch mode
 npm run -w apps/api test:cov        # Coverage report
-npm run -w apps/api test:e2e        # End-to-end tests
+npm run -w apps/api test:e2e        # End-to-end tests (uses apps/api/.env.test)
 
 # Frontend
 npm run -w apps/web test            # Karma watch mode
@@ -157,13 +174,19 @@ npm run test:coverage               # API + Web coverage
 
 - **API**: 69% branches, 85% functions, 85% lines, 85% statements
 - **Web**: 75% target
+- **Current state** (2026-03-04): API statements 99.34%, branches 85.15%; Web statements 91.67%, branches 68.12%
+- **Test count**: 354 tests passing across 46 suites (backend), 23 spec files (frontend)
 
 ### Test File Conventions
 
 - All test files: `*.spec.ts` alongside the file they test
-- Backend: Jest with `@nestjs/testing`, mock external dependencies (35 spec files)
+- Backend: Jest with `@nestjs/testing`, mock external dependencies (46 spec files)
 - Frontend: Jasmine + Karma (23 spec files)
-- E2E: `apps/api/test/` using supertest
+- E2E: `apps/api/test/` using supertest; requires `apps/api/.env.test`
+
+### What Is NOT Covered by Jest
+
+Jest is configured to exclude DTOs, controllers (for thresholds), schemas, modules, JWT strategy, `main.ts`, seed files, and migration files.
 
 ---
 
@@ -188,7 +211,7 @@ Copy `.env.example` to `apps/api/.env`:
 | `SMTP_FROM` | `no-reply@uniconnect.local` | Email from address |
 | `CORS_ORIGIN` | auto | Comma-separated allowed origins |
 
-**Default CORS origins** (when `CORS_ORIGIN` not set): `http://localhost:4200`, `http://localhost:5173`, `http://localhost:3000`
+**Default CORS origins** (when `CORS_ORIGIN` not set): `http://localhost:4200`, `http://localhost:5173`, `http://localhost:3000`, plus any `localhost:<port>` matched via regex.
 
 **Frontend**: API base URL is hard-coded as `http://localhost:3000/api` in `auth.service.ts`.
 
@@ -226,7 +249,11 @@ admin/
 ├── admin-dashboard.service.ts     # KPI aggregation
 ├── admin-dashboard.controller.ts
 ├── admin.module.ts
-└── schemas/                       # Admin-specific schemas
+└── schemas/
+    ├── academic-calendar-event.schema.ts
+    ├── bulk-import-job.schema.ts
+    ├── fee-exemption.schema.ts
+    └── fee-template.schema.ts
 ```
 
 ### Naming Conventions
@@ -250,12 +277,21 @@ admin/
 
 - Decorate with `@ApiTags()`, `@ApiOperation()`, `@ApiResponse()` for Swagger
 - Use `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(Role.Admin)` for protected routes
-- Validate request bodies with DTOs via `ValidationPipe`
+- Validate request bodies with DTOs via `ValidationPipe` (global: whitelist + forbidNonWhitelisted)
 
 ### Authentication & RBAC
 
 Roles (defined in `src/common/roles.enum.ts`):
-- `SuperAdmin`, `Admin`, `Teacher`, `External`, `Student`
+
+```typescript
+export enum Role {
+  SuperAdmin = 'super_admin',
+  Admin = 'admin',
+  Teacher = 'teacher',
+  External = 'external',
+  Student = 'student',
+}
+```
 
 Auth flow:
 1. Login → access token (15m) + refresh token (7d, hash stored in DB)
@@ -277,6 +313,14 @@ await this.auditLogService.log({
 });
 ```
 
+### All Backend Modules (21 total in app.module.ts)
+
+`UsersModule`, `AuthModule`, `AcademicModule`, `StudentsModule`, `PaymentsModule`,
+`PlanningModule`, `AuditModule`, `MessagesModule`, `NotesModule`, `AttendanceModule`,
+`TeacherProfileModule`, `TeacherDocumentsModule`, `AdminModule`, `ApplicationsModule`,
+`ResourcesModule`, `AssignmentsModule`, `DocumentRequestsModule`, `AnnouncementsModule`,
+`GlobalConfigModule`
+
 ---
 
 ## Frontend Conventions (Angular)
@@ -287,6 +331,7 @@ await this.auditLogService.log({
 - **Reactive Forms** for all forms
 - Services are `providedIn: 'root'` (singleton)
 - Lazy-loaded route groups: general routes and `teacher/` routes
+- Teacher section uses `TeacherShellComponent` as layout wrapper (navy sidebar + horizontal navbar)
 
 ### Route Guards
 
@@ -305,17 +350,22 @@ await this.auditLogService.log({
 /login          → LoginComponent (public)
 /apply          → ApplyComponent (public — student application)
 /teacher/*      → Lazy-loaded TEACHER_ROUTES (protected by teacherGuard)
-  /teacher/       → TeacherDashboardComponent
-  /teacher/planning → TeacherPlanningComponent
-  /teacher/notes    → TeacherNotesComponent
-  /teacher/presence → TeacherPresenceComponent
-  /teacher/profile  → TeacherProfilePageComponent
-  /teacher/stats    → TeacherStatsComponent
+                  Parent: TeacherShellComponent (navy sidebar + horizontal nav)
+  /teacher/               → TeacherDashboardComponent
+  /teacher/planning       → TeacherPlanningComponent
+  /teacher/notes          → TeacherNotesComponent
+  /teacher/presence       → TeacherPresenceComponent
+  /teacher/announcements  → Teacher announcements view
+  /teacher/assignments    → Teacher assignments management
+  /teacher/resources      → Teacher resources management
+  /teacher/profile        → TeacherProfilePageComponent
+  /teacher/stats          → TeacherStatsComponent
 /*              → Lazy-loaded GENERAL_ROUTES (protected by authGuard)
   /dashboard    → DashboardComponent
   /student      → StudentComponent
   /admin        → AdminComponent
-  /admin-uni    → AdminUniComponent
+  /admin-uni    → AdminUniComponent (tabs: Academic Year, Finance, Users,
+                                     Dashboard, Communication, Configuration)
   /planning     → PlanningComponent
   /messages     → MessagesComponent
   /notes        → NotesComponent
@@ -324,7 +374,14 @@ await this.auditLogService.log({
 
 ### API Services (`src/app/core/api/`)
 
-One service per backend module, all following the same pattern:
+One service per backend module:
+
+`academic.api.ts`, `admin.api.ts`, `announcements.api.ts`, `applications.api.ts`,
+`assignments.api.ts`, `attendance.api.ts`, `document-requests.api.ts`, `messages.api.ts`,
+`notes.api.ts`, `payments.api.ts`, `planning.api.ts`, `resources.api.ts`,
+`students.api.ts`, `teacher-documents.api.ts`, `teacher-profile.api.ts`, `users.api.ts`
+
+Pattern:
 
 ```typescript
 @Injectable({ providedIn: 'root' })
@@ -335,12 +392,6 @@ export class StudentsApiService {
   create(dto: CreateStudentDto) { return this.http.post(this.base, dto); }
 }
 ```
-
-Available API services (22 total):
-`academic.api.ts`, `admin.api.ts`, `announcements.api.ts`, `applications.api.ts`,
-`assignments.api.ts`, `attendance.api.ts`, `document-requests.api.ts`, `messages.api.ts`,
-`notes.api.ts`, `payments.api.ts`, `planning.api.ts`, `resources.api.ts`,
-`students.api.ts`, `teacher-profile.api.ts`, `users.api.ts`
 
 ### State Management
 
@@ -373,6 +424,11 @@ No global state management library. State is local to components or held in serv
 | `resources` | `Resource` | title, type, url, groupId |
 | `documentrequests` | `DocumentRequest` | studentId, type, status |
 | `announcements` | `Announcement` | title, content, targetRoles[], publishedAt |
+| `feetemplates` | `FeeTemplate` | name, amount, offerId |
+| `feeexemptions` | `FeeExemption` | studentId, templateId, reason |
+| `bulkimportjobs` | `BulkImportJob` | status, importedCount, errors[] |
+| `academiccalendarevents` | `AcademicCalendarEvent` | title, date, type |
+| `systemconfigs` | `SystemConfig` | singleton — smtp, emailTemplates, systemParams |
 
 ### Connection
 
@@ -389,11 +445,18 @@ Set `MONGO_URI` in your `.env`. For Atlas: `mongodb+srv://user:pass@cluster.mong
 | 4 | Planning (rooms, sessions, conflicts) | ✅ Done |
 | 5 | Messaging (direct & group, attachments) | ✅ Done |
 | 6 | Grades (subjects, evaluations, summaries) | ✅ Done |
-| 7 | Full admin module, bulk import, KPI dashboard | 🚧 In Progress |
+| 7 | Full admin module, bulk import, KPI dashboard | ✅ Done |
 
-Sprint 7 is planned for June 22 – July 13, 2026. The admin module backend (4 sub-services) has been implemented. See `SPRINT_7_PLAN.md`, `SPRINT_7_ARCHITECTURE.md`, and `docs/administration.md` for full specs.
+**Sprint 7 completed use cases** (UC-A01 through UC-A06, all 100%):
+- UC-A01: Academic structure (initializeYear, closeYear, calendar events)
+- UC-A02: Bulk student import (JSON + XLSX via exceljs with preview)
+- UC-A03: Payment configuration (fee templates, exemptions, financial report)
+- UC-A04: User & RBAC management (suspend, reset password, assign roles, audit)
+- UC-A05: Supervision & reports (executive dashboard, system status, broadcast)
+- UC-A06: Global config (SMTP, email templates, system params — SuperAdmin only)
 
-**New modules added in Sprint 7**: `applications`, `assignments`, `resources`, `document-requests`, `announcements`
+**New modules added in Sprint 7**: `applications`, `assignments`, `resources`,
+`document-requests`, `announcements`, `global-config`, `teacher-documents`
 
 ---
 
@@ -402,15 +465,17 @@ Sprint 7 is planned for June 22 – July 13, 2026. The admin module backend (4 s
 | File | Purpose |
 |---|---|
 | `apps/api/src/main.ts` | API bootstrap, CORS, Swagger setup, global pipes |
-| `apps/api/src/app.module.ts` | Root NestJS module — imports all 19 feature modules |
+| `apps/api/src/app.module.ts` | Root NestJS module — imports all 21 feature modules |
 | `apps/api/src/common/roles.enum.ts` | Role definitions |
 | `apps/api/src/common/roles.guard.ts` | RBAC guard |
 | `apps/api/src/audit/audit-log.service.ts` | Audit logging |
 | `apps/api/src/auth/jwt.strategy.ts` | JWT Passport strategy |
 | `apps/api/src/admin/admin.module.ts` | Admin module with 4 sub-services |
+| `apps/api/src/global-config/` | Global system configuration (SuperAdmin only) |
 | `apps/web/src/app/app.routes.ts` | All frontend routes |
 | `apps/web/src/app/pages/general.routes.ts` | General (non-teacher) routes with authGuard |
 | `apps/web/src/app/pages/teacher/teacher.routes.ts` | Teacher routes with teacherGuard |
+| `apps/web/src/app/pages/teacher/shell/` | TeacherShellComponent (navy sidebar layout) |
 | `apps/web/src/app/core/auth.service.ts` | Token management (localStorage) |
 | `apps/web/src/app/core/auth.interceptor.ts` | Adds Bearer token to HTTP requests |
 | `apps/web/src/app/core/role.guard.ts` | Role-based access control |
@@ -418,3 +483,4 @@ Sprint 7 is planned for June 22 – July 13, 2026. The admin module backend (4 s
 | `docs/administration.md` | Admin module specs (6 use cases, RBAC, API) |
 | `docs/use-cases.md` | Cross-module use case definitions |
 | `SPRINT_7_ARCHITECTURE.md` | Sprint 7 MongoDB schemas and DTOs |
+| `PWA_SETUP.md` | Progressive Web App configuration guide |
