@@ -173,6 +173,43 @@ export class AssignmentsService {
     return submission;
   }
 
+  async updateAssignment(
+    id: string,
+    data: { title?: string; description?: string; groupId?: string; subjectId?: string; dueDate?: string },
+    actor: AuditActor,
+  ) {
+    const update: any = { ...data };
+    if (data.groupId) update.groupId = new Types.ObjectId(data.groupId);
+    if (data.subjectId) update.subjectId = new Types.ObjectId(data.subjectId);
+    if (data.dueDate) update.dueDate = new Date(data.dueDate);
+    const assignment = await this.assignmentModel
+      .findByIdAndUpdate(id, { $set: update }, { returnDocument: 'after' })
+      .exec();
+    if (!assignment) throw new NotFoundException('Devoir introuvable');
+    await this.auditLog.log({
+      action: 'assignments.update',
+      entity: 'assignment',
+      entityId: String(assignment._id),
+      actor,
+      metadata: data,
+    });
+    return assignment;
+  }
+
+  async deleteAssignment(id: string, actor: AuditActor) {
+    const assignment = await this.assignmentModel.findByIdAndDelete(id).exec();
+    if (!assignment) throw new NotFoundException('Devoir introuvable');
+    await this.submissionModel.deleteMany({ assignmentId: new Types.ObjectId(id) }).exec();
+    await this.auditLog.log({
+      action: 'assignments.delete',
+      entity: 'assignment',
+      entityId: id,
+      actor,
+      metadata: { title: assignment.title },
+    });
+    return { deleted: true };
+  }
+
   async getSubmissionById(id: string, user: { role: Role; email?: string }) {
     const submission = await this.submissionModel.findById(id).exec();
     if (!submission) throw new NotFoundException('Soumission introuvable');

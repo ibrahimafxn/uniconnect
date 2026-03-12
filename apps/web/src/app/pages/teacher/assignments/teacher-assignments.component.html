@@ -60,10 +60,15 @@
             </td>
             <td class="actions">
               <button class="btn-outline" (click)="selectAssignment(a)">Soumissions →</button>
+              <button class="btn-icon-action" title="Modifier" (click)="openEdit(a, $event)">✎</button>
+              <button class="btn-icon-action btn-danger" title="Supprimer" (click)="deleteAssignment(a, $event)">✕</button>
             </td>
           </tr>
           <tr *ngIf="assignments.length === 0">
             <td colspan="5" class="empty">Aucun devoir. Créez-en un avec le bouton ci-dessus.</td>
+          </tr>
+          <tr *ngIf="deleteError">
+            <td colspan="5"><div class="error-msg">{{ deleteError }}</div></td>
           </tr>
         </tbody>
       </table>
@@ -168,7 +173,9 @@
         <span class="hint" *ngIf="assignmentFile">{{ assignmentFile.name }}</span>
       </div>
       <div class="error-msg" *ngIf="saveError">{{ saveError }}</div>
-      <button type="submit" class="btn-primary full" [disabled]="form.invalid">Créer le devoir</button>
+      <button type="submit" class="btn-primary full" [disabled]="form.invalid || saving">
+        {{ saving ? 'Sauvegarde…' : (editMode ? 'Enregistrer les modifications' : 'Créer le devoir') }}
+      </button>
     </form>
   </div>
 </div>

@@ -53,6 +53,14 @@ export class AssignmentsApi {
     return this.http.post<Assignment>(`${this.baseUrl}`, fd);
   }
 
+  update(id: string, payload: Partial<Pick<Assignment, 'title' | 'description' | 'groupId' | 'subjectId' | 'dueDate'>>) {
+    return this.http.patch<Assignment>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  delete(id: string) {
+    return this.http.delete<{ deleted: boolean }>(`${this.baseUrl}/${id}`);
+  }
+
   submit(assignmentId: string, file: File, comment?: string) {
     const fd = new FormData();
     fd.append('file', file);
