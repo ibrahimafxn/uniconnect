@@ -48,5 +48,6 @@ CHECKLIST_ONBOARDING.md
 IDEAS.md
 scripts/
 apps/api/tmp/
+apps/api/uploads/
 sprint_2_trello.csv
 trello_mvp.csv
