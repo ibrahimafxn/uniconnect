@@ -25,6 +25,28 @@ export class TeacherDashboardComponent {
   subjects$ = this.notes.listSubjects();
   evaluations$ = this.notes.listEvaluations();
 
+  /** YYYY-MM-DD en heure locale (évite le décalage UTC à minuit) */
+  get todayISO(): string {
+    const d = new Date();
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
+  }
+
+  private dateStr(d: string | Date): string {
+    const dt = typeof d === 'string' ? new Date(d) : d;
+    return dt.getFullYear() + '-'
+      + String(dt.getMonth() + 1).padStart(2, '0') + '-'
+      + String(dt.getDate()).padStart(2, '0');
+  }
+
+  upcomingSessions(sessions: any[]): any[] {
+    return sessions
+      .filter(s => this.dateStr(s.date) >= this.todayISO)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5);
+  }
+
   compactMode = this.loadCompactMode();
   ultraCompactMode = this.loadUltraCompactMode();
 
