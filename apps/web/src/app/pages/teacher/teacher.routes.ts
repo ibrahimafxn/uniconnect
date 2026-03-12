@@ -1,5 +1,6 @@
 import {Routes} from '@angular/router';
 import {teacherGuard} from '../../core/teacher.guard';
+import {TeacherShellComponent} from './shell/teacher-shell.component';
 import {TeacherDashboardComponent} from './dashboard/teacher-dashboard.component';
 import {TeacherPlanningComponent} from './planning/teacher-planning.component';
 import {TeacherNotesComponent} from './notes/teacher-notes.component';
@@ -13,6 +14,7 @@ import {TeacherResourcesComponent} from './resources/teacher-resources.component
 export const TEACHER_ROUTES: Routes = [
   {
     path: '',
+    component: TeacherShellComponent,
     canActivate: [teacherGuard],
     children: [
       {path: '', component: TeacherDashboardComponent},

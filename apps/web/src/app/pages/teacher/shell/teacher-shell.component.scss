@@ -1,0 +1,102 @@
+.teacher-layout {
+  display: flex;
+  min-height: calc(100vh - 56px); /* below the app-header */
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0 2rem;
+  position: sticky;
+  top: 56px;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 0 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: .75rem;
+}
+
+.sidebar-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+  font-size: .85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: .78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* ── Nav links ── */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 .75rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .55rem .85rem;
+  border-radius: 8px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+
+  &:hover {
+    background: rgba(255,255,255,.07);
+    color: #e2e8f0;
+  }
+
+  &.active {
+    background: #2563eb;
+    color: #fff;
+
+    .sidebar-icon { opacity: 1; }
+  }
+}
+
+.sidebar-icon {
+  font-size: 1rem;
+  opacity: .7;
+  flex-shrink: 0;
+}
+
+.sidebar-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Main content ── */
+.teacher-main {
+  flex: 1;
+  min-width: 0;
+  background: #f0f4f8;
+  overflow-y: auto;
+}

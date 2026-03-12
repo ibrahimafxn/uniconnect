@@ -1,0 +1,23 @@
+<div class="teacher-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="sidebar-logo">UC</span>
+      <span class="sidebar-title">Espace<br>Enseignant</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{exact: !!item.exact}"
+        class="sidebar-link"
+      >
+        <span class="sidebar-icon">{{ item.icon }}</span>
+        <span class="sidebar-label">{{ item.label }}</span>
+      </a>
+    </nav>
+  </aside>
+  <main class="teacher-main">
+    <router-outlet />
+  </main>
+</div>
