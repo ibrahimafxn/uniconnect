@@ -26,6 +26,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   // ── Data ────────────────────────────────────────────────────────────────────
   groups$   = this.academic.listGroups();
   subjects$ = this.notes.listSubjects();
+  private groupMap: Record<string, string> = {};
 
   groupsMap: Record<string, string> = {};
   studentsMap: Record<string, string> = {};
@@ -41,11 +42,15 @@ export class TeacherAssignmentsComponent implements OnInit {
   filterGroupId   = '';
   filterSubjectId = '';
 
-  // ── Create form ─────────────────────────────────────────────────────────────
-  drawerOpen  = false;
-  drawerTitle = '';
+  // ── Create / Edit form ───────────────────────────────────────────────────────
+  drawerOpen    = false;
+  drawerTitle   = '';
+  editMode      = false;
+  editingId: string | null = null;
+  editingSubmissionCount = 0;
   saveError: string | null = null;
-  saveSuccess = false;
+  saveSuccess   = false;
+  saving        = false;
   assignmentFile: File | null = null;
 
   form = this.fb.group({
@@ -55,6 +60,8 @@ export class TeacherAssignmentsComponent implements OnInit {
     subjectId:   [''],
     dueDate:     ['', Validators.required],
   });
+
+  deleteError: string | null = null;
 
   // ── Review form ─────────────────────────────────────────────────────────────
   reviewDrawerOpen = false;
@@ -69,6 +76,10 @@ export class TeacherAssignmentsComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.groups$.subscribe(res => {
+      this.groupMap = {};
+      for (const g of res.items ?? []) this.groupMap[g._id] = g.name;
+    });
     this.loadAssignments();
     this.groups$.subscribe(result => {
       this.groupsMap = {};
@@ -128,7 +139,30 @@ export class TeacherAssignmentsComponent implements OnInit {
     this.assignmentFile = null;
     this.saveError = null;
     this.saveSuccess = false;
+    this.saving = false;
+    this.editMode = false;
+    this.editingId = null;
     this.drawerTitle = 'Nouveau devoir';
+    this.drawerOpen = true;
+  }
+
+  openEdit(a: Assignment, event: Event) {
+    event.stopPropagation();
+    this.form.setValue({
+      title:       a.title,
+      description: a.description ?? '',
+      groupId:     a.groupId,
+      subjectId:   a.subjectId ?? '',
+      dueDate:     a.dueDate ? a.dueDate.slice(0, 10) : '',
+    });
+    this.assignmentFile = null;
+    this.saveError = null;
+    this.saveSuccess = false;
+    this.saving = false;
+    this.editMode = true;
+    this.editingId = a._id;
+    this.editingSubmissionCount = a.submissionCount ?? 0;
+    this.drawerTitle = 'Modifier le devoir';
     this.drawerOpen = true;
   }
 
@@ -140,21 +174,31 @@ export class TeacherAssignmentsComponent implements OnInit {
   save() {
     if (this.form.invalid) return;
     this.saveError = null;
+    this.saving = true;
     const v = this.form.value as any;
-    const payload = {
-      title:       v.title,
-      description: v.description ?? undefined,
-      groupId:     v.groupId,
-      subjectId:   v.subjectId ?? undefined,
-      dueDate:     v.dueDate,
-    };
-    this.api.create(payload, this.assignmentFile ?? undefined).subscribe({
-      next: () => {
-        this.saveSuccess = true;
-        this.drawerOpen = false;
-        this.loadAssignments();
-      },
-      error: (err) => { this.saveError = err?.error?.message ?? 'Erreur lors de la création.'; },
+    if (this.editMode && this.editingId) {
+      const payload: any = { title: v.title, description: v.description ?? undefined, groupId: v.groupId, subjectId: v.subjectId || undefined, dueDate: v.dueDate };
+      this.api.update(this.editingId, payload).subscribe({
+        next: () => { this.saving = false; this.drawerOpen = false; this.loadAssignments(); },
+        error: (err) => { this.saving = false; this.saveError = err?.error?.message ?? 'Erreur lors de la modification.'; },
+      });
+    } else {
+      const payload = { title: v.title, description: v.description ?? undefined, groupId: v.groupId, subjectId: v.subjectId ?? undefined, dueDate: v.dueDate };
+      this.api.create(payload, this.assignmentFile ?? undefined).subscribe({
+        next: () => { this.saving = false; this.saveSuccess = true; this.drawerOpen = false; this.loadAssignments(); },
+        error: (err) => { this.saving = false; this.saveError = err?.error?.message ?? 'Erreur lors de la création.'; },
+      });
+    }
+  }
+
+  // ── Delete ───────────────────────────────────────────────────────────────────
+  deleteAssignment(a: Assignment, event: Event) {
+    event.stopPropagation();
+    if (!confirm(`Supprimer le devoir « ${a.title} » ? Cette action est irréversible.`)) return;
+    this.deleteError = null;
+    this.api.delete(a._id).subscribe({
+      next: () => this.loadAssignments(),
+      error: (err) => { this.deleteError = err?.error?.message ?? 'Erreur lors de la suppression.'; },
     });
   }
 
@@ -209,6 +253,8 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   isPast(dueDate: string) { return new Date(dueDate) < new Date(); }
   countByStatus(status: string) { return this.submissions.filter(s => s.status === status).length; }
+  groupName(id: string) { return this.groupMap[id] ?? id; }
+  hasSubmissions(a: Assignment) { return (a.submissionCount ?? 0) > 0; }
 
   saveCompactMode() {
     if (!this.compactMode) { this.ultraCompactMode = false; this.savePref('ui.ultraCompactMode', false); }

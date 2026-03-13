@@ -4,100 +4,110 @@
   min-height: calc(100vh - 56px);
 }
 
-/* ── Top nav ── */
+/* ── Institutional top navigation ── */
 .teacher-topnav {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: #0f172a;
-  color: #e2e8f0;
-  padding: 0 1.5rem;
-  height: 52px;
+  align-items: stretch;
+  background: #ffffff;
+  border-bottom: 1px solid #DDE2EE;
+  height: 48px;
   flex-shrink: 0;
   position: sticky;
   top: 56px;
   z-index: 100;
   overflow-x: auto;
   scrollbar-width: none;
+  box-shadow: 0 1px 4px rgba(26, 35, 56, 0.06);
 
   &::-webkit-scrollbar { display: none; }
 }
 
+/* Left brand strip — navy accent bar */
 .topnav-brand {
   display: flex;
   align-items: center;
-  gap: .6rem;
+  gap: .55rem;
+  padding: 0 1.25rem 0 1rem;
+  border-right: 1px solid #DDE2EE;
   flex-shrink: 0;
-  padding-right: 1rem;
-  border-right: 1px solid rgba(255,255,255,.1);
-  margin-right: .5rem;
+  background: #1B3A6B;
 }
 
 .topnav-logo {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: #2563eb;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.15);
   color: #fff;
   font-weight: 800;
-  font-size: .78rem;
+  font-size: .72rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  letter-spacing: -.5px;
   flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,.2);
 }
 
 .topnav-title {
-  font-size: .78rem;
+  font-size: .72rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: rgba(255,255,255,.75);
   white-space: nowrap;
+  font-family: 'Manrope', sans-serif;
+  letter-spacing: .02em;
+  text-transform: uppercase;
 }
 
 /* ── Nav links ── */
 .topnav-links {
   display: flex;
-  align-items: center;
-  gap: 2px;
+  align-items: stretch;
   flex: 1;
+  padding: 0 .5rem;
 }
 
 .topnav-link {
   display: flex;
   align-items: center;
-  gap: .4rem;
-  padding: .4rem .75rem;
-  border-radius: 6px;
-  color: #94a3b8;
+  gap: .35rem;
+  padding: 0 .7rem;
+  color: #5a6479;
   text-decoration: none;
-  font-size: .82rem;
+  font-size: .8rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: background .15s, color .15s;
+  font-family: 'Manrope', sans-serif;
+  letter-spacing: .01em;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s, background .15s;
+  position: relative;
 
   &:hover {
-    background: rgba(255,255,255,.07);
-    color: #e2e8f0;
+    color: #1B3A6B;
+    background: #F4F6FA;
   }
 
   &.active {
-    background: #2563eb;
-    color: #fff;
+    color: #1B3A6B;
+    border-bottom-color: #B8972E;
+    font-weight: 600;
 
-    .topnav-icon { opacity: 1; }
+    .topnav-icon { opacity: 1; color: #B8972E; }
   }
 }
 
 .topnav-icon {
-  font-size: .85rem;
-  opacity: .7;
+  font-size: .75rem;
+  opacity: .55;
   flex-shrink: 0;
+  font-style: normal;
 }
 
 /* ── Main content ── */
 .teacher-main {
   flex: 1;
   min-width: 0;
-  background: #f0f4f8;
+  background: var(--uc-surface, #F4F6FA);
   overflow-y: auto;
 }

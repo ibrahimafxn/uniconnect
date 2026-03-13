@@ -1,10 +1,10 @@
 :host {
-  --bg: #f5f2ea; --card: #fff; --ink: #1f2937; --muted: #6b7280;
-  --accent: #ef6f3a; --border: #e5e1d8; --radius: 12px;
-  font-family: 'Space Grotesk', sans-serif; color: var(--ink);
+  --bg: #F4F6FA; --card: #FFFFFF; --ink: #1a2338; --muted: #6B7280;
+  --accent: #1B3A6B; --border: #DDE2EE; --radius: 10px;
+  font-family: 'Manrope', 'Sora', sans-serif; color: var(--ink);
 }
 
-.page { padding: 28px; min-height: calc(100vh - 80px); background: var(--bg); }
+.page { padding: 28px; min-height: calc(100vh - 104px); background: var(--bg); }
 .page.compact { padding: 18px; }
 .page.ultra-compact { padding: 12px; }
 
@@ -36,7 +36,25 @@ th { padding: 10px 14px; text-align: left; font-weight: 600; color: var(--muted)
 td { padding: 12px 14px; border-bottom: 1px solid #f0ede8; vertical-align: middle; }
 tr:last-child td { border-bottom: none; }
 tr.overdue td { background: #fef9f9; }
-.actions { white-space: nowrap; text-align: right; }
+.actions { white-space: nowrap; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+
+.btn-icon-action {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: .9rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, color .15s, background .15s;
+
+  &:hover { border-color: var(--accent); color: var(--accent); background: #E8EDF7; }
+  &.btn-danger:hover { border-color: #dc2626; color: #dc2626; background: #fee2e2; }
+}
 .empty { text-align: center; color: var(--muted); padding: 32px; }
 .loading-text { color: var(--muted); text-align: center; padding: 24px; }
 .sub-text { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
@@ -72,3 +90,4 @@ tr.overdue td { background: #fef9f9; }
 .error-msg { color: #dc2626; font-size: 0.85rem; margin: 8px 0; padding: 8px 12px; background: #fee2e2; border-radius: 8px; }
 
 .submission-preview { background: #f9f7f3; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.88rem; }
+.info-banner { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.85rem; color: #92400e; }
