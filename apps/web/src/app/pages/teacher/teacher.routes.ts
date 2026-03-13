@@ -10,6 +10,7 @@ import {TeacherStatsComponent} from './stats/teacher-stats.component';
 import {TeacherAnnouncementsComponent} from './announcements/teacher-announcements.component';
 import {TeacherAssignmentsComponent} from './assignments/teacher-assignments.component';
 import {TeacherResourcesComponent} from './resources/teacher-resources.component';
+import {MessagesComponent} from '../messages/messages.component';
 
 export const TEACHER_ROUTES: Routes = [
   {
@@ -24,6 +25,7 @@ export const TEACHER_ROUTES: Routes = [
       {path: 'announcements', component: TeacherAnnouncementsComponent},
       {path: 'assignments', component: TeacherAssignmentsComponent},
       {path: 'resources', component: TeacherResourcesComponent},
+      {path: 'messages', component: MessagesComponent},
       {path: 'profile', component: TeacherProfilePageComponent},
       {path: 'stats', component: TeacherStatsComponent},
     ]

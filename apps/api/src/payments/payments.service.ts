@@ -23,7 +23,7 @@ export class PaymentsService {
   ) {}
 
   listPlans() {
-    return this.planModel.find().sort({ createdAt: -1 }).exec();
+    return this.planModel.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).exec();
   }
 
   createPlan(data: {
@@ -47,7 +47,7 @@ export class PaymentsService {
   }
 
   listPayments() {
-    return this.paymentModel.find().sort({ paidAt: -1 }).exec();
+    return this.paymentModel.find({ isDeleted: { $ne: true } }).sort({ paidAt: -1 }).exec();
   }
 
   async createPayment(data: {
@@ -113,7 +113,9 @@ export class PaymentsService {
   }
 
   deletePlan(id: string) {
-    return this.planModel.findByIdAndDelete(id).exec();
+    return this.planModel
+      .findByIdAndUpdate(id, { $set: { isDeleted: true, deletedAt: new Date() } }, { returnDocument: 'after' })
+      .exec();
   }
 
   updatePayment(id: string, data: Partial<Payment>) {
@@ -123,7 +125,9 @@ export class PaymentsService {
   }
 
   deletePayment(id: string) {
-    return this.paymentModel.findByIdAndDelete(id).exec();
+    return this.paymentModel
+      .findByIdAndUpdate(id, { $set: { isDeleted: true, deletedAt: new Date() } }, { returnDocument: 'after' })
+      .exec();
   }
 
   async listUnpaid(asOf: Date) {

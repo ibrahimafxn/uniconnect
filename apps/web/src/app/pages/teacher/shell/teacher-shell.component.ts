@@ -21,7 +21,7 @@ export class TeacherShellComponent {
     {label: 'Ressources',      path: '/teacher/resources',     icon: '◫'},
     {label: 'Annonces',        path: '/teacher/announcements', icon: '◈'},
     {label: 'Statistiques',    path: '/teacher/stats',         icon: '∿'},
-    {label: 'Messagerie',      path: '/messages',              icon: '◇'},
+    {label: 'Messagerie',      path: '/teacher/messages',      icon: '◇'},
     {label: 'Mon Profil',      path: '/teacher/profile',       icon: '○'},
   ];
 }

@@ -37,6 +37,12 @@ export class Payment extends Document {
 
   @Prop({ trim: true })
   provider?: string; // ex: Orange Money, MTN MoMo, Moov Money
+
+  @Prop({ default: false })
+  isDeleted!: boolean;
+
+  @Prop({ type: Date, default: null })
+  deletedAt!: Date | null;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);
