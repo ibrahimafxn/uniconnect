@@ -28,7 +28,6 @@ export class TeacherAssignmentsComponent implements OnInit {
   subjects$ = this.notes.listSubjects();
   private groupMap: Record<string, string> = {};
 
-  groupsMap: Record<string, string> = {};
   studentsMap: Record<string, string> = {};
 
   assignments: Assignment[] = [];
@@ -81,10 +80,6 @@ export class TeacherAssignmentsComponent implements OnInit {
       for (const g of res.items ?? []) this.groupMap[g._id] = g.name;
     });
     this.loadAssignments();
-    this.groups$.subscribe(result => {
-      this.groupsMap = {};
-      for (const g of result.items) this.groupsMap[g._id] = g.name;
-    });
   }
 
   // ── Load ────────────────────────────────────────────────────────────────────
@@ -236,7 +231,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  groupName(id: string)  { return this.groupsMap[id] ?? id; }
+  groupName(id: string)  { return this.groupMap[id] ?? id; }
   studentName(id: string) { return this.studentsMap[id] ?? id; }
 
   downloadUrl(id: string)        { return this.api.downloadSubmissionUrl(id); }
@@ -253,7 +248,6 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   isPast(dueDate: string) { return new Date(dueDate) < new Date(); }
   countByStatus(status: string) { return this.submissions.filter(s => s.status === status).length; }
-  groupName(id: string) { return this.groupMap[id] ?? id; }
   hasSubmissions(a: Assignment) { return (a.submissionCount ?? 0) > 0; }
 
   saveCompactMode() {

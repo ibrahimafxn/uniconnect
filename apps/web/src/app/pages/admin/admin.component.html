@@ -37,20 +37,20 @@
         <!-- KPIs principaux -->
         <div class="pay-card stat">
           <div class="stat-label">Étudiants actifs</div>
-          <div class="stat-value">{{ dash.students?.active ?? 0 }}</div>
-          <div class="muted" style="font-size:0.78rem">Total : {{ dash.students?.total ?? 0 }}</div>
+          <div class="stat-value">{{ dash.students.active }}</div>
+          <div class="muted" style="font-size:0.78rem">Total : {{ dash.students.total }}</div>
         </div>
         <div class="pay-card stat">
           <div class="stat-label">Utilisateurs</div>
-          <div class="stat-value">{{ dash.users?.total ?? 0 }}</div>
+          <div class="stat-value">{{ dash.users.total }}</div>
         </div>
         <div class="pay-card stat">
           <div class="stat-label">Filières</div>
-          <div class="stat-value">{{ dash.programs?.total ?? 0 }}</div>
+          <div class="stat-value">{{ dash.programs.total }}</div>
         </div>
         <div class="pay-card stat">
           <div class="stat-label">Offres de formation</div>
-          <div class="stat-value">{{ dash.offers?.total ?? 0 }}</div>
+          <div class="stat-value">{{ dash.offers.total }}</div>
         </div>
 
         <!-- Rapport financier -->
