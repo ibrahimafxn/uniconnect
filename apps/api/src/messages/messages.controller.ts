@@ -75,7 +75,7 @@ export class MessagesController {
   }
 
   @Post('conversations/group')
-  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External)
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher)
   @ApiOperation({ summary: 'Créer une conversation de groupe' })
   createGroup(
     @Body() dto: CreateGroupConversationDto,

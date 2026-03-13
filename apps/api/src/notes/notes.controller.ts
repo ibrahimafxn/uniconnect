@@ -42,7 +42,7 @@ export class NotesController {
   constructor(private readonly notesService: NotesService) {}
 
   @Get('subjects')
-  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
   @ApiOperation({ summary: 'Lister les matieres' })
   @ApiQuery({ name: 'levelId', required: false })
   listSubjects(@Query('levelId') levelId?: string) {
@@ -158,7 +158,7 @@ export class NotesController {
   }
 
   @Get('evaluations/:id/grades')
-  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher)
   @ApiOperation({ summary: 'Lister les notes d\'une evaluation' })
   listGrades(@Param('id') id: string) {
     return this.notesService.listGrades(id);
@@ -181,7 +181,7 @@ export class NotesController {
   }
 
   @Get('students/:id/summary')
-  @Roles(Role.Admin, Role.SuperAdmin)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Resume des notes d\'un etudiant' })
   @ApiResponse({ status: 200, description: 'Resume notes + moyennes' })
   studentSummary(
