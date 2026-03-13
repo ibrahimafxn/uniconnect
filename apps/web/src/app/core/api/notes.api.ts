@@ -17,6 +17,9 @@ export type Evaluation = {
   subjectId: string;
   groupId: string;
   maxScore: number;
+  teacherId?: string | null;
+  isPublished: boolean;
+  publishedAt?: string | null;
 };
 
 export type NoteClaim = {
