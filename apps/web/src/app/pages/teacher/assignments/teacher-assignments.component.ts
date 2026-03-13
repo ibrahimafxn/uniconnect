@@ -24,6 +24,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   // ── Data ────────────────────────────────────────────────────────────────────
   groups$   = this.academic.listGroups();
   subjects$ = this.notes.listSubjects();
+  private groupMap: Record<string, string> = {};
 
   assignments: Assignment[] = [];
   loadingAssignments = false;
@@ -41,6 +42,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   drawerTitle   = '';
   editMode      = false;
   editingId: string | null = null;
+  editingSubmissionCount = 0;
   saveError: string | null = null;
   saveSuccess   = false;
   saving        = false;
@@ -69,6 +71,10 @@ export class TeacherAssignmentsComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.groups$.subscribe(res => {
+      this.groupMap = {};
+      for (const g of res.items ?? []) this.groupMap[g._id] = g.name;
+    });
     this.loadAssignments();
   }
 
@@ -131,6 +137,7 @@ export class TeacherAssignmentsComponent implements OnInit {
     this.saving = false;
     this.editMode = true;
     this.editingId = a._id;
+    this.editingSubmissionCount = a.submissionCount ?? 0;
     this.drawerTitle = 'Modifier le devoir';
     this.drawerOpen = true;
   }
@@ -219,6 +226,8 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   isPast(dueDate: string) { return new Date(dueDate) < new Date(); }
   countByStatus(status: string) { return this.submissions.filter(s => s.status === status).length; }
+  groupName(id: string) { return this.groupMap[id] ?? id; }
+  hasSubmissions(a: Assignment) { return (a.submissionCount ?? 0) > 0; }
 
   saveCompactMode() {
     if (!this.compactMode) { this.ultraCompactMode = false; this.savePref('ui.ultraCompactMode', false); }

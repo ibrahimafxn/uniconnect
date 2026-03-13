@@ -36,7 +36,14 @@ export class AssignmentsService {
       filter.groupId = params.groupId;
     }
     if (params.subjectId) filter.subjectId = params.subjectId;
-    return this.assignmentModel.find(filter).sort({ dueDate: 1 }).exec();
+    const assignments = await this.assignmentModel.find(filter).sort({ dueDate: 1 }).lean().exec();
+    const ids = assignments.map((a: any) => a._id);
+    const counts: { _id: any; count: number }[] = await this.submissionModel.aggregate([
+      { $match: { assignmentId: { $in: ids } } },
+      { $group: { _id: '$assignmentId', count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+    return assignments.map((a: any) => ({ ...a, submissionCount: countMap.get(String(a._id)) ?? 0 }));
   }
 
   async createAssignment(
@@ -178,6 +185,12 @@ export class AssignmentsService {
     data: { title?: string; description?: string; groupId?: string; subjectId?: string; dueDate?: string },
     actor: AuditActor,
   ) {
+    if (data.groupId) {
+      const submissionCount = await this.submissionModel.countDocuments({ assignmentId: new Types.ObjectId(id) }).exec();
+      if (submissionCount > 0) {
+        throw new BadRequestException('Le groupe ne peut pas être modifié une fois que des soumissions existent.');
+      }
+    }
     const update: any = { ...data };
     if (data.groupId) update.groupId = new Types.ObjectId(data.groupId);
     if (data.subjectId) update.subjectId = new Types.ObjectId(data.subjectId);
@@ -197,6 +210,10 @@ export class AssignmentsService {
   }
 
   async deleteAssignment(id: string, actor: AuditActor) {
+    const submissionCount = await this.submissionModel.countDocuments({ assignmentId: new Types.ObjectId(id) }).exec();
+    if (submissionCount > 0) {
+      throw new BadRequestException('Impossible de supprimer un devoir qui a déjà des soumissions.');
+    }
     const assignment = await this.assignmentModel.findByIdAndDelete(id).exec();
     if (!assignment) throw new NotFoundException('Devoir introuvable');
     await this.submissionModel.deleteMany({ assignmentId: new Types.ObjectId(id) }).exec();

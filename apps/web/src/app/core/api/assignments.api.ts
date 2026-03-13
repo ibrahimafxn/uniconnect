@@ -12,6 +12,7 @@ export type Assignment = {
   dueDate: string;
   originalName?: string;
   createdAt?: string;
+  submissionCount?: number;
 };
 
 export type Submission = {

@@ -47,7 +47,7 @@
             <td><strong>{{ a.title }}</strong>
               <div class="sub-text" *ngIf="a.description">{{ a.description }}</div>
             </td>
-            <td class="muted">{{ a.groupId }}</td>
+            <td class="muted">{{ groupName(a.groupId) }}</td>
             <td>
               <span [class.text-red]="isPast(a.dueDate)">{{ a.dueDate | date:'dd/MM/yyyy' }}</span>
               <span class="badge badge-red" *ngIf="isPast(a.dueDate)">Expiré</span>
@@ -61,7 +61,10 @@
             <td class="actions">
               <button class="btn-outline" (click)="selectAssignment(a)">Soumissions →</button>
               <button class="btn-icon-action" title="Modifier" (click)="openEdit(a, $event)">✎</button>
-              <button class="btn-icon-action btn-danger" title="Supprimer" (click)="deleteAssignment(a, $event)">✕</button>
+              <button class="btn-icon-action btn-danger"
+                [title]="hasSubmissions(a) ? 'Suppression impossible : des soumissions existent' : 'Supprimer'"
+                [disabled]="hasSubmissions(a)"
+                (click)="deleteAssignment(a, $event)">✕</button>
             </td>
           </tr>
           <tr *ngIf="assignments.length === 0">
@@ -152,10 +155,13 @@
   </div>
   <div class="drawer-body">
     <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="info-banner" *ngIf="editMode && editingSubmissionCount > 0">
+        ⚠️ Ce devoir a {{ editingSubmissionCount }} soumission(s). Seuls le titre, la description et la date limite peuvent être modifiés.
+      </div>
       <div class="field"><label>Titre *</label><input formControlName="title" placeholder="Ex. TD n°3 — Algorithmique" /></div>
       <div class="field"><label>Description</label><textarea formControlName="description" rows="3" placeholder="Consignes du devoir…"></textarea></div>
       <div class="field"><label>Groupe *</label>
-        <select formControlName="groupId">
+        <select formControlName="groupId" [attr.disabled]="(editMode && editingSubmissionCount > 0) ? true : null">
           <option value="">— Sélectionner —</option>
           <option *ngFor="let g of (groups$ | async)?.items" [value]="g._id">{{ g.name }}</option>
         </select>
