@@ -4,6 +4,7 @@ import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angula
 import {AssignmentsApi, Assignment, Submission} from '../../../core/api/assignments.api';
 import {AcademicApi} from '../../../core/api/academic.api';
 import {NotesApi} from '../../../core/api/notes.api';
+import {StudentsApi} from '../../../core/api/students.api';
 
 @Component({
   selector: 'app-teacher-assignments',
@@ -13,10 +14,11 @@ import {NotesApi} from '../../../core/api/notes.api';
   styleUrls: ['./teacher-assignments.component.scss'],
 })
 export class TeacherAssignmentsComponent implements OnInit {
-  private readonly api    = inject(AssignmentsApi);
+  private readonly api      = inject(AssignmentsApi);
   private readonly academic = inject(AcademicApi);
-  private readonly notes  = inject(NotesApi);
-  private readonly fb     = inject(FormBuilder);
+  private readonly notes    = inject(NotesApi);
+  private readonly studentsApi = inject(StudentsApi);
+  private readonly fb       = inject(FormBuilder);
 
   compactMode     = this.loadPref('ui.compactMode');
   ultraCompactMode = this.loadPref('ui.ultraCompactMode');
@@ -24,6 +26,9 @@ export class TeacherAssignmentsComponent implements OnInit {
   // ── Data ────────────────────────────────────────────────────────────────────
   groups$   = this.academic.listGroups();
   subjects$ = this.notes.listSubjects();
+
+  groupsMap: Record<string, string> = {};
+  studentsMap: Record<string, string> = {};
 
   assignments: Assignment[] = [];
   loadingAssignments = false;
@@ -65,6 +70,10 @@ export class TeacherAssignmentsComponent implements OnInit {
 
   ngOnInit() {
     this.loadAssignments();
+    this.groups$.subscribe(result => {
+      this.groupsMap = {};
+      for (const g of result.items) this.groupsMap[g._id] = g.name;
+    });
   }
 
   // ── Load ────────────────────────────────────────────────────────────────────
@@ -82,6 +91,20 @@ export class TeacherAssignmentsComponent implements OnInit {
   selectAssignment(a: Assignment) {
     this.selectedAssignment = a;
     this.loadSubmissions(a._id);
+    this.loadStudentsForGroup(a.groupId);
+  }
+
+  loadStudentsForGroup(groupId: string) {
+    this.studentsApi.listStudents('', 1, 500).subscribe({
+      next: (result) => {
+        this.studentsMap = {};
+        for (const s of result.items) {
+          if (s.groupId === groupId) {
+            this.studentsMap[s._id] = `${s.firstName} ${s.lastName}`;
+          }
+        }
+      },
+    });
   }
 
   loadSubmissions(assignmentId: string) {
@@ -96,6 +119,7 @@ export class TeacherAssignmentsComponent implements OnInit {
   back() {
     this.selectedAssignment = null;
     this.submissions = [];
+    this.studentsMap = {};
   }
 
   // ── Create ──────────────────────────────────────────────────────────────────
@@ -168,6 +192,9 @@ export class TeacherAssignmentsComponent implements OnInit {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
+  groupName(id: string)  { return this.groupsMap[id] ?? id; }
+  studentName(id: string) { return this.studentsMap[id] ?? id; }
+
   downloadUrl(id: string)        { return this.api.downloadSubmissionUrl(id); }
   assignmentDownloadUrl(id: string) { return this.api.downloadAssignmentUrl(id); }
 

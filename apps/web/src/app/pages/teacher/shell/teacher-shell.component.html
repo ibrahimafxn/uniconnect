@@ -1,22 +1,22 @@
 <div class="teacher-layout">
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <span class="sidebar-logo">UC</span>
-      <span class="sidebar-title">Espace<br>Enseignant</span>
+  <nav class="teacher-topnav">
+    <div class="topnav-brand">
+      <span class="topnav-logo">UC</span>
+      <span class="topnav-title">Espace Enseignant</span>
     </div>
-    <nav class="sidebar-nav">
+    <div class="topnav-links">
       <a
         *ngFor="let item of navItems"
         [routerLink]="item.path"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{exact: !!item.exact}"
-        class="sidebar-link"
+        class="topnav-link"
       >
-        <span class="sidebar-icon">{{ item.icon }}</span>
-        <span class="sidebar-label">{{ item.label }}</span>
+        <span class="topnav-icon">{{ item.icon }}</span>
+        <span class="topnav-label">{{ item.label }}</span>
       </a>
-    </nav>
-  </aside>
+    </div>
+  </nav>
   <main class="teacher-main">
     <router-outlet />
   </main>

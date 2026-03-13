@@ -1,71 +1,78 @@
 .teacher-layout {
   display: flex;
-  min-height: calc(100vh - 56px); /* below the app-header */
-}
-
-/* ── Sidebar ── */
-.sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  background: #0f172a;
-  color: #e2e8f0;
-  display: flex;
   flex-direction: column;
-  padding: 1.25rem 0 2rem;
-  position: sticky;
-  top: 56px;
-  height: calc(100vh - 56px);
-  overflow-y: auto;
+  min-height: calc(100vh - 56px);
 }
 
-.sidebar-brand {
+/* ── Top nav ── */
+.teacher-topnav {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  padding: 0 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  margin-bottom: .75rem;
+  gap: 1rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0 1.5rem;
+  height: 52px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 56px;
+  z-index: 100;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
 }
 
-.sidebar-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.topnav-brand {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-shrink: 0;
+  padding-right: 1rem;
+  border-right: 1px solid rgba(255,255,255,.1);
+  margin-right: .5rem;
+}
+
+.topnav-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   background: #2563eb;
   color: #fff;
   font-weight: 800;
-  font-size: .85rem;
+  font-size: .78rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.sidebar-title {
+.topnav-title {
   font-size: .78rem;
   font-weight: 600;
   color: #94a3b8;
-  line-height: 1.3;
+  white-space: nowrap;
 }
 
 /* ── Nav links ── */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 .75rem;
-}
-
-.sidebar-link {
+.topnav-links {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  padding: .55rem .85rem;
-  border-radius: 8px;
+  gap: 2px;
+  flex: 1;
+}
+
+.topnav-link {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .75rem;
+  border-radius: 6px;
   color: #94a3b8;
   text-decoration: none;
-  font-size: .875rem;
+  font-size: .82rem;
   font-weight: 500;
+  white-space: nowrap;
   transition: background .15s, color .15s;
 
   &:hover {
@@ -77,20 +84,14 @@
     background: #2563eb;
     color: #fff;
 
-    .sidebar-icon { opacity: 1; }
+    .topnav-icon { opacity: 1; }
   }
 }
 
-.sidebar-icon {
-  font-size: 1rem;
+.topnav-icon {
+  font-size: .85rem;
   opacity: .7;
   flex-shrink: 0;
-}
-
-.sidebar-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ── Main content ── */
