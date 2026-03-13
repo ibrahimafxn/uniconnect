@@ -158,7 +158,7 @@ export class NotesController {
   }
 
   @Get('evaluations/:id/grades')
-  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher)
   @ApiOperation({ summary: 'Lister les notes d\'une evaluation' })
   listGrades(@Param('id') id: string) {
     return this.notesService.listGrades(id);

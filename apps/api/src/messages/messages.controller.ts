@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/roles.guard';
+import { Roles } from '../common/roles.decorator';
 import { parsePagination } from '../common/pagination';
 import { MessagesService } from './messages.service';
 import { CreateDirectConversationDto } from './dto/create-direct-conversation.dto';
@@ -48,6 +49,7 @@ export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Get('conversations')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Lister les conversations' })
   @ApiResponse({ status: 200, description: 'Liste des conversations' })
   listConversations(
@@ -57,6 +59,7 @@ export class MessagesController {
   }
 
   @Post('conversations/direct')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Créer une conversation directe' })
   createDirect(
     @Body() dto: CreateDirectConversationDto,
@@ -72,6 +75,7 @@ export class MessagesController {
   }
 
   @Post('conversations/group')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher)
   @ApiOperation({ summary: 'Créer une conversation de groupe' })
   createGroup(
     @Body() dto: CreateGroupConversationDto,
@@ -91,6 +95,7 @@ export class MessagesController {
   }
 
   @Get('conversations/:id/messages')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Lister les messages d\'une conversation' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -105,6 +110,7 @@ export class MessagesController {
   }
 
   @Post('conversations/:id/messages')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Envoyer un message' })
   createMessage(
     @Param('id') id: string,
@@ -121,6 +127,7 @@ export class MessagesController {
   }
 
   @Post('attachments')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -172,6 +179,7 @@ export class MessagesController {
   }
 
   @Get('attachments/:id/download')
+  @Roles(Role.SuperAdmin, Role.Admin, Role.Teacher, Role.External, Role.Student)
   @ApiOperation({ summary: 'Telecharger une piece jointe' })
   async downloadAttachment(
     @Param('id') id: string,

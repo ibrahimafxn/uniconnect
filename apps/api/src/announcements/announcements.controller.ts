@@ -26,7 +26,7 @@ export class AnnouncementsController {
   }
 
   @Post()
-  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher)
   create(
     @Body() dto: CreateAnnouncementDto,
     @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
