@@ -47,7 +47,7 @@
             <td><strong>{{ a.title }}</strong>
               <div class="sub-text" *ngIf="a.description">{{ a.description }}</div>
             </td>
-            <td class="muted">{{ a.groupId }}</td>
+            <td class="muted">{{ groupName(a.groupId) }}</td>
             <td>
               <span [class.text-red]="isPast(a.dueDate)">{{ a.dueDate | date:'dd/MM/yyyy' }}</span>
               <span class="badge badge-red" *ngIf="isPast(a.dueDate)">Expiré</span>
@@ -108,7 +108,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let s of submissions">
-            <td><strong>{{ s.studentId }}</strong></td>
+            <td><strong>{{ studentName(s.studentId) }}</strong></td>
             <td>
               <a [href]="downloadUrl(s._id)" target="_blank" class="link">
                 📎 {{ s.originalName }}
