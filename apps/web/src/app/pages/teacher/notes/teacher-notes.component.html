@@ -95,6 +95,7 @@
         class="eval-card"
         *ngFor="let e of evaluations"
         [class.selected]="selectedEvaluation?._id === e._id"
+        [class.published]="e.isPublished"
         (click)="selectEvaluation(e)"
       >
         <div class="eval-info">
@@ -106,6 +107,8 @@
             {{ subjectName(subjects, e.subjectId) }}
           </span>
           <span class="max-score">/ {{ e.maxScore }}</span>
+          <span class="badge-published" *ngIf="e.isPublished">✓ Publié</span>
+          <span class="badge-draft" *ngIf="!e.isPublished">Brouillon</span>
         </div>
       </div>
     </div>
@@ -113,6 +116,9 @@
 
   <!-- Étape 3 : Saisie des notes -->
   <section class="section" *ngIf="selectedEvaluation && students.length > 0">
+    <div class="published-notice" *ngIf="selectedEvaluation.isPublished">
+      ✓ Cette évaluation a été publiée officiellement — la saisie est verrouillée.
+    </div>
     <div class="section-header">
       <h2 class="section-title">
         <span class="step">3</span> Saisie des notes —
@@ -125,7 +131,7 @@
         </span>
         <span class="success-msg" *ngIf="saveSuccess">✓ Notes enregistrées</span>
         <span class="error-msg" *ngIf="saveError">{{ saveError }}</span>
-        <button class="btn-save" (click)="saveGrades()" [disabled]="saving || loadingGrades">
+        <button class="btn-save" (click)="saveGrades()" [disabled]="saving || loadingGrades || selectedEvaluation.isPublished">
           {{ saving ? 'Enregistrement…' : 'Enregistrer les notes' }}
         </button>
       </div>
@@ -156,6 +162,7 @@
           [value]="gradeEntry(student._id)?.score ?? ''"
           (change)="updateScore(student._id, $any($event.target).value)"
           placeholder="—"
+          [readonly]="selectedEvaluation.isPublished"
         />
         <input
           type="text"
@@ -163,11 +170,12 @@
           [value]="gradeEntry(student._id)?.comment ?? ''"
           (change)="updateComment(student._id, $any($event.target).value)"
           placeholder="Commentaire (optionnel)"
+          [readonly]="selectedEvaluation.isPublished"
         />
       </div>
     </div>
 
-    <div class="save-bottom" *ngIf="!loadingGrades">
+    <div class="save-bottom" *ngIf="!loadingGrades && !selectedEvaluation.isPublished">
       <button class="btn-save" (click)="saveGrades()" [disabled]="saving">
         {{ saving ? 'Enregistrement…' : 'Enregistrer les notes' }}
       </button>

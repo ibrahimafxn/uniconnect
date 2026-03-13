@@ -315,6 +315,42 @@ button[type='submit'] {
   color: var(--muted);
 }
 
+.badge-published {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.badge-draft {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef9c3;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.eval-card.published {
+  border-left: 3px solid #22c55e;
+  opacity: 0.9;
+}
+
+.published-notice {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #15803d;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
 /* Grades table */
 .save-actions {
   display: flex;
@@ -398,6 +434,14 @@ button[type='submit'] {
     outline: none;
     border-color: var(--accent-2);
   }
+}
+
+.score-input[readonly],
+.comment-input[readonly] {
+  background: #f3f4f6;
+  color: var(--muted);
+  cursor: not-allowed;
+  border-color: #e5e7eb;
 }
 
 .save-bottom {
