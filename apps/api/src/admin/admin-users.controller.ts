@@ -120,6 +120,7 @@ export class AdminUsersController {
   }
 
   @Patch(':id/role')
+  @Roles(Role.SuperAdmin)
   @ApiOperation({ summary: 'Modifier le rôle d\'un utilisateur' })
   assignRole(
     @Param('id') id: string,
