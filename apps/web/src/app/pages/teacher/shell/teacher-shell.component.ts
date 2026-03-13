@@ -13,15 +13,15 @@ type NavItem = {label: string; path: string; icon: string; exact?: boolean};
 })
 export class TeacherShellComponent {
   readonly navItems: NavItem[] = [
-    {label: 'Tableau de bord', path: '/teacher', icon: '⊞', exact: true},
-    {label: 'Mon Planning',    path: '/teacher/planning',     icon: '📅'},
-    {label: 'Mes Notes',       path: '/teacher/notes',        icon: '📊'},
-    {label: 'Présences',       path: '/teacher/presence',     icon: '✅'},
-    {label: 'Devoirs',         path: '/teacher/assignments',  icon: '📝'},
-    {label: 'Ressources',      path: '/teacher/resources',    icon: '📁'},
-    {label: 'Annonces',        path: '/teacher/announcements',icon: '📢'},
-    {label: 'Statistiques',    path: '/teacher/stats',        icon: '📈'},
-    {label: 'Messagerie',      path: '/messages',             icon: '💬'},
-    {label: 'Mon Profil',      path: '/teacher/profile',      icon: '👤'},
+    {label: 'Tableau de bord', path: '/teacher',               icon: '⌂',  exact: true},
+    {label: 'Planning',        path: '/teacher/planning',      icon: '▦'},
+    {label: 'Notes',           path: '/teacher/notes',         icon: '≡'},
+    {label: 'Présences',       path: '/teacher/presence',      icon: '◉'},
+    {label: 'Devoirs',         path: '/teacher/assignments',   icon: '✎'},
+    {label: 'Ressources',      path: '/teacher/resources',     icon: '◫'},
+    {label: 'Annonces',        path: '/teacher/announcements', icon: '◈'},
+    {label: 'Statistiques',    path: '/teacher/stats',         icon: '∿'},
+    {label: 'Messagerie',      path: '/messages',              icon: '◇'},
+    {label: 'Mon Profil',      path: '/teacher/profile',       icon: '○'},
   ];
 }

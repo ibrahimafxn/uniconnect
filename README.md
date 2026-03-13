@@ -145,6 +145,7 @@ Fonctionnel:
 
 Doc module:
 - `docs/support.md`
+- `docs/roles-rules.md`
 
 ## Sprint 6 (Notes + Stabilisation)
 

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -25,6 +26,7 @@ import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
 import { Role } from '../common/roles.enum';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 
 const uploadRoot = join(process.cwd(), 'uploads', 'assignments');
@@ -101,6 +103,37 @@ export class AssignmentsController {
         userAgent: req.headers?.['user-agent'],
       },
     );
+  }
+
+  @Patch(':id')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  updateAssignment(
+    @Param('id') id: string,
+    @Body() dto: UpdateAssignmentDto,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.service.updateAssignment(id, dto, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
+  @Delete(':id')
+  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
+  deleteAssignment(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.service.deleteAssignment(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
   }
 
   @Get(':id/download')

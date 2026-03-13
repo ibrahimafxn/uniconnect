@@ -12,6 +12,7 @@ export type Assignment = {
   dueDate: string;
   originalName?: string;
   createdAt?: string;
+  submissionCount?: number;
 };
 
 export type Submission = {
@@ -51,6 +52,14 @@ export class AssignmentsApi {
     fd.append('dueDate', payload.dueDate);
     if (file) fd.append('file', file);
     return this.http.post<Assignment>(`${this.baseUrl}`, fd);
+  }
+
+  update(id: string, payload: Partial<Pick<Assignment, 'title' | 'description' | 'groupId' | 'subjectId' | 'dueDate'>>) {
+    return this.http.patch<Assignment>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  delete(id: string) {
+    return this.http.delete<{ deleted: boolean }>(`${this.baseUrl}/${id}`);
   }
 
   submit(assignmentId: string, file: File, comment?: string) {
