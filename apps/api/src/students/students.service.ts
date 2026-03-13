@@ -40,15 +40,17 @@ export class StudentsService {
   ) {}
 
   async listStudents(params: { skip: number; limit: number; q?: string }) {
+    const base: any = { isDeleted: { $ne: true } };
     const filter = params.q
       ? {
+          ...base,
           $or: [
             { firstName: { $regex: params.q, $options: 'i' } },
             { lastName: { $regex: params.q, $options: 'i' } },
             { studentNumber: { $regex: params.q, $options: 'i' } },
           ],
         }
-      : {};
+      : base;
 
     const [items, total] = await Promise.all([
       this.studentModel
@@ -300,7 +302,9 @@ export class StudentsService {
   }
 
   deleteStudent(id: string) {
-    return this.studentModel.findByIdAndDelete(id).exec();
+    return this.studentModel
+      .findByIdAndUpdate(id, { $set: { isDeleted: true, deletedAt: new Date() } }, { returnDocument: 'after' })
+      .exec();
   }
 
   getStudent(id: string) {

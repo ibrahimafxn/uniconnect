@@ -96,7 +96,7 @@ export class NotesService {
       throw new BadRequestException('Etudiant introuvable.');
     }
     return this.evaluationModel
-      .find({ groupId: student.groupId })
+      .find({ groupId: student.groupId, isPublished: true })
       .sort({ date: -1 })
       .exec();
   }
@@ -106,10 +106,12 @@ export class NotesService {
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException('Date invalide.');
     }
+    const isTeacherOrExternal = actor.role === Role.Teacher || actor.role === Role.External;
     const evaluation = await this.evaluationModel.create({
       ...data,
       date,
       maxScore: data.maxScore ?? 20,
+      teacherId: isTeacherOrExternal ? new Types.ObjectId(actor.userId) : null,
     });
     await this.auditLog.log({
       action: 'notes.evaluation.create',
@@ -122,6 +124,17 @@ export class NotesService {
   }
 
   async updateEvaluation(id: string, data: Partial<Evaluation> & { date?: string }, actor: AuditActor) {
+    const isTeacherOrExternal = actor.role === Role.Teacher || actor.role === Role.External;
+    if (isTeacherOrExternal) {
+      const existing = await this.evaluationModel.findById(id).lean().exec();
+      if (!existing) throw new NotFoundException('Evaluation introuvable.');
+      if (String(existing.teacherId) !== actor.userId) {
+        throw new ForbiddenException('Accès refusé : cette évaluation ne vous appartient pas.');
+      }
+      if (existing.isPublished) {
+        throw new ForbiddenException('Impossible de modifier une évaluation publiée.');
+      }
+    }
     const payload: any = { ...data };
     if (data.date) {
       const date = new Date(data.date);
@@ -166,6 +179,13 @@ export class NotesService {
     const evaluation = await this.evaluationModel.findById(evaluationId).lean().exec();
     if (!evaluation) {
       throw new BadRequestException('Evaluation introuvable.');
+    }
+    const isTeacherOrExternal = actor.role === Role.Teacher || actor.role === Role.External;
+    if (isTeacherOrExternal && String(evaluation.teacherId) !== actor.userId) {
+      throw new ForbiddenException('Accès refusé : cette évaluation ne vous appartient pas.');
+    }
+    if (evaluation.isPublished) {
+      throw new ForbiddenException('Impossible de modifier les notes d\'une évaluation publiée.');
     }
     const maxScore = evaluation.maxScore ?? 20;
     grades.forEach((g) => {
@@ -218,7 +238,10 @@ export class NotesService {
     }
 
     const subjects = await this.subjectModel.find({ levelId: group.levelId }).exec();
-    const evaluations = await this.evaluationModel.find({ groupId: student.groupId }).exec();
+    const isStudent = actor.role === Role.Student;
+    const evalFilter: any = { groupId: student.groupId };
+    if (isStudent) evalFilter.isPublished = true;
+    const evaluations = await this.evaluationModel.find(evalFilter).exec();
     const evaluationIds = evaluations.map((e) => e._id);
     const grades = await this.gradeModel
       .find({ studentId: new Types.ObjectId(studentId), evaluationId: { $in: evaluationIds } })
@@ -440,5 +463,26 @@ export class NotesService {
       throw new BadRequestException('Etudiant introuvable.');
     }
     return this.getStudentSummary(String(profile._id), actor);
+  }
+
+  async publishEvaluation(id: string, actor: AuditActor) {
+    const evaluation = await this.evaluationModel.findById(id).lean().exec();
+    if (!evaluation) throw new NotFoundException('Evaluation introuvable.');
+    if (evaluation.isPublished) throw new BadRequestException('Evaluation déjà publiée.');
+    const updated = await this.evaluationModel
+      .findByIdAndUpdate(
+        id,
+        { $set: { isPublished: true, publishedAt: new Date() } },
+        { returnDocument: 'after' },
+      )
+      .exec();
+    await this.auditLog.log({
+      action: 'notes.evaluation.publish',
+      entity: 'evaluation',
+      entityId: id,
+      actor,
+      metadata: { title: evaluation.title, groupId: evaluation.groupId },
+    });
+    return updated;
   }
 }

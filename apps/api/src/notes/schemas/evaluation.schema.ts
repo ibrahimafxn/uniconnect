@@ -19,6 +19,17 @@ export class Evaluation extends Document {
 
   @Prop({ required: true, default: 20 })
   maxScore!: number;
+
+  /** Identifiant de l'enseignant/intervenant créateur (pour contrôle de périmètre) */
+  @Prop({ type: Types.ObjectId, default: null })
+  teacherId!: Types.ObjectId | null;
+
+  /** Notes publiées officiellement par la scolarité */
+  @Prop({ default: false })
+  isPublished!: boolean;
+
+  @Prop({ type: Date, default: null })
+  publishedAt!: Date | null;
 }
 
 export const EvaluationSchema = SchemaFactory.createForClass(Evaluation);

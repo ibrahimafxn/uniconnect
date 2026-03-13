@@ -150,6 +150,23 @@ export class NotesController {
     });
   }
 
+  @Patch('evaluations/:id/publish')
+  @Roles(Role.Admin, Role.SuperAdmin)
+  @ApiOperation({ summary: 'Publier officiellement les notes d\'une évaluation' })
+  @ApiResponse({ status: 200, description: 'Évaluation publiée' })
+  publishEvaluation(
+    @Param('id') id: string,
+    @Request() req: { user: { userId: string; email?: string; role: Role }; ip?: string; headers?: Record<string, any> },
+  ) {
+    return this.notesService.publishEvaluation(id, {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      ip: req.ip,
+      userAgent: req.headers?.['user-agent'],
+    });
+  }
+
   @Get('groups/:id/students')
   @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External)
   @ApiOperation({ summary: 'Lister les etudiants d\'un groupe' })
@@ -181,7 +198,7 @@ export class NotesController {
   }
 
   @Get('students/:id/summary')
-  @Roles(Role.Admin, Role.SuperAdmin, Role.Teacher, Role.External, Role.Student)
+  @Roles(Role.Admin, Role.SuperAdmin)
   @ApiOperation({ summary: 'Resume des notes d\'un etudiant' })
   @ApiResponse({ status: 200, description: 'Resume notes + moyennes' })
   studentSummary(

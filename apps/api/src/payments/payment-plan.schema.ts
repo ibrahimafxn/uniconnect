@@ -35,6 +35,12 @@ export class PaymentPlan extends Document {
 
   @Prop({ type: [PaymentInstallmentSchema], default: [] })
   installments!: PaymentInstallment[];
+
+  @Prop({ default: false })
+  isDeleted!: boolean;
+
+  @Prop({ type: Date, default: null })
+  deletedAt!: Date | null;
 }
 
 export const PaymentPlanSchema = SchemaFactory.createForClass(PaymentPlan);

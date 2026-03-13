@@ -73,6 +73,12 @@ export class StudentProfile extends Document {
     default: { email: true, sms: true, push: true },
   })
   notificationPrefs?: { email: boolean; sms: boolean; push: boolean };
+
+  @Prop({ default: false })
+  isDeleted!: boolean;
+
+  @Prop({ type: Date, default: null })
+  deletedAt!: Date | null;
 }
 
 export const StudentProfileSchema = SchemaFactory.createForClass(StudentProfile);
