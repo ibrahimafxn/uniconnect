@@ -18,6 +18,9 @@ informations d’aide contextualisées.
 - Tous les profils peuvent accéder au support.
 - Les échanges support doivent être journalisés côté back-office (V2).
 
+## RBAC (reference)
+Voir les regles detaillees et la matrice des permissions: `roles-rules.md`.
+
 ## Parcours utilisateur (V1)
 
 1. L’utilisateur clique sur “Aide/Support” depuis le header.

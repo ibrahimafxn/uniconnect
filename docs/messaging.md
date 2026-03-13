@@ -24,6 +24,9 @@ Offrir une messagerie interne simple (1-1 + groupes) avec pièces jointes basiqu
 - Un utilisateur ne peut voir que ses conversations.
 - Upload/telechargement reserve aux participants de la conversation.
 
+## RBAC (reference)
+Voir les regles detaillees et la matrice des permissions: `roles-rules.md`.
+
 ## Audit log
 Actions journalisees:
 - `messaging.conversation.create`

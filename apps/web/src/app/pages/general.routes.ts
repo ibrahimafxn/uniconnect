@@ -20,7 +20,7 @@ export const GENERAL_ROUTES: Routes = [
       {path: 'admin', component: AdminComponent, canActivate: [roleGuard(['admin', 'super_admin'])]},
       {path: 'admin-uni', component: AdminUniComponent, canActivate: [roleGuard(['admin', 'super_admin'])]},
       {path: 'planning', component: PlanningComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},
-      {path: 'messages', component: MessagesComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},
+      {path: 'messages', component: MessagesComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student', 'teacher', 'external'])]},
       {path: 'notes', component: NotesComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student'])]},
       {path: 'support', component: SupportComponent, canActivate: [roleGuard(['admin', 'super_admin', 'student', 'teacher', 'external'])]},
     ]

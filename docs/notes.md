@@ -28,6 +28,9 @@ Saisie des notes par groupe et consultation des moyennes par etudiant.
 - Enseignant/Intervenant: evaluations + notes + consultation.
 - Etudiant: resume personnel uniquement.
 
+## RBAC (reference)
+Voir les regles detaillees et la matrice des permissions: `roles-rules.md`.
+
 ## Calcul moyenne
 - Moyenne matiere: moyenne des notes normalisees sur 20.
 - Moyenne generale: moyenne ponderee par coefficient.

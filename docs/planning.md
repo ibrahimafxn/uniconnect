@@ -13,6 +13,9 @@ Acces differencie par profil (admin/enseignant/etudiant).
   - Etudiant: seances du groupe associe.
 - Detection des conflits: salle, enseignant ou groupe sur une plage horaire.
 
+## RBAC (reference)
+Voir les regles detaillees et la matrice des permissions: `roles-rules.md`.
+
 ## Endpoints (API)
 - `GET /api/planning/rooms`
 - `POST /api/planning/rooms`

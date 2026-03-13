@@ -8,6 +8,9 @@ Le module Administration fournit les fonctionnalités de gestion et de supervisi
 - Paiements et configurations.
 - Supervision via audit logs et rapports.
 
+## RBAC (reference)
+Voir les regles detaillees et la matrice des permissions: `roles-rules.md`.
+
 ## Cas d'usage (UC-A01 à UC-A06)
 
 ### UC-A01 — Initialisation de l'année académique
@@ -376,4 +379,3 @@ PAYMENT_OVERDUE_ALERT_DAYS: 30
 - Advanced reporting (BI, dashboards temps réel).
 - Gestion des absences avec alertes parents.
 - Sanctions/mesures disciplinaires.
-
